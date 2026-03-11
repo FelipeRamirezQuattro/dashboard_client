@@ -19,14 +19,14 @@ const AdminLayout: React.FC = () => {
 
   return (
     <div className="min-h-[calc(100vh-73px)] bg-gray-50">
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Admin Header */}
-        <div className="flex justify-between items-start mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6 sm:mb-8">
+          <div className="flex-1">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
               Admin Console
             </h1>
-            <p className="text-gray-600">
+            <p className="text-sm sm:text-base text-gray-600">
               Configure enterprise settings and manage user workspace
               permissions.
             </p>
@@ -34,25 +34,29 @@ const AdminLayout: React.FC = () => {
           {location.pathname === "/admin/users" && (
             <button
               onClick={handleCreateUser}
-              className="bg-osi-primary hover:bg-osi-primary-dark text-white font-medium px-5 py-2.5 rounded-lg flex items-center gap-2 transition-colors"
+              className="bg-osi-primary hover:bg-osi-primary-dark text-white font-medium px-5 py-3 rounded-lg flex items-center justify-center gap-2 transition-colors touch-manipulation active:scale-95 w-full sm:w-auto shrink-0"
             >
-              <span className="material-symbols-outlined text-xl">
+              <span
+                className="material-symbols-outlined text-xl"
+                aria-hidden="true"
+              >
                 person_add
               </span>
-              + Create User
+              <span className="hidden sm:inline">+ Create User</span>
+              <span className="sm:hidden">Create User</span>
             </button>
           )}
         </div>
 
         {/* Navigation Tabs */}
-        <div className="bg-white rounded-t-lg shadow-sm border-b-0">
-          <nav className="flex">
+        <div className="bg-white rounded-t-lg shadow-sm border-b-0 -mx-4 sm:mx-0">
+          <nav className="flex overflow-x-auto scrollbar-hide">
             {navItems.map((item) => (
               <NavLink
                 key={item.path}
                 to={item.path}
                 className={({ isActive }) =>
-                  `relative px-6 py-4 font-medium transition-colors ${
+                  `relative px-4 sm:px-6 py-3 sm:py-4 font-medium transition-colors whitespace-nowrap touch-manipulation ${
                     isActive
                       ? "text-gray-900"
                       : "text-gray-600 hover:text-gray-900"
@@ -61,7 +65,7 @@ const AdminLayout: React.FC = () => {
               >
                 {({ isActive }) => (
                   <>
-                    <span>{item.label}</span>
+                    <span className="text-sm sm:text-base">{item.label}</span>
                     {isActive && (
                       <div className="absolute bottom-0 left-0 right-0 h-1 bg-osi-primary"></div>
                     )}

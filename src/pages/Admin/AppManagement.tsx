@@ -10,13 +10,13 @@ import {
   AppCategory,
   categoryLabels,
 } from "../../types/app.types";
-import LoadingSpinner from "../../components/LoadingSpinner";
 import { Shield, CheckCircle2, XCircle, Trash2, Lock } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { businessUnitService } from "../../services/businessUnit.service";
 import { departmentService } from "../../services/department.service";
 import { BusinessUnit } from "../../types/businessUnit.types";
 import { Department } from "../../types/department.types";
+import { TableRowSkeleton } from "../../components/SkeletonLoader";
 
 const AppManagement: React.FC = () => {
   const { data: apps, isLoading, error } = useAllApps();
@@ -52,7 +52,7 @@ const AppManagement: React.FC = () => {
   // Filter departments based on selected business unit in the form
   const availableDepartments =
     allDepartments?.filter((dept: Department) =>
-      typeof dept.businessUnitId === "object"
+      typeof dept.businessUnitId === "object" && dept.businessUnitId !== null
         ? dept.businessUnitId._id === formData.businessUnitId
         : dept.businessUnitId === formData.businessUnitId,
     ) || [];
@@ -104,11 +104,13 @@ const AppManagement: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-osi-dark">App Management</h2>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <h2 className="text-xl sm:text-2xl font-bold text-osi-dark">
+          App Management
+        </h2>
         <button
           onClick={() => setIsCreateModalOpen(true)}
-          className="btn-primary"
+          className="btn-primary touch-manipulation active:scale-95 w-full sm:w-auto"
         >
           + Add Application
         </button>
@@ -116,8 +118,44 @@ const AppManagement: React.FC = () => {
 
       {/* Apps Table */}
       {isLoading ? (
-        <div className="flex justify-center py-20">
-          <LoadingSpinner size="lg" />
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <table className="w-full min-w-max">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Business Unit
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Department
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Category
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Required Role
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    SSO
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {[...Array(6)].map((_, i) => (
+                  <TableRowSkeleton key={i} columns={8} />
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : error ? (
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
@@ -125,8 +163,8 @@ const AppManagement: React.FC = () => {
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <table className="w-full min-w-max">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -168,14 +206,16 @@ const AppManagement: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm text-gray-900">
-                        {typeof app.businessUnitId === "object"
+                        {typeof app.businessUnitId === "object" &&
+                        app.businessUnitId !== null
                           ? app.businessUnitId.name
                           : "—"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm text-gray-900">
-                        {typeof app.departmentId === "object"
+                        {typeof app.departmentId === "object" &&
+                        app.departmentId !== null
                           ? app.departmentId.name
                           : "—"}
                       </span>

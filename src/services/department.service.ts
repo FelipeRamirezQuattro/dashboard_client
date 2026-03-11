@@ -8,12 +8,12 @@ import {
 export const departmentService = {
   async getAllDepartments(): Promise<Department[]> {
     const response = await api.get("/departments");
-    return response.data;
+    return Array.isArray(response.data) ? response.data : [];
   },
 
   async getActiveDepartments(): Promise<Department[]> {
     const response = await api.get("/departments/active");
-    return response.data;
+    return Array.isArray(response.data) ? response.data : [];
   },
 
   async getDepartmentById(id: string): Promise<Department> {
@@ -23,7 +23,7 @@ export const departmentService = {
 
   async getDepartmentsByBusinessUnit(buId: string): Promise<Department[]> {
     const response = await api.get(`/departments/by-business-unit/${buId}`);
-    return response.data;
+    return Array.isArray(response.data) ? response.data : [];
   },
 
   async createDepartment(data: CreateDepartmentDTO): Promise<Department> {

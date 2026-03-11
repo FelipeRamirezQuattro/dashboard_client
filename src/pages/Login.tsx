@@ -18,14 +18,46 @@ const Login: React.FC = () => {
   useEffect(() => {
     // Check for SSO error in URL
     const ssoError = searchParams.get("error");
+    const errorDetails = searchParams.get("details");
+
     if (ssoError) {
-      if (ssoError === "sso_failed") {
-        setError("Microsoft sign-in failed. Please try again.");
-      } else if (ssoError === "sso_callback_failed") {
-        setError("Authentication failed. Please try signing in again.");
-      } else if (ssoError === "no_token") {
-        setError("Invalid authentication response. Please try again.");
+      console.log("[Login] SSO Error detected:", ssoError, errorDetails);
+
+      let errorMessage = "Sign-in failed. Please try again.";
+
+      switch (ssoError) {
+        case "sso_failed":
+          errorMessage =
+            "Microsoft sign-in failed. Please try again or use email/password.";
+          break;
+        case "sso_init_failed":
+          errorMessage =
+            "Unable to initiate Microsoft sign-in. Please check your connection.";
+          break;
+        case "sso_auth_failed":
+          errorMessage = "Microsoft authentication failed. Please try again.";
+          break;
+        case "sso_no_user":
+          errorMessage = "Unable to authenticate user. Please contact support.";
+          break;
+        case "sso_callback_failed":
+          errorMessage =
+            "Authentication callback failed. Please try signing in again.";
+          break;
+        case "sso_callback_error":
+          errorMessage = errorDetails
+            ? `Authentication error: ${errorDetails}`
+            : "An error occurred during sign-in. Please try again.";
+          break;
+        case "no_token":
+          errorMessage = "Invalid authentication response. Please try again.";
+          break;
+        default:
+          errorMessage = "An unexpected error occurred. Please try again.";
       }
+
+      setError(errorMessage);
+
       // Clear the error from URL
       navigate("/login", { replace: true });
     }
@@ -57,21 +89,26 @@ const Login: React.FC = () => {
     <div className="min-h-screen bg-osi-bg flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo and Title */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6 sm:mb-8">
           <div className="inline-flex items-center justify-center mb-4">
-            <span className="material-symbols-outlined text-osi-primary text-6xl">
+            <span
+              className="material-symbols-outlined text-osi-primary text-5xl sm:text-6xl"
+              aria-hidden="true"
+            >
               dashboard
             </span>
           </div>
-          <h1 className="text-3xl font-bold text-osi-dark mb-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-osi-dark mb-1">
             Odessa Separator Inc.
           </h1>
         </div>
 
         {/* Login Card */}
-        <div className="bg-white rounded-2xl shadow-lg p-8">
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-osi-dark">Sign In</h2>
+        <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
+          <div className="mb-5 sm:mb-6">
+            <h2 className="text-xl sm:text-2xl font-bold text-osi-dark">
+              Sign In
+            </h2>
             <p className="text-osi-secondary text-sm mt-1">
               Access your separator monitoring dashboard
             </p>
@@ -92,7 +129,10 @@ const Login: React.FC = () => {
                 Email Address
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-osi-secondary text-xl">
+                <span
+                  className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-osi-secondary text-xl"
+                  aria-hidden="true"
+                >
                   mail
                 </span>
                 <input
@@ -100,10 +140,11 @@ const Login: React.FC = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-11 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-osi-primary focus:border-transparent transition-all"
+                  className="w-full pl-11 pr-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-osi-primary focus:border-transparent transition-all text-base"
                   placeholder="name@company.com"
                   required
                   disabled={isLoading}
+                  autoComplete="email"
                 />
               </div>
             </div>
@@ -118,13 +159,16 @@ const Login: React.FC = () => {
                 </label>
                 <a
                   href="#"
-                  className="text-xs text-osi-primary hover:underline font-medium"
+                  className="text-xs text-osi-primary hover:underline font-medium touch-manipulation"
                 >
                   Forgot password?
                 </a>
               </div>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-osi-secondary text-xl">
+                <span
+                  className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-osi-secondary text-xl"
+                  aria-hidden="true"
+                >
                   lock
                 </span>
                 <input
@@ -132,10 +176,11 @@ const Login: React.FC = () => {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-11 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-osi-primary focus:border-transparent transition-all"
+                  className="w-full pl-11 pr-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-osi-primary focus:border-transparent transition-all text-base"
                   placeholder="••••••••"
                   required
                   disabled={isLoading}
+                  autoComplete="current-password"
                 />
               </div>
             </div>
@@ -146,7 +191,7 @@ const Login: React.FC = () => {
                 type="checkbox"
                 checked={rememberDevice}
                 onChange={(e) => setRememberDevice(e.target.checked)}
-                className="w-4 h-4 text-osi-primary border-gray-300 rounded focus:ring-osi-primary"
+                className="w-4 h-4 text-osi-primary border-gray-300 rounded focus:ring-osi-primary touch-manipulation"
               />
               <label htmlFor="remember" className="ml-2 text-sm text-osi-dark">
                 Remember this device
@@ -156,17 +201,20 @@ const Login: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-osi-primary hover:bg-osi-primary-dark text-white font-bold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full bg-osi-primary hover:bg-osi-primary-dark text-white font-bold py-3 sm:py-3.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 touch-manipulation"
             >
               {isLoading ? (
                 <>
                   <LoadingSpinner size="sm" />
-                  Signing in...
+                  <span>Signing in…</span>
                 </>
               ) : (
                 <>
-                  Sign In
-                  <span className="material-symbols-outlined text-lg">
+                  <span>Sign In</span>
+                  <span
+                    className="material-symbols-outlined text-lg"
+                    aria-hidden="true"
+                  >
                     arrow_forward
                   </span>
                 </>
@@ -175,7 +223,7 @@ const Login: React.FC = () => {
           </form>
 
           {/* Divider */}
-          <div className="relative my-6">
+          <div className="relative my-5 sm:my-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-200"></div>
             </div>
@@ -191,29 +239,33 @@ const Login: React.FC = () => {
             type="button"
             onClick={handleMicrosoftSSO}
             disabled={isLoading}
-            className="w-full flex items-center justify-center gap-3 px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-3 px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
           >
-            <svg className="w-5 h-5" viewBox="0 0 23 23">
+            <svg
+              className="w-5 h-5 flex-shrink-0"
+              viewBox="0 0 23 23"
+              aria-hidden="true"
+            >
               <path fill="#f35325" d="M1 1h10v10H1z" />
               <path fill="#81bc06" d="M12 1h10v10H12z" />
               <path fill="#05a6f0" d="M1 12h10v10H1z" />
               <path fill="#ffba08" d="M12 12h10v10H12z" />
             </svg>
-            <span className="font-medium text-osi-dark text-sm">
+            <span className="font-medium text-osi-dark text-sm sm:text-base">
               Sign in with Microsoft
             </span>
           </button>
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-8">
+        <div className="text-center mt-6 sm:mt-8">
           <p className="text-xs text-osi-secondary">
             © 2026 Odessa Separator Inc. All rights reserved.
           </p>
-          <div className="flex items-center justify-center gap-4 mt-2 text-xs">
+          <div className="flex items-center justify-center gap-3 sm:gap-4 mt-2 text-xs flex-wrap">
             <a
               href="#"
-              className="text-osi-secondary hover:text-osi-primary transition-colors"
+              className="text-osi-secondary hover:text-osi-primary transition-colors touch-manipulation"
             >
               Security Policy
             </a>

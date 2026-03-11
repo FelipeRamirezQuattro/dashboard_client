@@ -3,6 +3,7 @@ import React, {
   useContext,
   useReducer,
   useEffect,
+  useCallback,
   ReactNode,
 } from "react";
 import {
@@ -113,21 +114,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     };
 
     initAuth();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const login = async (credentials: LoginCredentials): Promise<void> => {
-    dispatch({ type: "LOGIN_START" });
-    try {
-      const response = await authService.login(credentials);
-      localStorage.setItem("accessToken", response.accessToken);
-      dispatch({ type: "LOGIN_SUCCESS", payload: response });
-    } catch (error) {
-      dispatch({ type: "LOGIN_FAILURE" });
-      throw error;
-    }
-  };
+  const login = useCallback(
+    async (credentials: LoginCredentials): Promise<void> => {
+      dispatch({ type: "LOGIN_START" });
+      try {
+        const response = await authService.login(credentials);
+        localStorage.setItem("accessToken", response.accessToken);
+        dispatch({ type: "LOGIN_SUCCESS", payload: response });
+      } catch (error) {
+        dispatch({ type: "LOGIN_FAILURE" });
+        throw error;
+      }
+    },
+    [],
+  );
 
-  const logout = async (): Promise<void> => {
+  const logout = useCallback(async (): Promise<void> => {
     try {
       await authService.logout();
     } catch (error) {
@@ -136,9 +141,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       localStorage.removeItem("accessToken");
       dispatch({ type: "LOGOUT" });
     }
-  };
+  }, []);
 
-  const refreshToken = async (): Promise<void> => {
+  const refreshToken = useCallback(async (): Promise<void> => {
     try {
       const response = await authService.refreshToken();
       localStorage.setItem("accessToken", response.accessToken);
@@ -152,22 +157,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       dispatch({ type: "LOGIN_FAILURE" });
       throw error;
     }
-  };
+  }, []);
 
-  const setUser = (user: IUser | null): void => {
+  const setUser = useCallback((user: IUser | null): void => {
     dispatch({ type: "SET_USER", payload: user });
-  };
+  }, []);
 
-  const setAccessToken = (token: string | null): void => {
+  const setAccessToken = useCallback((token: string | null): void => {
     if (token) {
       localStorage.setItem("accessToken", token);
     } else {
       localStorage.removeItem("accessToken");
     }
     dispatch({ type: "SET_TOKEN", payload: token });
-  };
+  }, []);
 
-  const loginWithToken = async (token: string): Promise<void> => {
+  const loginWithToken = useCallback(async (token: string): Promise<void> => {
     dispatch({ type: "LOGIN_START" });
     try {
       localStorage.setItem("accessToken", token);
@@ -181,7 +186,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       dispatch({ type: "LOGIN_FAILURE" });
       throw error;
     }
-  };
+  }, []);
 
   const value: AuthContextType = {
     ...state,

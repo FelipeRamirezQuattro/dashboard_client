@@ -36,20 +36,42 @@ const SSOCallback: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { loginWithToken } = useAuthContext();
+  const hasProcessed = React.useRef(false);
 
   useEffect(() => {
+    // Prevent multiple executions
+    if (hasProcessed.current) {
+      return;
+    }
+
     const token = searchParams.get("token");
+    console.log("[SSOCallback] Processing callback, token present:", !!token);
+
     if (token) {
+      hasProcessed.current = true;
+      console.log("[SSOCallback] Attempting login with token");
       // Login with the token from SSO callback
       loginWithToken(token)
         .then(() => {
+          console.log(
+            "[SSOCallback] Login successful, redirecting to dashboard",
+          );
           navigate("/dashboard", { replace: true });
         })
         .catch((error) => {
-          console.error("SSO login failed:", error);
-          navigate("/login?error=sso_callback_failed", { replace: true });
+          console.error("[SSOCallback] SSO login failed:", error);
+          const errorMsg =
+            error?.response?.data?.error ||
+            error?.message ||
+            "sso_callback_failed";
+          navigate(
+            `/login?error=sso_callback_failed&details=${encodeURIComponent(errorMsg)}`,
+            { replace: true },
+          );
         });
     } else {
+      hasProcessed.current = true;
+      console.error("[SSOCallback] No token in URL parameters");
       navigate("/login?error=no_token", { replace: true });
     }
   }, [searchParams, navigate, loginWithToken]);
@@ -111,6 +133,11 @@ const App: React.FC = () => {
             {/* 404 */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+
+          {/* Optional: Accessibility Testing Panel (Development Only) */}
+          {/* Uncomment to enable the floating accessibility testing panel */}
+          {/* import AccessibilityPanel from "./components/AccessibilityPanel"; */}
+          {/* {import.meta.env.DEV && <AccessibilityPanel />} */}
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>

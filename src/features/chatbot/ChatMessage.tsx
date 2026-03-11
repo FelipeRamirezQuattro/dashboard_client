@@ -12,6 +12,69 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
     minute: "2-digit",
   });
 
+  // Function to parse and render message with markdown-like formatting
+  const renderMessage = (text: string) => {
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+
+    // Combined regex to match links [text](url) and bold **text**
+    const regex = /\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*/g;
+    let match;
+
+    while ((match = regex.exec(text)) !== null) {
+      // Add text before the match
+      if (match.index > lastIndex) {
+        parts.push(text.substring(lastIndex, match.index));
+      }
+
+      if (match[1] && match[2]) {
+        // It's a link [text](url)
+        const url = match[2];
+        parts.push(
+          <a
+            key={match.index}
+            href={url}
+            className={`underline font-semibold cursor-pointer ${
+              isBot
+                ? "text-osi-primary hover:text-osi-primary/80"
+                : "text-white hover:text-white/90"
+            }`}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              // Create a temporary anchor element to trigger download
+              const link = document.createElement("a");
+              link.href = url;
+              link.download = url.split("/").pop() || "download";
+              link.target = "_blank";
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }}
+          >
+            {match[1]} 📥
+          </a>,
+        );
+      } else if (match[3]) {
+        // It's bold **text**
+        parts.push(
+          <strong key={match.index} className="font-semibold">
+            {match[3]}
+          </strong>,
+        );
+      }
+
+      lastIndex = regex.lastIndex;
+    }
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex));
+    }
+
+    return parts.length > 0 ? parts : text;
+  };
+
   return (
     <div className={`flex ${isBot ? "justify-start" : "justify-end"} mb-4`}>
       <div
@@ -35,9 +98,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
               isBot ? "bg-gray-100 text-gray-800" : "bg-osi-primary text-white"
             }`}
           >
-            <p className="text-sm leading-relaxed whitespace-pre-line">
-              {message.message}
-            </p>
+            <div className="text-sm leading-relaxed whitespace-pre-line">
+              {renderMessage(message.message)}
+            </div>
           </div>
           <span
             className={`text-xs text-gray-400 mt-1 px-2 ${

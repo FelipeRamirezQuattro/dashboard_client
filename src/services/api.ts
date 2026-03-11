@@ -6,7 +6,10 @@ import axios, {
 } from "axios";
 
 const api: AxiosInstance = axios.create({
-  baseURL: "/api-dashboard",
+  baseURL: import.meta.env.VITE_API_BASE_URL || "/api-dashboard",
+  timeout: import.meta.env.VITE_API_TIMEOUT
+    ? parseInt(import.meta.env.VITE_API_TIMEOUT)
+    : 30000,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
@@ -43,8 +46,9 @@ api.interceptors.response.use(
 
       try {
         // Try to refresh the token
+        const baseURL = import.meta.env.VITE_API_BASE_URL || "/api-dashboard";
         const response = await axios.post(
-          "/api-dashboard/auth/refresh",
+          `${baseURL}/auth/refresh`,
           {},
           { withCredentials: true },
         );

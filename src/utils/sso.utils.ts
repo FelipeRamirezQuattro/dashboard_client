@@ -1,5 +1,6 @@
 export const initiateMicrosoftSSO = (): void => {
-  window.location.href = "/api-dashboard/auth/sso/microsoft";
+  const baseURL = import.meta.env.VITE_API_BASE_URL || "/api-dashboard";
+  window.location.href = `${baseURL}/auth/sso/microsoft`;
 };
 
 export default {

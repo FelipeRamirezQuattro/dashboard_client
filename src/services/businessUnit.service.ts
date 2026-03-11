@@ -8,12 +8,12 @@ import {
 export const businessUnitService = {
   async getAllBusinessUnits(): Promise<BusinessUnit[]> {
     const response = await api.get("/business-units");
-    return response.data;
+    return Array.isArray(response.data) ? response.data : [];
   },
 
   async getActiveBusinessUnits(): Promise<BusinessUnit[]> {
     const response = await api.get("/business-units/active");
-    return response.data;
+    return Array.isArray(response.data) ? response.data : [];
   },
 
   async getBusinessUnitById(id: string): Promise<BusinessUnit> {

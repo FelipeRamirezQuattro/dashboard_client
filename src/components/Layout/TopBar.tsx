@@ -8,6 +8,8 @@ import { departmentService } from "../../services/department.service";
 import { IExternalApp } from "../../types/app.types";
 import { BusinessUnit } from "../../types/businessUnit.types";
 import { Department } from "../../types/department.types";
+import MobileNav from "./MobileNav";
+import MobileSearch from "./MobileSearch";
 
 interface SearchResult {
   id: string;
@@ -25,6 +27,8 @@ const TopBar: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [selectedResultIndex, setSelectedResultIndex] = useState(-1);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = async () => {
@@ -228,174 +232,274 @@ const TopBar: React.FC = () => {
   };
 
   return (
-    <header className="flex items-center justify-between border-b border-osi-primary/10 bg-white px-6 py-4 sticky top-0 z-50 shadow-sm">
-      <Link to="/dashboard" className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-osi-primary text-white">
-          <span className="material-symbols-outlined text-2xl">factory</span>
-        </div>
-        <h1 className="text-xl font-bold tracking-tight text-slate-900">
-          Odessa Separator
-        </h1>
-      </Link>
+    <>
+      {/* Mobile Navigation */}
+      <MobileNav
+        isOpen={isMobileNavOpen}
+        onClose={() => setIsMobileNavOpen(false)}
+      />
 
-      {/* Global Search Bar */}
-      <form onSubmit={handleSearch} className="flex-1 max-w-2xl mx-8">
-        <div className="relative" ref={searchRef}>
-          <div className="flex items-center gap-3 px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg hover:border-gray-300 focus-within:border-osi-primary focus-within:bg-white transition-all">
-            <span className="material-symbols-outlined text-gray-400 text-xl">
-              search
+      {/* Mobile Search */}
+      <MobileSearch
+        isOpen={isMobileSearchOpen}
+        onClose={() => setIsMobileSearchOpen(false)}
+      />
+
+      <header className="flex items-center justify-between border-b border-osi-primary/10 bg-white px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-30 shadow-sm">
+        {/* Mobile Menu Button */}
+        <button
+          onClick={() => setIsMobileNavOpen(true)}
+          className="lg:hidden p-2 -ml-2 hover:bg-gray-100 active:bg-gray-200 rounded-lg transition-colors touch-manipulation"
+          aria-label="Open navigation menu"
+        >
+          <span
+            className="material-symbols-outlined text-2xl text-gray-700"
+            aria-hidden="true"
+          >
+            menu
+          </span>
+        </button>
+
+        {/* Logo - Responsive */}
+        <Link to="/dashboard" className="flex items-center gap-2 sm:gap-3">
+          <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-osi-primary text-white flex-shrink-0">
+            <span
+              className="material-symbols-outlined text-xl sm:text-2xl"
+              aria-hidden="true"
+            >
+              factory
             </span>
-            <input
-              type="text"
-              placeholder="Search applications, business units, departments..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => setIsSearchFocused(true)}
-              onKeyDown={handleKeyDown}
-              className="flex-1 bg-transparent border-none focus:outline-none text-sm text-gray-700 placeholder:text-gray-400"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery("")}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <span className="material-symbols-outlined text-xl">close</span>
-              </button>
-            )}
           </div>
+          <h1 className="text-base sm:text-xl font-bold tracking-tight text-slate-900 hidden md:block">
+            Odessa Separator Inc. (OSI)
+          </h1>
+          <h1 className="text-base font-bold tracking-tight text-slate-900 md:hidden">
+            OSI
+          </h1>
+        </Link>
 
-          {/* Search Results Dropdown */}
-          {isSearchFocused && searchQuery.trim() && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 max-h-96 overflow-y-auto z-50">
-              {searchResults.length > 0 ? (
-                <div className="py-2">
-                  {searchResults.map((result, index) => (
-                    <button
-                      key={`${result.type}-${result.id}`}
-                      onClick={() => handleResultClick(result)}
-                      className={`w-full px-4 py-3 transition-colors text-left flex items-start gap-3 ${
-                        index === selectedResultIndex
-                          ? "bg-osi-primary/10"
-                          : "hover:bg-gray-50"
-                      }`}
-                    >
-                      <span
-                        className={`material-symbols-outlined text-xl mt-0.5 ${
-                          result.type === "businessUnit"
-                            ? "text-osi-primary"
-                            : result.type === "department"
-                              ? "text-blue-600"
-                              : "text-green-600"
-                        }`}
-                      >
-                        {getResultIcon(result.type)}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold text-gray-900">
-                            {result.name}
-                          </p>
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
-                            {getResultTypeLabel(result.type)}
-                          </span>
-                        </div>
-                        {result.description && (
-                          <p className="text-xs text-gray-500 mt-1 line-clamp-1">
-                            {result.description}
-                          </p>
-                        )}
-                        {result.businessUnitName &&
-                          result.type !== "businessUnit" && (
-                            <p className="text-xs text-gray-400 mt-1">
-                              {result.businessUnitName}
-                              {result.type === "app" && " • Click to launch"}
-                            </p>
-                          )}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="px-4 py-8 text-center">
-                  <span className="material-symbols-outlined text-gray-300 text-4xl mb-2">
-                    search_off
+        {/* Desktop Search Bar */}
+        <form
+          onSubmit={handleSearch}
+          className="hidden lg:flex flex-1 max-w-2xl mx-8"
+        >
+          <div className="relative w-full" ref={searchRef}>
+            <div className="flex items-center gap-3 px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg hover:border-gray-300 focus-within:border-osi-primary focus-within:bg-white transition-all">
+              <span
+                className="material-symbols-outlined text-gray-400 text-xl"
+                aria-hidden="true"
+              >
+                search
+              </span>
+              <input
+                type="text"
+                placeholder="Search applications, business units, departments…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setIsSearchFocused(true)}
+                onKeyDown={handleKeyDown}
+                className="flex-1 bg-transparent border-none focus:outline-none text-sm text-gray-700 placeholder:text-gray-400"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="text-gray-400 hover:text-gray-600 p-1 rounded touch-manipulation"
+                  aria-label="Clear search"
+                >
+                  <span
+                    className="material-symbols-outlined text-xl"
+                    aria-hidden="true"
+                  >
+                    close
                   </span>
-                  <p className="text-sm text-gray-500">
-                    No results found for "{searchQuery}"
-                  </p>
-                </div>
+                </button>
               )}
             </div>
-          )}
-        </div>
-      </form>
 
-      <div className="flex items-center gap-4">
-        <div className="relative">
-          <button
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center gap-4"
+            {/* Search Results Dropdown - Desktop */}
+            {isSearchFocused && searchQuery.trim() && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 max-h-96 overflow-y-auto z-50">
+                {searchResults.length > 0 ? (
+                  <div className="py-2">
+                    {searchResults.map((result, index) => (
+                      <button
+                        key={`${result.type}-${result.id}`}
+                        onClick={() => handleResultClick(result)}
+                        className={`w-full px-4 py-3 transition-colors text-left flex items-start gap-3 ${
+                          index === selectedResultIndex
+                            ? "bg-osi-primary/10"
+                            : "hover:bg-gray-50"
+                        }`}
+                      >
+                        <span
+                          className={`material-symbols-outlined text-xl mt-0.5 ${
+                            result.type === "businessUnit"
+                              ? "text-osi-primary"
+                              : result.type === "department"
+                                ? "text-blue-600"
+                                : "text-green-600"
+                          }`}
+                          aria-hidden="true"
+                        >
+                          {getResultIcon(result.type)}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-semibold text-gray-900">
+                              {result.name}
+                            </p>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
+                              {getResultTypeLabel(result.type)}
+                            </span>
+                          </div>
+                          {result.description && (
+                            <p className="text-xs text-gray-500 mt-1 line-clamp-1">
+                              {result.description}
+                            </p>
+                          )}
+                          {result.businessUnitName &&
+                            result.type !== "businessUnit" && (
+                              <p className="text-xs text-gray-400 mt-1">
+                                {result.businessUnitName}
+                                {result.type === "app" && " • Click to launch"}
+                              </p>
+                            )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="px-4 py-8 text-center">
+                    <span
+                      className="material-symbols-outlined text-gray-300 text-4xl mb-2"
+                      aria-hidden="true"
+                    >
+                      search_off
+                    </span>
+                    <p className="text-sm text-gray-500">
+                      No results found for "{searchQuery}"
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </form>
+
+        {/* Mobile Search Button */}
+        <button
+          onClick={() => setIsMobileSearchOpen(true)}
+          className="lg:hidden p-2 hover:bg-gray-100 active:bg-gray-200 rounded-lg transition-colors touch-manipulation"
+          aria-label="Open search"
+        >
+          <span
+            className="material-symbols-outlined text-2xl text-gray-700"
+            aria-hidden="true"
           >
-            <div className="text-right hidden sm:block">
-              <p className="text-sm font-semibold leading-none">
-                {user?.firstName} {user?.lastName}
-              </p>
-              <p className="text-xs text-osi-secondary mt-1 capitalize">
-                {user?.role === "superadmin"
-                  ? "System Administrator"
-                  : user?.role}
-              </p>
-            </div>
-            <div className="h-10 w-10 rounded-full bg-slate-200 border-2 border-osi-primary overflow-hidden flex items-center justify-center text-osi-dark font-semibold">
-              {getInitials()}
-            </div>
-          </button>
+            search
+          </span>
+        </button>
 
-          {/* Dropdown Menu */}
-          {isDropdownOpen && (
-            <>
-              <div
-                className="fixed inset-0 z-10"
-                onClick={() => setIsDropdownOpen(false)}
-              ></div>
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-20 border border-gray-200">
-                <div className="px-4 py-2 border-b border-gray-200 sm:hidden">
-                  <p className="text-sm font-medium text-osi-dark">
-                    {user?.firstName} {user?.lastName}
-                  </p>
-                  <p className="text-xs text-gray-500 capitalize">
-                    {user?.role}
-                  </p>
-                </div>
-                <Link
-                  to="/dashboard"
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+        {/* User Dropdown */}
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <button
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="flex items-center gap-2 sm:gap-4 touch-manipulation p-1 sm:p-0 hover:bg-gray-100 sm:hover:bg-transparent rounded-lg transition-colors"
+              aria-label="User menu"
+            >
+              <div className="text-right hidden sm:block">
+                <p className="text-sm font-semibold leading-none">
+                  {user?.firstName} {user?.lastName}
+                </p>
+                <p className="text-xs text-osi-secondary mt-1 capitalize">
+                  {user?.role === "superadmin"
+                    ? "System Administrator"
+                    : user?.role}
+                </p>
+              </div>
+              <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-slate-200 border-2 border-osi-primary overflow-hidden flex items-center justify-center text-osi-dark font-semibold text-sm flex-shrink-0">
+                {getInitials()}
+              </div>
+            </button>
+
+            {/* Dropdown Menu */}
+            {isDropdownOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-10"
                   onClick={() => setIsDropdownOpen(false)}
-                >
-                  Dashboard
-                </Link>
-                {(user?.role === "admin" || user?.role === "superadmin") && (
+                  aria-hidden="true"
+                ></div>
+                <div className="absolute right-0 mt-2 w-56 sm:w-48 bg-white rounded-lg shadow-lg py-1 z-20 border border-gray-200">
+                  <div className="px-4 py-3 border-b border-gray-200 sm:hidden">
+                    <p className="text-sm font-medium text-osi-dark">
+                      {user?.firstName} {user?.lastName}
+                    </p>
+                    <p className="text-xs text-gray-500 capitalize mt-1">
+                      {user?.role === "superadmin"
+                        ? "System Administrator"
+                        : user?.role}
+                    </p>
+                  </div>
                   <Link
-                    to="/admin"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    to="/dashboard"
+                    className="block px-4 py-2.5 sm:py-2 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-200 touch-manipulation"
                     onClick={() => setIsDropdownOpen(false)}
                   >
-                    Admin Panel
+                    <span className="flex items-center gap-2">
+                      <span
+                        className="material-symbols-outlined text-lg"
+                        aria-hidden="true"
+                      >
+                        dashboard
+                      </span>
+                      Dashboard
+                    </span>
                   </Link>
-                )}
-                <button
-                  onClick={handleLogout}
-                  className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                >
-                  Logout
-                </button>
-              </div>
-            </>
-          )}
+                  {(user?.role === "admin" || user?.role === "superadmin") && (
+                    <Link
+                      to="/admin"
+                      className="block px-4 py-2.5 sm:py-2 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-200 touch-manipulation"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      <span className="flex items-center gap-2">
+                        <span
+                          className="material-symbols-outlined text-lg"
+                          aria-hidden="true"
+                        >
+                          admin_panel_settings
+                        </span>
+                        Admin Panel
+                      </span>
+                    </Link>
+                  )}
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2.5 sm:py-2 text-sm text-red-600 hover:bg-gray-100 active:bg-gray-200 touch-manipulation"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span
+                        className="material-symbols-outlined text-lg"
+                        aria-hidden="true"
+                      >
+                        logout
+                      </span>
+                      Logout
+                    </span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+    </>
   );
 };
 

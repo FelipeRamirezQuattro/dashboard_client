@@ -43,11 +43,15 @@ const ChatbotWindow: React.FC<ChatbotWindowProps> = ({ onClose }) => {
         timestamp: new Date(data.timestamp),
       };
 
-      // Simulate typing delay for more natural feel
+      // Simulate realistic thinking/typing delay (1.5-2.5 seconds with random variance)
+      const baseDelay = 1500;
+      const randomVariance = Math.random() * 1000; // 0-1000ms random
+      const thinkingDelay = baseDelay + randomVariance;
+
       setTimeout(() => {
         setIsTyping(false);
         setMessages((prev) => [...prev, botMessage]);
-      }, 500);
+      }, thinkingDelay);
     },
     onError: () => {
       setIsTyping(false);
@@ -80,32 +84,43 @@ const ChatbotWindow: React.FC<ChatbotWindowProps> = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed bottom-24 right-6 w-96 h-[600px] bg-white rounded-2xl shadow-2xl flex flex-col z-50 border border-gray-200">
+    <div className="fixed inset-x-0 bottom-0 sm:bottom-auto sm:bottom-24 sm:right-6 sm:left-auto sm:w-96 h-[85vh] sm:h-[600px] bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col z-50 border border-gray-200">
       {/* Header */}
-      <div className="bg-gradient-to-r from-osi-primary to-osi-primary/90 text-white px-6 py-4 rounded-t-2xl flex items-center justify-between">
+      <div className="bg-gradient-to-r from-osi-primary to-osi-primary/90 text-white px-4 sm:px-6 py-4 sm:py-4 rounded-t-2xl flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-            <span className="material-symbols-outlined text-2xl">
+          <div className="h-9 w-9 sm:h-10 sm:w-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm flex-shrink-0">
+            <span
+              className="material-symbols-outlined text-xl sm:text-2xl"
+              aria-hidden="true"
+            >
               smart_toy
             </span>
           </div>
-          <div>
-            <h3 className="font-semibold text-lg">OSI Assistant</h3>
-            <p className="text-xs text-white/80">
+          <div className="min-w-0">
+            <h3 className="font-semibold text-base sm:text-lg truncate">
+              OSI Assistant
+            </h3>
+            <p className="text-xs text-white/80 truncate">
               Helping you navigate OSI solutions
             </p>
           </div>
         </div>
         <button
           onClick={onClose}
-          className="text-white hover:bg-white/20 rounded-lg p-1 transition-colors"
+          className="text-white hover:bg-white/20 active:bg-white/30 rounded-lg p-2 transition-colors touch-manipulation flex-shrink-0"
+          aria-label="Close chatbot"
         >
-          <span className="material-symbols-outlined">close</span>
+          <span
+            className="material-symbols-outlined text-xl sm:text-2xl"
+            aria-hidden="true"
+          >
+            close
+          </span>
         </button>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 bg-gray-50">
+      <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-3 sm:py-4 bg-gray-50">
         {messages.map((message) => (
           <ChatMessage key={message.id} message={message} />
         ))}
@@ -113,9 +128,12 @@ const ChatbotWindow: React.FC<ChatbotWindowProps> = ({ onClose }) => {
         {/* Typing Indicator */}
         {isTyping && (
           <div className="flex justify-start mb-4">
-            <div className="flex gap-2 max-w-[80%]">
-              <div className="flex-shrink-0 h-8 w-8 rounded-full bg-osi-primary text-white flex items-center justify-center">
-                <span className="material-symbols-outlined text-base">
+            <div className="flex gap-2 max-w-[80%] sm:max-w-[85%]">
+              <div className="flex-shrink-0 h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-osi-primary text-white flex items-center justify-center">
+                <span
+                  className="material-symbols-outlined text-sm sm:text-base"
+                  aria-hidden="true"
+                >
                   smart_toy
                 </span>
               </div>

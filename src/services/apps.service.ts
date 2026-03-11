@@ -7,7 +7,8 @@ import {
 
 export const getApps = async (): Promise<IExternalApp[]> => {
   const response = await api.get<{ apps: IExternalApp[] }>("/apps");
-  return response.data.apps;
+  const apps = response.data.apps || response.data;
+  return Array.isArray(apps) ? apps : [];
 };
 
 export const launchApp = async (appId: string): Promise<LaunchAppResponse> => {
@@ -18,7 +19,8 @@ export const launchApp = async (appId: string): Promise<LaunchAppResponse> => {
 // Admin endpoints
 export const getAllApps = async (): Promise<IExternalApp[]> => {
   const response = await api.get<{ apps: IExternalApp[] }>("/admin/apps");
-  return response.data.apps;
+  const apps = response.data.apps || response.data;
+  return Array.isArray(apps) ? apps : [];
 };
 
 export const createApp = async (data: CreateAppData): Promise<IExternalApp> => {

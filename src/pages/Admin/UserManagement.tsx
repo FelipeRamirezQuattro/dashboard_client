@@ -9,6 +9,7 @@ import LoadingSpinner from "../../components/LoadingSpinner";
 import { permissionsService } from "../../services/permissions.service";
 import { businessUnitService } from "../../services/businessUnit.service";
 import { departmentService } from "../../services/department.service";
+import { TableRowSkeleton } from "../../components/SkeletonLoader";
 
 interface UserFormData {
   firstName: string;
@@ -150,7 +151,8 @@ const UserManagement: React.FC = () => {
         const dept = allDepartments.find((d) => d._id === deptId);
         if (dept) {
           const buId =
-            typeof dept.businessUnitId === "object"
+            typeof dept.businessUnitId === "object" &&
+            dept.businessUnitId !== null
               ? dept.businessUnitId._id
               : dept.businessUnitId;
           permissions.push({
@@ -199,7 +201,8 @@ const UserManagement: React.FC = () => {
         const dept = allDepartments.find((d) => d._id === deptId);
         if (dept) {
           const buId =
-            typeof dept.businessUnitId === "object"
+            typeof dept.businessUnitId === "object" &&
+            dept.businessUnitId !== null
               ? dept.businessUnitId._id
               : dept.businessUnitId;
           permissions.push({
@@ -346,7 +349,7 @@ const UserManagement: React.FC = () => {
     }
     return allDepartments.filter((dept) => {
       const buId =
-        typeof dept.businessUnitId === "object"
+        typeof dept.businessUnitId === "object" && dept.businessUnitId !== null
           ? dept.businessUnitId._id
           : dept.businessUnitId;
       return buId === selectedBusinessUnitForDepts;
@@ -408,38 +411,82 @@ const UserManagement: React.FC = () => {
   return (
     <div className="bg-white rounded-b-lg shadow-sm">
       {/* User Directory Header */}
-      <div className="flex justify-between items-center px-6 py-5 border-b border-gray-200">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200">
         <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-amber-500 text-2xl">
+          <span
+            className="material-symbols-outlined text-amber-500 text-xl sm:text-2xl"
+            aria-hidden="true"
+          >
             group
           </span>
-          <h2 className="text-xl font-bold text-gray-900">User Directory</h2>
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+            User Directory
+          </h2>
         </div>
-        <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700">
-            <span className="material-symbols-outlined text-lg">tune</span>
-            Filter
+        <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto">
+          <button className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700 touch-manipulation whitespace-nowrap shrink-0">
+            <span
+              className="material-symbols-outlined text-lg"
+              aria-hidden="true"
+            >
+              tune
+            </span>
+            <span className="hidden sm:inline">Filter</span>
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700">
-            <span className="material-symbols-outlined text-lg">download</span>
-            Export
+          <button className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700 touch-manipulation whitespace-nowrap shrink-0">
+            <span
+              className="material-symbols-outlined text-lg"
+              aria-hidden="true"
+            >
+              download
+            </span>
+            <span className="hidden sm:inline">Export</span>
           </button>
           <button
             onClick={handleOpenCreateModal}
-            className="flex items-center gap-2 px-4 py-2 bg-osi-primary text-white rounded-lg hover:bg-osi-primary-dark transition-colors text-sm font-medium"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-osi-primary text-white rounded-lg hover:bg-osi-primary-dark transition-colors text-sm font-medium touch-manipulation active:scale-95 whitespace-nowrap shrink-0"
           >
-            <span className="material-symbols-outlined text-lg">
+            <span
+              className="material-symbols-outlined text-lg"
+              aria-hidden="true"
+            >
               person_add
             </span>
-            Add User
+            <span className="hidden sm:inline">Add User</span>
+            <span className="sm:hidden">Add</span>
           </button>
         </div>
       </div>
 
       {/* Users Table */}
       {isLoading ? (
-        <div className="flex justify-center py-20">
-          <LoadingSpinner size="lg" />
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
+          <table className="w-full min-w-max">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  User
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Email
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Role
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {[...Array(5)].map((_, i) => (
+                <TableRowSkeleton key={i} columns={5} />
+              ))}
+            </tbody>
+          </table>
         </div>
       ) : error ? (
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center m-6">
@@ -447,9 +494,9 @@ const UserManagement: React.FC = () => {
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-white border-b border-gray-200">
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <table className="w-full min-w-max">
+              <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Name
@@ -849,7 +896,8 @@ const UserManagement: React.FC = () => {
                     <div className="space-y-2">
                       {getFilteredDepartments().map((dept: Department) => {
                         const buName =
-                          typeof dept.businessUnitId === "object"
+                          typeof dept.businessUnitId === "object" &&
+                          dept.businessUnitId !== null
                             ? dept.businessUnitId.name
                             : businessUnits.find(
                                 (bu: BusinessUnit) =>
