@@ -4,6 +4,7 @@ import ChatMessage from "./ChatMessage";
 import ChatInput from "./ChatInput";
 import { ChatMessage as ChatMessageType } from "../../types/chatbot.types";
 import { chatbotService } from "../../services/chatbot.service";
+import useTextToSpeech from "../../hooks/useTextToSpeech";
 
 interface ChatbotWindowProps {
   onClose: () => void;
@@ -12,7 +13,23 @@ interface ChatbotWindowProps {
 const ChatbotWindow: React.FC<ChatbotWindowProps> = ({ onClose }) => {
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [isTyping, setIsTyping] = useState(false);
+  const [autoSpeak, setAutoSpeak] = useState(false);
+  const [currentlySpeakingId, setCurrentlySpeakingId] = useState<string | null>(
+    null,
+  );
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const latestBotMessageRef = useRef<string | null>(null);
+
+  const {
+    speak,
+    stop,
+    isSpeaking,
+    isSupported: isTTSSupported,
+  } = useTextToSpeech({
+    rate: 1.0,
+    pitch: 1.0,
+    volume: 1.0,
+  });
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -51,6 +68,14 @@ const ChatbotWindow: React.FC<ChatbotWindowProps> = ({ onClose }) => {
       setTimeout(() => {
         setIsTyping(false);
         setMessages((prev) => [...prev, botMessage]);
+        latestBotMessageRef.current = botMessage.id;
+
+        // Auto-speak if enabled
+        if (autoSpeak && isTTSSupported) {
+          setTimeout(() => {
+            handleSpeakMessage(botMessage.id, botMessage.message);
+          }, 300);
+        }
       }, thinkingDelay);
     },
     onError: () => {
@@ -66,13 +91,20 @@ const ChatbotWindow: React.FC<ChatbotWindowProps> = ({ onClose }) => {
     },
   });
 
-  const handleSendMessage = (message: string) => {
+  const handleSendMessage = (message: string, isVoice?: boolean) => {
+    // Stop any ongoing speech when user sends a new message
+    if (isSpeaking) {
+      stop();
+      setCurrentlySpeakingId(null);
+    }
+
     // Add user message
     const userMessage: ChatMessageType = {
       id: `user-${Date.now()}`,
       message,
       sender: "user",
       timestamp: new Date(),
+      isSpoken: isVoice,
     };
     setMessages((prev) => [...prev, userMessage]);
 
@@ -83,8 +115,33 @@ const ChatbotWindow: React.FC<ChatbotWindowProps> = ({ onClose }) => {
     sendMessageMutation.mutate(message);
   };
 
+  const handleSpeakMessage = (messageId: string, text: string) => {
+    if (!isTTSSupported) return;
+
+    if (currentlySpeakingId === messageId && isSpeaking) {
+      // Stop if already speaking this message
+      stop();
+      setCurrentlySpeakingId(null);
+    } else {
+      // Speak the message
+      setCurrentlySpeakingId(messageId);
+      speak(text);
+
+      // Clear speaking state when done (estimated duration)
+      const words = text.split(/\s+/).length;
+      const estimatedDuration = (words / 150) * 60 * 1000; // 150 words per minute
+      setTimeout(() => {
+        setCurrentlySpeakingId(null);
+      }, estimatedDuration + 500);
+    }
+  };
+
+  const toggleAutoSpeak = () => {
+    setAutoSpeak(!autoSpeak);
+  };
+
   return (
-    <div className="fixed inset-x-0 bottom-0 sm:bottom-auto sm:bottom-24 sm:right-6 sm:left-auto sm:w-96 h-[85vh] sm:h-[600px] bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col z-50 border border-gray-200">
+    <div className="fixed bottom-0 right-0 left-0 sm:bottom-24 sm:right-6 sm:left-auto sm:w-96 h-[85vh] sm:h-[600px] bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col z-50 border border-gray-200">
       {/* Header */}
       <div className="bg-gradient-to-r from-osi-primary to-osi-primary/90 text-white px-4 sm:px-6 py-4 sm:py-4 rounded-t-2xl flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
@@ -105,24 +162,52 @@ const ChatbotWindow: React.FC<ChatbotWindowProps> = ({ onClose }) => {
             </p>
           </div>
         </div>
-        <button
-          onClick={onClose}
-          className="text-white hover:bg-white/20 active:bg-white/30 rounded-lg p-2 transition-colors touch-manipulation flex-shrink-0"
-          aria-label="Close chatbot"
-        >
-          <span
-            className="material-symbols-outlined text-xl sm:text-2xl"
-            aria-hidden="true"
+        <div className="flex items-center gap-1">
+          {/* Auto-speak toggle */}
+          {isTTSSupported && (
+            <button
+              onClick={toggleAutoSpeak}
+              className={`text-white hover:bg-white/20 active:bg-white/30 rounded-lg p-2 transition-colors touch-manipulation ${
+                autoSpeak ? "bg-white/20" : ""
+              }`}
+              aria-label={
+                autoSpeak ? "Disable auto-speak" : "Enable auto-speak"
+              }
+              title={autoSpeak ? "Auto-speak enabled" : "Auto-speak disabled"}
+            >
+              <span
+                className="material-symbols-outlined text-lg sm:text-xl"
+                aria-hidden="true"
+              >
+                {autoSpeak ? "volume_up" : "volume_off"}
+              </span>
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            className="text-white hover:bg-white/20 active:bg-white/30 rounded-lg p-2 transition-colors touch-manipulation flex-shrink-0"
+            aria-label="Close chatbot"
           >
-            close
-          </span>
-        </button>
+            <span
+              className="material-symbols-outlined text-xl sm:text-2xl"
+              aria-hidden="true"
+            >
+              close
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-3 sm:py-4 bg-gray-50">
         {messages.map((message) => (
-          <ChatMessage key={message.id} message={message} />
+          <ChatMessage
+            key={message.id}
+            message={message}
+            onSpeak={message.sender === "bot" ? handleSpeakMessage : undefined}
+            isSpeaking={currentlySpeakingId === message.id}
+            isTTSSupported={isTTSSupported}
+          />
         ))}
 
         {/* Typing Indicator */}

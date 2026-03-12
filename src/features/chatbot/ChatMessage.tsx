@@ -3,9 +3,17 @@ import { ChatMessage as ChatMessageType } from "../../types/chatbot.types";
 
 interface ChatMessageProps {
   message: ChatMessageType;
+  onSpeak?: (messageId: string, text: string) => void;
+  isSpeaking?: boolean;
+  isTTSSupported?: boolean;
 }
 
-const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
+const ChatMessage: React.FC<ChatMessageProps> = ({
+  message,
+  onSpeak,
+  isSpeaking = false,
+  isTTSSupported = false,
+}) => {
   const isBot = message.sender === "bot";
   const time = new Date(message.timestamp).toLocaleTimeString("en-US", {
     hour: "numeric",
@@ -93,22 +101,58 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
 
         {/* Message Content */}
         <div className="flex flex-col">
-          <div
-            className={`rounded-2xl px-4 py-2.5 ${
-              isBot ? "bg-gray-100 text-gray-800" : "bg-osi-primary text-white"
-            }`}
-          >
-            <div className="text-sm leading-relaxed whitespace-pre-line">
-              {renderMessage(message.message)}
+          <div className="flex items-start gap-2">
+            <div
+              className={`rounded-2xl px-4 py-2.5 ${
+                isBot
+                  ? "bg-gray-100 text-gray-800"
+                  : "bg-osi-primary text-white"
+              }`}
+            >
+              <div className="text-sm leading-relaxed whitespace-pre-line">
+                {renderMessage(message.message)}
+              </div>
             </div>
+            {/* Speaker button for bot messages */}
+            {isBot && onSpeak && isTTSSupported && (
+              <button
+                onClick={() => onSpeak(message.id, message.message)}
+                className={`flex-shrink-0 p-1.5 rounded-lg transition-colors ${
+                  isSpeaking
+                    ? "bg-osi-primary text-white"
+                    : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+                }`}
+                aria-label={isSpeaking ? "Stop speaking" : "Speak message"}
+                title={isSpeaking ? "Stop speaking" : "Speak this message"}
+              >
+                <span
+                  className={`material-symbols-outlined text-sm ${
+                    isSpeaking ? "animate-pulse" : ""
+                  }`}
+                  aria-hidden="true"
+                >
+                  {isSpeaking ? "volume_up" : "volume_up"}
+                </span>
+              </button>
+            )}
           </div>
-          <span
-            className={`text-xs text-gray-400 mt-1 px-2 ${
-              isBot ? "text-left" : "text-right"
-            }`}
-          >
-            {time}
-          </span>
+          <div className="flex items-center gap-2">
+            <span
+              className={`text-xs text-gray-400 mt-1 px-2 ${
+                isBot ? "text-left" : "text-right"
+              }`}
+            >
+              {time}
+            </span>
+            {message.isSpoken && (
+              <span
+                className="text-xs text-gray-400 mt-1"
+                title="Sent via voice"
+              >
+                <span className="material-symbols-outlined text-xs">mic</span>
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>
