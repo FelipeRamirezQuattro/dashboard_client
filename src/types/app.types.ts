@@ -12,6 +12,7 @@ export interface IExternalApp {
   name: string;
   description: string;
   url: string;
+  chatbotApiUrl?: string;
   ssoEndpoint?: string;
   iconUrl?: string;
   category: AppCategory;
@@ -54,6 +55,7 @@ export interface CreateAppData {
   name: string;
   description: string;
   url: string;
+  chatbotApiUrl?: string;
   ssoEndpoint?: string;
   iconUrl?: string;
   category: AppCategory;

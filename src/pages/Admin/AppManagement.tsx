@@ -39,6 +39,7 @@ const AppManagement: React.FC = () => {
     name: "",
     description: "",
     url: "",
+    chatbotApiUrl: "",
     ssoEndpoint: "",
     iconUrl: "",
     category: "other",
@@ -66,6 +67,7 @@ const AppManagement: React.FC = () => {
         name: "",
         description: "",
         url: "",
+        chatbotApiUrl: "",
         ssoEndpoint: "",
         iconUrl: "",
         category: "other",
@@ -393,6 +395,28 @@ const AppManagement: React.FC = () => {
                     className="input-field"
                     placeholder="https://app.example.com"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Chatbot API Base URL (Optional)
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.chatbotApiUrl || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        chatbotApiUrl: e.target.value,
+                      })
+                    }
+                    className="input-field"
+                    placeholder="https://api.osidesigner.com/api-chemtracker"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Used by dashboard chatbot routing. If empty, app URL is
+                    used.
+                  </p>
                 </div>
 
                 <div>
