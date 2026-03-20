@@ -2,7 +2,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 import ChatMessage from "./ChatMessage";
 import ChatInput from "./ChatInput";
-import { ChatMessage as ChatMessageType } from "../../types/chatbot.types";
+import {
+  ChatMessage as ChatMessageType,
+  ChatContextTurn,
+} from "../../types/chatbot.types";
 import { chatbotService } from "../../services/chatbot.service";
 import useTextToSpeech from "../../hooks/useTextToSpeech";
 
@@ -19,6 +22,7 @@ const ChatbotWindow: React.FC<ChatbotWindowProps> = ({ onClose }) => {
   );
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const latestBotMessageRef = useRef<string | null>(null);
+  const sessionIdRef = useRef<string>("");
 
   const {
     speak,
@@ -36,22 +40,65 @@ const ChatbotWindow: React.FC<ChatbotWindowProps> = ({ onClose }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  // Welcome message on mount
+  // Initialize session and hydrate persisted history on mount.
   useEffect(() => {
-    const welcomeMessage: ChatMessageType = {
-      id: "welcome",
-      message:
-        "Hello! I'm the OSI Assistant. I can help you learn about Odessa Separator Inc., our business units, departments, services, and more. How can I assist you today?",
-      sender: "bot",
-      timestamp: new Date(),
+    const hydrateHistory = async () => {
+      const storageKey = "osi-chatbot-session-id";
+      const existingSessionId = localStorage.getItem(storageKey);
+
+      if (existingSessionId) {
+        sessionIdRef.current = existingSessionId;
+      } else {
+        const newSessionId =
+          typeof crypto !== "undefined" && "randomUUID" in crypto
+            ? crypto.randomUUID()
+            : `session-${Date.now()}`;
+        sessionIdRef.current = newSessionId;
+        localStorage.setItem(storageKey, newSessionId);
+      }
+
+      try {
+        const result = await chatbotService.getHistory(sessionIdRef.current);
+
+        if (result.history?.length) {
+          const hydratedMessages: ChatMessageType[] = result.history.map(
+            (turn, index) => ({
+              id: `history-${index}-${Date.now()}`,
+              message: turn.content,
+              sender: turn.role === "assistant" ? "bot" : "user",
+              timestamp: new Date(),
+            }),
+          );
+
+          setMessages(hydratedMessages);
+          return;
+        }
+      } catch {
+        // Keep UX smooth if history endpoint fails; fallback to welcome message.
+      }
+
+      const welcomeMessage: ChatMessageType = {
+        id: "welcome",
+        message:
+          "Hello! I'm the OSI Assistant. I can help you learn about Odessa Separator Inc., our business units, departments, services, and more. How can I assist you today?",
+        sender: "bot",
+        timestamp: new Date(),
+      };
+      setMessages([welcomeMessage]);
     };
-    setMessages([welcomeMessage]);
+
+    hydrateHistory();
   }, []);
 
   // Mutation for sending messages
   const sendMessageMutation = useMutation({
     mutationFn: chatbotService.sendMessage,
     onSuccess: (data) => {
+      if (data.sessionId && data.sessionId !== sessionIdRef.current) {
+        sessionIdRef.current = data.sessionId;
+        localStorage.setItem("osi-chatbot-session-id", data.sessionId);
+      }
+
       // Add bot response
       const botMessage: ChatMessageType = {
         id: `bot-${Date.now()}`,
@@ -108,11 +155,31 @@ const ChatbotWindow: React.FC<ChatbotWindowProps> = ({ onClose }) => {
     };
     setMessages((prev) => [...prev, userMessage]);
 
+    // Keep recent history to provide context similar to modern chatbots.
+    const recentHistory: ChatContextTurn[] = messages
+      .filter((m) => m.sender === "user" || m.sender === "bot")
+      .slice(-8)
+      .map((m) => ({
+        role: m.sender === "bot" ? "assistant" : "user",
+        content: m.message,
+      }));
+
+    const contextHistory: ChatContextTurn[] = [
+      ...recentHistory,
+      { role: "user", content: message },
+    ];
+
     // Show typing indicator
     setIsTyping(true);
 
     // Send to backend
-    sendMessageMutation.mutate(message);
+    sendMessageMutation.mutate({
+      message,
+      sessionId: sessionIdRef.current,
+      context: {
+        history: contextHistory,
+      },
+    });
   };
 
   const handleSpeakMessage = (messageId: string, text: string) => {

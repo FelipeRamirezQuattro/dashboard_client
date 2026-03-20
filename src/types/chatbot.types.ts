@@ -10,6 +10,25 @@ export interface ChatResponse {
   reply: string;
   timestamp: string;
   confidence?: number;
+  sessionId?: string;
+}
+
+export interface ChatContextTurn {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface ChatRequest {
+  message: string;
+  sessionId?: string;
+  context?: {
+    history?: ChatContextTurn[];
+  };
+}
+
+export interface ChatHistoryResponse {
+  sessionId: string;
+  history: ChatContextTurn[];
 }
 
 export interface VoiceSettings {
