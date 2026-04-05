@@ -9,13 +9,22 @@ export default {
           "primary-dark": "#e09520",
           secondary: "#596376",
           "secondary-light": "#7a8699",
-          bg: "#f8f7f5",
-          dark: "#1A1A2E",
+          bg: "#f8fafc",
+          dark: "#1e293b",
         },
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "-apple-system", "sans-serif"],
         display: ["Inter", "sans-serif"],
+      },
+      animation: {
+        "page-enter": "pageEnter 250ms ease-out both",
+      },
+      keyframes: {
+        pageEnter: {
+          from: { opacity: "0", transform: "translateY(12px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
       },
     },
   },

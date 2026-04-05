@@ -9,6 +9,7 @@ const AdminLayout: React.FC = () => {
     { path: "/admin/business-units", label: "Business Units" },
     { path: "/admin/departments", label: "Departments" },
     { path: "/admin/apps", label: "App Management" },
+    { path: "/admin/notifications", label: "Notifications" },
     { path: "/admin/audit", label: "Audit Logs" },
   ];
 
@@ -18,7 +19,7 @@ const AdminLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-73px)] bg-gray-50">
+    <div className="min-h-[calc(100vh-48px)]" style={{ background: "#f8fafc" }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Admin Header */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6 sm:mb-8">
@@ -26,7 +27,7 @@ const AdminLayout: React.FC = () => {
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
               Admin Console
             </h1>
-            <p className="text-sm sm:text-base text-gray-600">
+            <p className="text-sm sm:text-base text-gray-400">
               Configure enterprise settings and manage user workspace
               permissions.
             </p>
@@ -34,7 +35,11 @@ const AdminLayout: React.FC = () => {
           {location.pathname === "/admin/users" && (
             <button
               onClick={handleCreateUser}
-              className="bg-osi-primary hover:bg-osi-primary-dark text-white font-medium px-5 py-3 rounded-lg flex items-center justify-center gap-2 transition-colors touch-manipulation active:scale-95 w-full sm:w-auto shrink-0"
+              className="font-medium px-5 py-3 rounded-lg flex items-center justify-center gap-2 transition-all touch-manipulation active:scale-95 w-full sm:w-auto shrink-0 text-black"
+              style={{
+                background: "linear-gradient(135deg, #fbad37 0%, #ffd280 100%)",
+                boxShadow: "0 0 20px rgba(251,173,55,0.3)",
+              }}
             >
               <span
                 className="material-symbols-outlined text-xl"
@@ -49,8 +54,14 @@ const AdminLayout: React.FC = () => {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="bg-white rounded-t-lg shadow-sm border-b-0 -mx-4 sm:mx-0">
-          <nav className="flex overflow-x-auto scrollbar-hide">
+        <div
+          className="rounded-t-lg -mx-4 sm:mx-0 overflow-x-auto"
+          style={{
+            background: "#f9fafb",
+            borderBottom: "1px solid #e5e7eb",
+          }}
+        >
+          <nav className="flex scrollbar-hide">
             {navItems.map((item) => (
               <NavLink
                 key={item.path}
@@ -59,7 +70,7 @@ const AdminLayout: React.FC = () => {
                   `relative px-4 sm:px-6 py-3 sm:py-4 font-medium transition-colors whitespace-nowrap touch-manipulation ${
                     isActive
                       ? "text-gray-900"
-                      : "text-gray-600 hover:text-gray-900"
+                      : "text-gray-400 hover:text-gray-700"
                   }`
                 }
               >
@@ -67,7 +78,13 @@ const AdminLayout: React.FC = () => {
                   <>
                     <span className="text-sm sm:text-base">{item.label}</span>
                     {isActive && (
-                      <div className="absolute bottom-0 left-0 right-0 h-1 bg-osi-primary"></div>
+                      <div
+                        className="absolute bottom-0 left-0 right-0 h-0.5"
+                        style={{
+                          background:
+                            "linear-gradient(90deg, #fbad37 0%, #ffd280 100%)",
+                        }}
+                      ></div>
                     )}
                   </>
                 )}

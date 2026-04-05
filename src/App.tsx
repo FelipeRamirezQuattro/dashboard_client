@@ -20,6 +20,7 @@ import AppManagement from "./pages/Admin/AppManagement";
 import BusinessUnitManagement from "./pages/Admin/BusinessUnitManagement";
 import DepartmentManagement from "./pages/Admin/DepartmentManagement";
 import AuditLogs from "./pages/Admin/AuditLogs";
+import NotificationManagement from "./pages/Admin/NotificationManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -77,10 +78,19 @@ const SSOCallback: React.FC = () => {
   }, [searchParams, navigate, loginWithToken]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div
+      className="min-h-screen flex items-center justify-center"
+      style={{ background: "#f8fafc" }}
+    >
       <div className="text-center">
-        <div className="w-16 h-16 border-4 border-osi-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-gray-600">Completing sign in...</p>
+        <div
+          className="w-12 h-12 rounded-full animate-spin mx-auto mb-4"
+          style={{
+            border: "3px solid rgba(251,173,55,0.2)",
+            borderTopColor: "#fbad37",
+          }}
+        ></div>
+        <p className="text-gray-400 text-sm">Completing sign in...</p>
       </div>
     </div>
   );
@@ -127,6 +137,7 @@ const App: React.FC = () => {
                 <Route path="departments" element={<DepartmentManagement />} />
                 <Route path="apps" element={<AppManagement />} />
                 <Route path="audit" element={<AuditLogs />} />
+                <Route path="notifications" element={<NotificationManagement />} />
               </Route>
             </Route>
 

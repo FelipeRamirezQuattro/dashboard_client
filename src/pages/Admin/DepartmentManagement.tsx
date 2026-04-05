@@ -110,7 +110,7 @@ const DepartmentManagement: React.FC = () => {
           <h2 className="text-xl sm:text-2xl font-bold text-osi-dark">
             Departments
           </h2>
-          <p className="text-sm sm:text-base text-gray-600 mt-1">
+          <p className="text-sm sm:text-base text-gray-500 mt-1">
             Manage departments within business units
           </p>
         </div>
@@ -125,29 +125,29 @@ const DepartmentManagement: React.FC = () => {
 
       {/* Departments Table */}
       {isLoading ? (
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="rounded-lg bg-gray-50 border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto -mx-4 sm:mx-0">
             <table className="w-full min-w-max">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Name
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Description
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Business Unit
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-transparent divide-y divide-white/[0.08]">
                 {[...Array(5)].map((_, i) => (
                   <TableRowSkeleton key={i} columns={5} />
                 ))}
@@ -160,32 +160,32 @@ const DepartmentManagement: React.FC = () => {
           <p className="text-red-600">Failed to load departments</p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="rounded-lg bg-gray-50 border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto -mx-4 sm:mx-0">
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="min-w-full divide-y divide-white/[0.08]">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Name
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Description
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Business Unit
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Created By
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-transparent divide-y divide-white/[0.08]">
                 {departments?.map((dept) => (
                   <tr key={dept._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -197,7 +197,7 @@ const DepartmentManagement: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm text-gray-500">
                         {dept.description}
                       </span>
                     </td>
@@ -232,7 +232,7 @@ const DepartmentManagement: React.FC = () => {
                       </button>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm text-gray-500">
                         {typeof dept.createdBy === "object" &&
                         dept.createdBy !== null
                           ? `${dept.createdBy.firstName} ${dept.createdBy.lastName}`
@@ -264,13 +264,13 @@ const DepartmentManagement: React.FC = () => {
       {/* Create/Edit Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-transparent rounded-lg p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-2xl font-bold text-osi-dark mb-6">
               {editingDept ? "Edit Department" : "Create New Department"}
             </h3>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-600 mb-1">
                   Business Unit *
                 </label>
                 <select
@@ -279,7 +279,7 @@ const DepartmentManagement: React.FC = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, businessUnitId: e.target.value })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-osi-primary focus:border-transparent"
+                  className="w-full px-4 py-2 bg-gray-100 text-gray-900 placeholder-gray-400 border border-gray-300 rounded-lg focus:ring-2 focus:ring-osi-primary focus:border-transparent"
                 >
                   <option value="">Select a business unit</option>
                   {businessUnits?.map((bu) => (
@@ -291,7 +291,7 @@ const DepartmentManagement: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-600 mb-1">
                   Name *
                 </label>
                 <input
@@ -301,13 +301,13 @@ const DepartmentManagement: React.FC = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-osi-primary focus:border-transparent"
+                  className="w-full px-4 py-2 bg-gray-100 text-gray-900 placeholder-gray-400 border border-gray-300 rounded-lg focus:ring-2 focus:ring-osi-primary focus:border-transparent"
                   placeholder="Sales, Engineering, Manufacturing, etc."
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-600 mb-1">
                   Description *
                 </label>
                 <textarea
@@ -317,7 +317,7 @@ const DepartmentManagement: React.FC = () => {
                     setFormData({ ...formData, description: e.target.value })
                   }
                   rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-osi-primary focus:border-transparent"
+                  className="w-full px-4 py-2 bg-gray-100 text-gray-900 placeholder-gray-400 border border-gray-300 rounded-lg focus:ring-2 focus:ring-osi-primary focus:border-transparent"
                   placeholder="Description of this department"
                 />
               </div>

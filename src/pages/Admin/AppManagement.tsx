@@ -120,38 +120,38 @@ const AppManagement: React.FC = () => {
 
       {/* Apps Table */}
       {isLoading ? (
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="rounded-lg bg-gray-50 border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto -mx-4 sm:mx-0">
             <table className="w-full min-w-max">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Name
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Business Unit
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Department
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Category
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Required Role
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     SSO
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-transparent divide-y divide-white/[0.08]">
                 {[...Array(6)].map((_, i) => (
                   <TableRowSkeleton key={i} columns={8} />
                 ))}
@@ -164,45 +164,45 @@ const AppManagement: React.FC = () => {
           <p className="text-red-600">Failed to load applications</p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="rounded-lg bg-gray-50 border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto -mx-4 sm:mx-0">
             <table className="w-full min-w-max">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Name
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Business Unit
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Department
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Category
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Required Role
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     SSO
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-transparent divide-y divide-white/[0.08]">
                 {apps?.map((app) => (
                   <tr key={app._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="text-sm font-medium text-gray-900">
                         {app.name}
                       </div>
-                      <div className="text-sm text-gray-500 truncate max-w-md">
+                      <div className="text-sm text-gray-400 truncate max-w-md">
                         {app.description}
                       </div>
                     </td>
@@ -229,8 +229,8 @@ const AppManagement: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
-                        <Shield className="w-4 h-4 text-slate-500" />
-                        <span className="text-sm font-medium text-slate-700 capitalize">
+                        <Shield className="w-4 h-4 text-gray-400" />
+                        <span className="text-sm font-medium text-gray-600 capitalize">
                           {app.requiredRole}
                         </span>
                       </div>
@@ -252,7 +252,7 @@ const AppManagement: React.FC = () => {
                           className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                             app.isActive
                               ? "text-emerald-700 bg-emerald-50 hover:bg-emerald-100"
-                              : "text-gray-600 bg-gray-50 hover:bg-gray-100"
+                              : "text-gray-500 bg-gray-50 hover:bg-gray-100"
                           }`}
                         >
                           {app.isActive ? (
@@ -294,14 +294,14 @@ const AppManagement: React.FC = () => {
       {/* Create Modal */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-transparent rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <h3 className="text-2xl font-bold text-osi-dark mb-6">
                 Add New Application
               </h3>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-600 mb-2">
                     Business Unit *
                   </label>
                   <select
@@ -326,7 +326,7 @@ const AppManagement: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-600 mb-2">
                     Department *
                   </label>
                   <select
@@ -352,7 +352,7 @@ const AppManagement: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-600 mb-2">
                     App Name *
                   </label>
                   <input
@@ -367,7 +367,7 @@ const AppManagement: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-600 mb-2">
                     Description *
                   </label>
                   <textarea
@@ -382,7 +382,7 @@ const AppManagement: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-600 mb-2">
                     URL *
                   </label>
                   <input
@@ -398,7 +398,7 @@ const AppManagement: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-600 mb-2">
                     Chatbot API Base URL (Optional)
                   </label>
                   <input
@@ -413,14 +413,14 @@ const AppManagement: React.FC = () => {
                     className="input-field"
                     placeholder="https://api.osidesigner.com/api-chemtracker"
                   />
-                  <p className="mt-1 text-xs text-gray-500">
+                  <p className="mt-1 text-xs text-gray-400">
                     Used by dashboard chatbot routing. If empty, app URL is
                     used.
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-600 mb-2">
                     SSO Endpoint (Optional)
                   </label>
                   <input
@@ -435,7 +435,7 @@ const AppManagement: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-600 mb-2">
                     Icon URL (Optional)
                   </label>
                   <input
@@ -451,7 +451,7 @@ const AppManagement: React.FC = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-600 mb-2">
                       Category *
                     </label>
                     <select
@@ -475,7 +475,7 @@ const AppManagement: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-600 mb-2">
                       Required Role *
                     </label>
                     <select
@@ -507,7 +507,7 @@ const AppManagement: React.FC = () => {
                     }
                     className="rounded border-gray-300 text-osi-primary focus:ring-osi-primary"
                   />
-                  <label htmlFor="isActive" className="text-sm text-gray-700">
+                  <label htmlFor="isActive" className="text-sm text-gray-600">
                     Active
                   </label>
                 </div>
@@ -522,7 +522,7 @@ const AppManagement: React.FC = () => {
                     }
                     className="rounded border-gray-300 text-osi-primary focus:ring-osi-primary"
                   />
-                  <label htmlFor="comingSoon" className="text-sm text-gray-700">
+                  <label htmlFor="comingSoon" className="text-sm text-gray-600">
                     Coming Soon (Disables Launch Button)
                   </label>
                 </div>

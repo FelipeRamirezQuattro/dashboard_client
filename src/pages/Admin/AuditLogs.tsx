@@ -50,10 +50,10 @@ const AuditLogs: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+      <div className="rounded-lg bg-gray-50 border border-gray-200 p-4 sm:p-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-600 mb-2">
               Filter by Action
             </label>
             <select
@@ -82,29 +82,29 @@ const AuditLogs: React.FC = () => {
 
       {/* Logs Table */}
       {isLoading ? (
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="rounded-lg bg-gray-50 border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto -mx-4 sm:mx-0">
             <table className="w-full min-w-max">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Timestamp
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     User
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Action
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Target
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     IP Address
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-transparent divide-y divide-white/[0.08]">
                 {[...Array(10)].map((_, i) => (
                   <TableRowSkeleton key={i} columns={5} />
                 ))}
@@ -118,32 +118,32 @@ const AuditLogs: React.FC = () => {
         </div>
       ) : (
         <>
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="rounded-lg bg-gray-50 border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto -mx-4 sm:mx-0">
               <table className="w-full min-w-max">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                       Timestamp
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                       User
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                       Action
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                       Target
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                       IP Address
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-transparent divide-y divide-white/[0.08]">
                   {data?.logs?.map((log: AuditLog) => (
                     <tr key={log._id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {formatDate(log.createdAt)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -152,7 +152,7 @@ const AuditLogs: React.FC = () => {
                             <div className="text-sm font-medium text-gray-900">
                               {log.userId.firstName} {log.userId.lastName}
                             </div>
-                            <div className="text-sm text-gray-500">
+                            <div className="text-sm text-gray-400">
                               {log.userId.email}
                             </div>
                           </div>
@@ -161,14 +161,14 @@ const AuditLogs: React.FC = () => {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-50 text-slate-700 border border-slate-200">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-gray-50 text-gray-600 border border-gray-200">
                           {log.action}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600 max-w-md truncate">
+                      <td className="px-6 py-4 text-sm text-gray-500 max-w-md truncate">
                         {log.target}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {log.ipAddress || "—"}
                       </td>
                     </tr>
@@ -180,8 +180,8 @@ const AuditLogs: React.FC = () => {
 
           {/* Pagination */}
           {data?.pagination && (
-            <div className="flex items-center justify-between bg-white rounded-lg shadow-sm px-6 py-4">
-              <div className="text-sm text-gray-600">
+            <div className="flex items-center justify-between rounded-lg bg-gray-50 border border-gray-200 px-6 py-4">
+              <div className="text-sm text-gray-500">
                 Showing page {data.pagination.page} of {data.pagination.pages} (
                 {data.pagination.total} total records)
               </div>

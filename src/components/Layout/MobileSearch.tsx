@@ -207,17 +207,24 @@ const MobileSearch: React.FC<MobileSearchProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-white z-50 flex flex-col lg:hidden">
+    <div
+      className="fixed inset-0 z-50 flex flex-col lg:hidden"
+      style={{ background: "white" }}
+    >
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-3 sticky top-0">
+      <div
+        className="px-4 py-3 sticky top-0 flex-shrink-0"
+        style={{ borderBottom: "1px solid #e5e7eb", background: "white" }}
+      >
         <div className="flex items-center gap-3">
           <button
             onClick={handleClose}
-            className="p-2 -ml-2 hover:bg-gray-100 active:bg-gray-200 rounded-lg transition-colors touch-manipulation"
+            className="p-2 -ml-2 rounded-lg transition-colors touch-manipulation text-gray-600 hover:text-gray-900"
+            style={{ background: "#f3f4f6" }}
             aria-label="Close search"
           >
             <span
-              className="material-symbols-outlined text-2xl text-gray-600"
+              className="material-symbols-outlined text-xl"
               aria-hidden="true"
             >
               arrow_back
@@ -236,7 +243,11 @@ const MobileSearch: React.FC<MobileSearchProps> = ({ isOpen, onClose }) => {
               placeholder="Search apps, business units, departments…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-osi-primary focus:border-transparent text-base"
+              className="w-full pl-11 pr-4 py-3 rounded-lg text-base text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-osi-primary/60 transition-all"
+              style={{
+                background: "#f3f4f6",
+                border: "1px solid #d1d5db",
+              }}
               autoComplete="off"
               autoCorrect="off"
               autoCapitalize="off"
@@ -245,11 +256,11 @@ const MobileSearch: React.FC<MobileSearchProps> = ({ isOpen, onClose }) => {
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 hover:bg-gray-200 active:bg-gray-300 rounded-full transition-colors touch-manipulation"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full transition-colors touch-manipulation text-gray-400 hover:text-gray-700"
                 aria-label="Clear search"
               >
                 <span
-                  className="material-symbols-outlined text-lg text-gray-500"
+                  className="material-symbols-outlined text-lg"
                   aria-hidden="true"
                 >
                   close
@@ -264,31 +275,41 @@ const MobileSearch: React.FC<MobileSearchProps> = ({ isOpen, onClose }) => {
       <div className="flex-1 overflow-y-auto">
         {!searchQuery.trim() ? (
           <div className="flex flex-col items-center justify-center h-full px-6 text-center">
-            <span
-              className="material-symbols-outlined text-6xl text-gray-300 mb-4"
-              aria-hidden="true"
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
+              style={{ background: "rgba(251,173,55,0.1)" }}
             >
-              search
-            </span>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <span
+                className="material-symbols-outlined text-4xl text-osi-primary/60"
+                aria-hidden="true"
+              >
+                search
+              </span>
+            </div>
+            <h3 className="text-base font-semibold text-gray-700 mb-2">
               Search OSI Dashboard
             </h3>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-400">
               Find applications, business units, and departments
             </p>
           </div>
         ) : searchResults.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full px-6 text-center">
-            <span
-              className="material-symbols-outlined text-6xl text-gray-300 mb-4"
-              aria-hidden="true"
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
+              style={{ background: "#f3f4f6" }}
             >
-              search_off
-            </span>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <span
+                className="material-symbols-outlined text-4xl text-gray-400"
+                aria-hidden="true"
+              >
+                search_off
+              </span>
+            </div>
+            <h3 className="text-base font-semibold text-gray-700 mb-2">
               No results found
             </h3>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-400">
               Try searching with different keywords
             </p>
           </div>
@@ -298,19 +319,30 @@ const MobileSearch: React.FC<MobileSearchProps> = ({ isOpen, onClose }) => {
               <button
                 key={`${result.type}-${result.id}`}
                 onClick={() => handleResultClick(result)}
-                className={`w-full px-4 py-4 transition-colors text-left flex items-start gap-3 touch-manipulation active:bg-gray-100 ${
-                  index === selectedIndex
-                    ? "bg-osi-primary/10"
-                    : "hover:bg-gray-50"
+                className={`w-full px-4 py-4 transition-colors text-left flex items-start gap-3 touch-manipulation ${
+                  index === selectedIndex ? "bg-amber-50" : ""
                 }`}
+                style={{
+                  borderBottom: "1px solid #f3f4f6",
+                }}
+                onMouseEnter={(e) => {
+                  if (index !== selectedIndex)
+                    (e.currentTarget as HTMLButtonElement).style.background =
+                      "#f9fafb";
+                }}
+                onMouseLeave={(e) => {
+                  if (index !== selectedIndex)
+                    (e.currentTarget as HTMLButtonElement).style.background =
+                      "transparent";
+                }}
               >
                 <span
-                  className={`material-symbols-outlined text-2xl mt-0.5 flex-shrink-0 ${
+                  className={`material-symbols-outlined text-xl mt-0.5 flex-shrink-0 ${
                     result.type === "businessUnit"
                       ? "text-osi-primary"
                       : result.type === "department"
-                        ? "text-blue-600"
-                        : "text-green-600"
+                        ? "text-blue-400"
+                        : "text-emerald-400"
                   }`}
                   aria-hidden="true"
                 >
@@ -318,15 +350,18 @@ const MobileSearch: React.FC<MobileSearchProps> = ({ isOpen, onClose }) => {
                 </span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <p className="text-base font-semibold text-gray-900 truncate">
+                    <p className="text-sm font-semibold text-gray-900 truncate">
                       {result.name}
                     </p>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600 flex-shrink-0">
+                    <span
+                      className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium flex-shrink-0 text-gray-500"
+                      style={{ background: "#f0f1f3" }}
+                    >
                       {getResultTypeLabel(result.type)}
                     </span>
                   </div>
                   {result.description && (
-                    <p className="text-sm text-gray-500 line-clamp-2">
+                    <p className="text-xs text-gray-400 line-clamp-2">
                       {result.description}
                     </p>
                   )}
@@ -337,7 +372,7 @@ const MobileSearch: React.FC<MobileSearchProps> = ({ isOpen, onClose }) => {
                   )}
                 </div>
                 <span
-                  className="material-symbols-outlined text-gray-400 flex-shrink-0"
+                  className="material-symbols-outlined text-gray-400 flex-shrink-0 text-lg"
                   aria-hidden="true"
                 >
                   arrow_forward

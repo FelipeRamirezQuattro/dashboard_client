@@ -34,14 +34,17 @@ export const Skeleton: React.FC<SkeletonProps> = ({
 
   return (
     <div
-      className={`bg-gray-200 ${variantClasses[variant]} ${animationClasses[animation]} ${className}`}
-      style={style}
+      className={`${variantClasses[variant]} ${animationClasses[animation]} ${className}`}
+      style={{ ...style, background: "#f0f1f3" }}
     />
   );
 };
 
 export const CardSkeleton: React.FC = () => (
-  <div className="bg-white rounded-xl p-6 border border-gray-200">
+  <div
+    className="rounded-xl p-6"
+    style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}
+  >
     <Skeleton variant="circular" width={48} height={48} className="mb-4" />
     <Skeleton variant="text" width="70%" className="mb-2" />
     <Skeleton variant="text" width="90%" className="mb-2" />
@@ -52,7 +55,7 @@ export const CardSkeleton: React.FC = () => (
 export const TableRowSkeleton: React.FC<{ columns?: number }> = ({
   columns = 5,
 }) => (
-  <tr className="border-b border-gray-200">
+  <tr style={{ borderBottom: "1px solid #e5e7eb" }}>
     {Array.from({ length: columns }).map((_, index) => (
       <td key={index} className="px-6 py-4">
         <Skeleton variant="text" width="80%" />
@@ -62,7 +65,10 @@ export const TableRowSkeleton: React.FC<{ columns?: number }> = ({
 );
 
 export const AppCardSkeleton: React.FC = () => (
-  <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200 shadow-sm">
+  <div
+    className="rounded-xl p-4 sm:p-6"
+    style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}
+  >
     <div className="flex items-center gap-4 mb-4">
       <Skeleton variant="circular" width={56} height={56} />
       <div className="flex-1">
@@ -77,7 +83,10 @@ export const AppCardSkeleton: React.FC = () => (
 );
 
 export const BusinessUnitCardSkeleton: React.FC = () => (
-  <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+  <div
+    className="rounded-xl p-6"
+    style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}
+  >
     <Skeleton
       variant="rectangular"
       width={96}

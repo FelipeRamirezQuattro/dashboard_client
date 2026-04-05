@@ -78,43 +78,67 @@ const MobileNav: React.FC<MobileNavProps> = ({
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-300 lg:hidden ${
+        className={`fixed inset-0 z-40 transition-opacity duration-300 lg:hidden ${
           isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
+        style={{ background: "rgba(0,0,0,0.4)" }}
         onClick={onClose}
         aria-hidden="true"
       />
 
       {/* Slide-out Menu */}
       <nav
-        className={`fixed top-0 left-0 h-full w-80 max-w-[85vw] bg-white z-50 shadow-2xl transform transition-transform duration-300 ease-out lg:hidden ${
+        className={`fixed top-0 left-0 h-full w-80 max-w-[85vw] z-50 shadow-2xl transform transition-transform duration-300 ease-out lg:hidden flex flex-col ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
+        style={{
+          background: "white",
+          borderRight: "1px solid #e5e7eb",
+        }}
         aria-label="Mobile navigation"
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-osi-primary to-osi-primary/90 text-white px-6 py-6">
+        <div
+          className="px-6 py-5 flex-shrink-0"
+          style={{
+            background:
+              "linear-gradient(135deg, rgba(251,173,55,0.15) 0%, rgba(251,173,55,0.05) 100%)",
+            borderBottom: "1px solid rgba(251,173,55,0.2)",
+          }}
+        >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-white/20 flex items-center justify-center backdrop-blur-sm">
+              <div
+                className="h-9 w-9 rounded-lg flex items-center justify-center"
+                style={{ background: "rgba(251,173,55,0.15)" }}
+              >
                 <span
-                  className="material-symbols-outlined text-2xl"
+                  className="material-symbols-outlined text-xl text-osi-primary"
                   aria-hidden="true"
                 >
                   factory
                 </span>
               </div>
-              <div>
-                <h2 className="font-bold text-lg">OSI Dashboard</h2>
-              </div>
+              <h2
+                className="font-bold text-base text-gray-900"
+                style={{
+                  background:
+                    "linear-gradient(90deg, #fbad37 0%, #ffd280 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
+                OSI Dashboard
+              </h2>
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-white/20 rounded-lg transition-colors touch-manipulation"
+              className="p-2 rounded-lg transition-colors touch-manipulation text-gray-600 hover:text-gray-900"
+              style={{ background: "#f3f4f6" }}
               aria-label="Close navigation menu"
             >
               <span
-                className="material-symbols-outlined text-2xl"
+                className="material-symbols-outlined text-xl"
                 aria-hidden="true"
               >
                 close
@@ -124,39 +148,51 @@ const MobileNav: React.FC<MobileNavProps> = ({
 
           {/* User Info */}
           {user && (
-            <div className="flex items-center gap-3 p-3 bg-white/10 rounded-lg backdrop-blur-sm">
-              <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-                <span className="text-sm font-bold">
-                  {user.firstName.charAt(0)}
-                  {user.lastName.charAt(0)}
-                </span>
+            <div
+              className="flex items-center gap-3 p-3 rounded-lg"
+              style={{ background: "#f8fafc" }}
+            >
+              <div
+                className="h-9 w-9 rounded-full flex items-center justify-center flex-shrink-0 text-black font-bold text-sm"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #fbad37 0%, #ffd280 100%)",
+                }}
+              >
+                {user.firstName.charAt(0)}
+                {user.lastName.charAt(0)}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold truncate">
+                <p className="font-semibold text-sm text-gray-900 truncate">
                   {user.firstName} {user.lastName}
                 </p>
-                <p className="text-xs text-white/80 truncate">{user.email}</p>
+                <p className="text-xs text-gray-500 truncate">{user.email}</p>
               </div>
             </div>
           )}
         </div>
 
         {/* Navigation Links */}
-        <div className="overflow-y-auto h-[calc(100%-180px)] px-4 py-4">
+        <div className="flex-1 overflow-y-auto px-4 py-4">
           {/* Main Navigation */}
           <div className="mb-6">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-osi-secondary mb-3 px-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 px-3">
               Navigation
             </h3>
             <nav className="space-y-1">
               <Link
                 to="/dashboard"
                 onClick={onClose}
-                className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-colors touch-manipulation ${
+                className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-all touch-manipulation ${
                   location.pathname === "/dashboard"
-                    ? "bg-osi-primary/10 text-osi-primary font-semibold"
-                    : "text-slate-600 hover:bg-slate-50 active:bg-slate-100"
+                    ? "text-osi-primary font-semibold border-l-2 border-osi-primary pl-[10px]"
+                    : "text-gray-600 hover:text-gray-900"
                 }`}
+                style={
+                  location.pathname === "/dashboard"
+                    ? { background: "rgba(251,173,55,0.1)" }
+                    : { background: "transparent" }
+                }
               >
                 <span
                   className="material-symbols-outlined text-xl"
@@ -171,11 +207,16 @@ const MobileNav: React.FC<MobileNavProps> = ({
                 <Link
                   to="/admin/users"
                   onClick={onClose}
-                  className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-colors touch-manipulation ${
+                  className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-all touch-manipulation ${
                     location.pathname.startsWith("/admin")
-                      ? "bg-osi-primary/10 text-osi-primary font-semibold"
-                      : "text-slate-600 hover:bg-slate-50 active:bg-slate-100"
+                      ? "text-osi-primary font-semibold border-l-2 border-osi-primary pl-[10px]"
+                      : "text-gray-600 hover:text-gray-900"
                   }`}
+                  style={
+                    location.pathname.startsWith("/admin")
+                      ? { background: "rgba(251,173,55,0.1)" }
+                      : { background: "transparent" }
+                  }
                 >
                   <span
                     className="material-symbols-outlined text-xl"
@@ -192,7 +233,7 @@ const MobileNav: React.FC<MobileNavProps> = ({
           {/* Categories (if shown) */}
           {showCategories && selectedCategory !== undefined && (
             <div className="mb-6">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-osi-secondary mb-3 px-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 px-3">
                 Categories
               </h3>
               <nav className="space-y-1">
@@ -200,11 +241,16 @@ const MobileNav: React.FC<MobileNavProps> = ({
                   <button
                     key={category.value}
                     onClick={() => handleCategorySelect(category.value)}
-                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors touch-manipulation ${
+                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-all touch-manipulation ${
                       selectedCategory === category.value
-                        ? "bg-osi-primary/10 text-osi-primary font-semibold"
-                        : "text-slate-600 hover:bg-slate-50 active:bg-slate-100"
+                        ? "text-osi-primary font-semibold border-l-2 border-osi-primary pl-[10px]"
+                        : "text-gray-600 hover:text-gray-900"
                     }`}
+                    style={
+                      selectedCategory === category.value
+                        ? { background: "rgba(251,173,55,0.1)" }
+                        : { background: "transparent" }
+                    }
                   >
                     <span
                       className="material-symbols-outlined text-xl"
@@ -220,22 +266,34 @@ const MobileNav: React.FC<MobileNavProps> = ({
           )}
 
           {/* System Status */}
-          <div className="p-4 bg-slate-50 rounded-xl">
-            <p className="text-xs text-osi-secondary font-medium mb-2">
+          <div
+            className="p-4 rounded-xl"
+            style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}
+          >
+            <p className="text-xs text-gray-400 font-medium mb-2">
               Server Status
             </p>
             <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
-              <span className="text-xs font-semibold">Operational</span>
+              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span className="text-xs font-semibold text-emerald-400">
+                Operational
+              </span>
             </div>
           </div>
         </div>
 
         {/* Footer Actions */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200">
+        <div
+          className="flex-shrink-0 p-4"
+          style={{ borderTop: "1px solid #e5e7eb" }}
+        >
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 active:bg-red-200 transition-colors font-medium touch-manipulation"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-colors font-medium touch-manipulation text-red-400 hover:text-red-300"
+            style={{
+              background: "rgba(239,68,68,0.1)",
+              border: "1px solid rgba(239,68,68,0.2)",
+            }}
           >
             <span
               className="material-symbols-outlined text-xl"
