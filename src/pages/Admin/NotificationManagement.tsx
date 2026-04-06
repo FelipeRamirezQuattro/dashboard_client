@@ -26,7 +26,11 @@ const typeOptions: { value: NotificationType; label: string }[] = [
   { value: "custom", label: "Custom" },
 ];
 
-const severityOptions: { value: NotificationSeverity; label: string; color: string }[] = [
+const severityOptions: {
+  value: NotificationSeverity;
+  label: string;
+  color: string;
+}[] = [
   { value: "info", label: "Info", color: "text-blue-600" },
   { value: "success", label: "Success", color: "text-emerald-600" },
   { value: "warning", label: "Warning", color: "text-amber-600" },
@@ -58,7 +62,11 @@ const defaultForm: CreateNotificationPayload = {
 };
 
 const NotificationManagement: React.FC = () => {
-  const { data: notifications = [], isLoading, error } = useAdminNotifications();
+  const {
+    data: notifications = [],
+    isLoading,
+    error,
+  } = useAdminNotifications();
   const createNotification = useCreateNotification();
   const deleteNotification = useDeleteNotification();
 
@@ -73,7 +81,8 @@ const NotificationManagement: React.FC = () => {
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState<CreateNotificationPayload>(defaultForm);
+  const [formData, setFormData] =
+    useState<CreateNotificationPayload>(defaultForm);
 
   const filteredDepartments = allDepartments.filter((dept: Department) => {
     if (!formData.targetId) return false;
@@ -93,7 +102,8 @@ const NotificationManagement: React.FC = () => {
     try {
       const payload: CreateNotificationPayload = {
         ...formData,
-        targetId: formData.targetScope !== "all" ? formData.targetId : undefined,
+        targetId:
+          formData.targetScope !== "all" ? formData.targetId : undefined,
         relatedAppId: formData.relatedAppId || undefined,
         expiresAt: formData.expiresAt || undefined,
       };
@@ -138,7 +148,10 @@ const NotificationManagement: React.FC = () => {
             boxShadow: "0 0 16px rgba(251,173,55,0.25)",
           }}
         >
-          <span className="material-symbols-outlined text-xl" aria-hidden="true">
+          <span
+            className="material-symbols-outlined text-xl"
+            aria-hidden="true"
+          >
             add_alert
           </span>
           Create Notification
@@ -177,7 +190,12 @@ const NotificationManagement: React.FC = () => {
         <div className="rounded-lg border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-max">
-              <thead style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
+              <thead
+                style={{
+                  background: "#f9fafb",
+                  borderBottom: "1px solid #e5e7eb",
+                }}
+              >
                 <tr>
                   {[
                     "Title",
@@ -200,16 +218,22 @@ const NotificationManagement: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-gray-100 bg-white">
                 {notifications.map((n) => (
-                  <tr key={n._id} className="hover:bg-gray-50 transition-colors">
+                  <tr
+                    key={n._id}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
                     <td className="px-5 py-4 max-w-xs">
                       <p className="text-sm font-semibold text-gray-900 truncate">
                         {n.title}
                       </p>
-                      <p className="text-xs text-gray-400 truncate">{n.message}</p>
+                      <p className="text-xs text-gray-400 truncate">
+                        {n.message}
+                      </p>
                     </td>
                     <td className="px-5 py-4 whitespace-nowrap">
                       <span className="text-sm text-gray-600">
-                        {typeOptions.find((t) => t.value === n.type)?.label ?? n.type}
+                        {typeOptions.find((t) => t.value === n.type)?.label ??
+                          n.type}
                       </span>
                     </td>
                     <td className="px-5 py-4 whitespace-nowrap">
@@ -297,7 +321,10 @@ const NotificationManagement: React.FC = () => {
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+            <form
+              onSubmit={handleSubmit}
+              className="p-6 space-y-4 max-h-[70vh] overflow-y-auto"
+            >
               {/* Title */}
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
@@ -386,31 +413,31 @@ const NotificationManagement: React.FC = () => {
                   Target Audience
                 </label>
                 <div className="flex gap-2">
-                  {(["all", "businessUnit", "department"] as NotificationScope[]).map(
-                    (scope) => (
-                      <button
-                        key={scope}
-                        type="button"
-                        onClick={() => handleScopeChange(scope)}
-                        className="flex-1 py-2 px-3 rounded-lg border text-xs font-semibold transition-all touch-manipulation"
-                        style={
-                          formData.targetScope === scope
-                            ? {
-                                background: "rgba(251,173,55,0.12)",
-                                borderColor: "#fbad37",
-                                color: "#92650a",
-                              }
-                            : {
-                                background: "white",
-                                borderColor: "#e5e7eb",
-                                color: "#6b7280",
-                              }
-                        }
-                      >
-                        {scopeLabels[scope]}
-                      </button>
-                    ),
-                  )}
+                  {(
+                    ["all", "businessUnit", "department"] as NotificationScope[]
+                  ).map((scope) => (
+                    <button
+                      key={scope}
+                      type="button"
+                      onClick={() => handleScopeChange(scope)}
+                      className="flex-1 py-2 px-3 rounded-lg border text-xs font-semibold transition-all touch-manipulation"
+                      style={
+                        formData.targetScope === scope
+                          ? {
+                              background: "rgba(251,173,55,0.12)",
+                              borderColor: "#fbad37",
+                              color: "#92650a",
+                            }
+                          : {
+                              background: "white",
+                              borderColor: "#e5e7eb",
+                              color: "#6b7280",
+                            }
+                      }
+                    >
+                      {scopeLabels[scope]}
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -475,7 +502,10 @@ const NotificationManagement: React.FC = () => {
                             : ""
                         }
                         onChange={(e) =>
-                          setFormData((p) => ({ ...p, targetId: e.target.value }))
+                          setFormData((p) => ({
+                            ...p,
+                            targetId: e.target.value,
+                          }))
                         }
                         className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:border-osi-primary transition-colors bg-white"
                       >
@@ -495,7 +525,9 @@ const NotificationManagement: React.FC = () => {
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
                   Expires At{" "}
-                  <span className="text-gray-400 font-normal normal-case">(optional)</span>
+                  <span className="text-gray-400 font-normal normal-case">
+                    (optional)
+                  </span>
                 </label>
                 <input
                   type="datetime-local"
@@ -521,10 +553,13 @@ const NotificationManagement: React.FC = () => {
                   disabled={createNotification.isPending}
                   className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-black transition-all active:scale-95 touch-manipulation disabled:opacity-60"
                   style={{
-                    background: "linear-gradient(135deg, #fbad37 0%, #ffd280 100%)",
+                    background:
+                      "linear-gradient(135deg, #fbad37 0%, #ffd280 100%)",
                   }}
                 >
-                  {createNotification.isPending ? "Sending…" : "Send Notification"}
+                  {createNotification.isPending
+                    ? "Sending…"
+                    : "Send Notification"}
                 </button>
               </div>
             </form>

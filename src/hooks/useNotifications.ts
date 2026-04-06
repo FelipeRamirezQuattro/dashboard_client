@@ -52,8 +52,13 @@ export const useCreateNotification = () => {
 export const useUpdateNotification = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<CreateNotificationPayload> }) =>
-      notificationService.updateNotification(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<CreateNotificationPayload>;
+    }) => notificationService.updateNotification(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ADMIN_NOTIFICATIONS_KEY });
     },

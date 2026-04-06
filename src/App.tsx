@@ -137,7 +137,10 @@ const App: React.FC = () => {
                 <Route path="departments" element={<DepartmentManagement />} />
                 <Route path="apps" element={<AppManagement />} />
                 <Route path="audit" element={<AuditLogs />} />
-                <Route path="notifications" element={<NotificationManagement />} />
+                <Route
+                  path="notifications"
+                  element={<NotificationManagement />}
+                />
               </Route>
             </Route>
 

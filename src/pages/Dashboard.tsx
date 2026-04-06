@@ -3,15 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useBusinessUnits } from "../hooks/useBusinessUnits";
 import { BusinessUnitCardSkeleton } from "../components/SkeletonLoader";
-import { useCountUp } from "../hooks/useCountUp";
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const { data: businessUnits, isLoading, error } = useBusinessUnits();
   const navigate = useNavigate();
-
-  const totalCount = useCountUp(businessUnits?.length ?? 0);
-  const activeCount = useCountUp(businessUnits?.length ?? 0);
 
   return (
     <div className="min-h-full" style={{ background: "#f8fafc" }}>

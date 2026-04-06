@@ -1,7 +1,14 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useNotifications, useMarkAsRead, useMarkAllAsRead } from "../hooks/useNotifications";
+import {
+  useNotifications,
+  useMarkAsRead,
+  useMarkAllAsRead,
+} from "../hooks/useNotifications";
 import { useNotificationSSE } from "../hooks/useNotificationSSE";
-import { INotification, NotificationSeverity } from "../types/notification.types";
+import {
+  INotification,
+  NotificationSeverity,
+} from "../types/notification.types";
 
 const severityConfig: Record<
   NotificationSeverity,
@@ -65,7 +72,10 @@ const NotificationBell: React.FC = () => {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -100,7 +110,9 @@ const NotificationBell: React.FC = () => {
         {unreadCount > 0 && (
           <span
             className="absolute top-0.5 right-0.5 min-w-[16px] h-4 flex items-center justify-center rounded-full text-[10px] font-bold text-black px-1"
-            style={{ background: "linear-gradient(135deg, #fbad37 0%, #ffd280 100%)" }}
+            style={{
+              background: "linear-gradient(135deg, #fbad37 0%, #ffd280 100%)",
+            }}
             aria-hidden="true"
           >
             {unreadCount > 99 ? "99+" : unreadCount}
