@@ -9,12 +9,20 @@ import {
 import { chatbotService } from "../../services/chatbot.service";
 import useTextToSpeech from "../../hooks/useTextToSpeech";
 
+const WELCOME_MESSAGE: ChatMessageType = {
+  id: "welcome",
+  message:
+    "Hello! I'm the OSI Assistant. I can help you learn about Odessa Separator Inc., our business units, departments, services, and more. How can I assist you today?",
+  sender: "bot",
+  timestamp: new Date(),
+};
+
 interface ChatbotWindowProps {
   onClose: () => void;
 }
 
 const ChatbotWindow: React.FC<ChatbotWindowProps> = ({ onClose }) => {
-  const [messages, setMessages] = useState<ChatMessageType[]>([]);
+  const [messages, setMessages] = useState<ChatMessageType[]>([WELCOME_MESSAGE]);
   const [isTyping, setIsTyping] = useState(false);
   const [autoSpeak, setAutoSpeak] = useState(false);
   const [currentlySpeakingId, setCurrentlySpeakingId] = useState<string | null>(
@@ -22,7 +30,11 @@ const ChatbotWindow: React.FC<ChatbotWindowProps> = ({ onClose }) => {
   );
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const latestBotMessageRef = useRef<string | null>(null);
-  const sessionIdRef = useRef<string>("");
+  const sessionIdRef = useRef<string>(
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `session-${Date.now()}`
+  );
 
   const {
     speak,
@@ -40,65 +52,11 @@ const ChatbotWindow: React.FC<ChatbotWindowProps> = ({ onClose }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  // Initialize session and hydrate persisted history on mount.
-  useEffect(() => {
-    const hydrateHistory = async () => {
-      const storageKey = "osi-chatbot-session-id";
-      const existingSessionId = localStorage.getItem(storageKey);
-
-      if (existingSessionId) {
-        sessionIdRef.current = existingSessionId;
-      } else {
-        const newSessionId =
-          typeof crypto !== "undefined" && "randomUUID" in crypto
-            ? crypto.randomUUID()
-            : `session-${Date.now()}`;
-        sessionIdRef.current = newSessionId;
-        localStorage.setItem(storageKey, newSessionId);
-      }
-
-      try {
-        const result = await chatbotService.getHistory(sessionIdRef.current);
-
-        if (result.history?.length) {
-          const hydratedMessages: ChatMessageType[] = result.history.map(
-            (turn, index) => ({
-              id: `history-${index}-${Date.now()}`,
-              message: turn.content,
-              sender: turn.role === "assistant" ? "bot" : "user",
-              timestamp: new Date(),
-            }),
-          );
-
-          setMessages(hydratedMessages);
-          return;
-        }
-      } catch {
-        // Keep UX smooth if history endpoint fails; fallback to welcome message.
-      }
-
-      const welcomeMessage: ChatMessageType = {
-        id: "welcome",
-        message:
-          "Hello! I'm the OSI Assistant. I can help you learn about Odessa Separator Inc., our business units, departments, services, and more. How can I assist you today?",
-        sender: "bot",
-        timestamp: new Date(),
-      };
-      setMessages([welcomeMessage]);
-    };
-
-    hydrateHistory();
-  }, []);
 
   // Mutation for sending messages
   const sendMessageMutation = useMutation({
     mutationFn: chatbotService.sendMessage,
     onSuccess: (data) => {
-      if (data.sessionId && data.sessionId !== sessionIdRef.current) {
-        sessionIdRef.current = data.sessionId;
-        localStorage.setItem("osi-chatbot-session-id", data.sessionId);
-      }
-
       // Add bot response
       const botMessage: ChatMessageType = {
         id: `bot-${Date.now()}`,
