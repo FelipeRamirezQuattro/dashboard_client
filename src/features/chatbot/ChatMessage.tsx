@@ -42,25 +42,15 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           <a
             key={match.index}
             href={url}
-            className={`underline font-semibold cursor-pointer ${
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`underline font-semibold ${
               isBot
                 ? "text-osi-primary hover:text-osi-primary/80"
                 : "text-white hover:text-white/90"
             }`}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              // Create a temporary anchor element to trigger download
-              const link = document.createElement("a");
-              link.href = url;
-              link.download = url.split("/").pop() || "download";
-              link.target = "_blank";
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-            }}
           >
-            {match[1]} 📥
+            {match[1]}
           </a>,
         );
       } else if (match[3]) {
