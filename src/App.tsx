@@ -21,6 +21,7 @@ import BusinessUnitManagement from "./pages/Admin/BusinessUnitManagement";
 import DepartmentManagement from "./pages/Admin/DepartmentManagement";
 import AuditLogs from "./pages/Admin/AuditLogs";
 import NotificationManagement from "./pages/Admin/NotificationManagement";
+import FileBankManager from "./pages/Admin/FileBankManager";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -141,6 +142,7 @@ const App: React.FC = () => {
                   path="notifications"
                   element={<NotificationManagement />}
                 />
+                <Route path="file-bank" element={<FileBankManager />} />
               </Route>
             </Route>
 
