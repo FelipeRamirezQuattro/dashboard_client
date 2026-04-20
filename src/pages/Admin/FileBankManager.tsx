@@ -186,9 +186,7 @@ const FileBankManager: React.FC = () => {
           </div>
 
           {/* Error */}
-          {uploadError && (
-            <p className="text-sm text-red-500">{uploadError}</p>
-          )}
+          {uploadError && <p className="text-sm text-red-500">{uploadError}</p>}
 
           {/* Submit */}
           <button
@@ -196,8 +194,7 @@ const FileBankManager: React.FC = () => {
             disabled={uploadMutation.isPending}
             className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium text-sm text-black transition-all disabled:opacity-50"
             style={{
-              background:
-                "linear-gradient(135deg, #fbad37 0%, #ffd280 100%)",
+              background: "linear-gradient(135deg, #fbad37 0%, #ffd280 100%)",
               boxShadow: "0 0 16px rgba(251,173,55,0.3)",
             }}
           >
@@ -214,7 +211,12 @@ const FileBankManager: React.FC = () => {
       >
         <table className="w-full text-sm">
           <thead>
-            <tr style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
+            <tr
+              style={{
+                background: "#f9fafb",
+                borderBottom: "1px solid #e5e7eb",
+              }}
+            >
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 File
               </th>
@@ -242,7 +244,10 @@ const FileBankManager: React.FC = () => {
               </>
             ) : error ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-red-500 text-sm">
+                <td
+                  colSpan={6}
+                  className="px-4 py-8 text-center text-red-500 text-sm"
+                >
                   Failed to load files.
                 </td>
               </tr>

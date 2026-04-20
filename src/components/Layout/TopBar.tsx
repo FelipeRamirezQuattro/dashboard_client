@@ -1,4 +1,3 @@
-// client/src/components/Layout/TopBar.tsx
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -22,7 +21,12 @@ interface SearchResult {
   businessUnitName?: string;
 }
 
-const TopBar: React.FC = () => {
+interface TopBarProps {
+  sidebarCollapsed?: boolean;
+  sidebarWidth?: number;
+}
+
+const TopBar: React.FC<TopBarProps> = ({ sidebarWidth = 240 }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -43,27 +47,13 @@ const TopBar: React.FC = () => {
     return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
   };
 
-  const { data: apps = [] } = useQuery({
-    queryKey: ["apps"],
-    queryFn: getApps,
-  });
-
-  const { data: businessUnits = [] } = useQuery({
-    queryKey: ["businessUnits"],
-    queryFn: () => businessUnitService.getActiveBusinessUnits(),
-  });
-
-  const { data: departments = [] } = useQuery({
-    queryKey: ["departments"],
-    queryFn: () => departmentService.getActiveDepartments(),
-  });
+  const { data: apps = [] } = useQuery({ queryKey: ["apps"], queryFn: getApps });
+  const { data: businessUnits = [] } = useQuery({ queryKey: ["businessUnits"], queryFn: () => businessUnitService.getActiveBusinessUnits() });
+  const { data: departments = [] } = useQuery({ queryKey: ["departments"], queryFn: () => departmentService.getActiveDepartments() });
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        searchRef.current &&
-        !searchRef.current.contains(event.target as Node)
-      ) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setIsSearchFocused(false);
       }
     };
@@ -77,66 +67,24 @@ const TopBar: React.FC = () => {
     const results: SearchResult[] = [];
 
     businessUnits.forEach((bu: BusinessUnit) => {
-      if (
-        bu.name.toLowerCase().includes(query) ||
-        bu.description.toLowerCase().includes(query)
-      ) {
-        results.push({
-          id: bu._id,
-          name: bu.name,
-          type: "businessUnit",
-          description: bu.description,
-        });
+      if (bu.name.toLowerCase().includes(query) || bu.description.toLowerCase().includes(query)) {
+        results.push({ id: bu._id, name: bu.name, type: "businessUnit", description: bu.description });
       }
     });
 
     departments.forEach((dept: Department) => {
-      if (
-        dept.name.toLowerCase().includes(query) ||
-        dept.description.toLowerCase().includes(query)
-      ) {
-        const buId =
-          typeof dept.businessUnitId === "object"
-            ? dept.businessUnitId._id
-            : dept.businessUnitId;
-        const buName =
-          typeof dept.businessUnitId === "object"
-            ? dept.businessUnitId.name
-            : businessUnits.find((bu: BusinessUnit) => bu._id === buId)?.name ||
-              "";
-        results.push({
-          id: dept._id,
-          name: dept.name,
-          type: "department",
-          description: dept.description,
-          businessUnitId: buId,
-          businessUnitName: buName,
-        });
+      if (dept.name.toLowerCase().includes(query) || dept.description.toLowerCase().includes(query)) {
+        const buId = typeof dept.businessUnitId === "object" ? dept.businessUnitId._id : dept.businessUnitId;
+        const buName = typeof dept.businessUnitId === "object" ? dept.businessUnitId.name : businessUnits.find((bu: BusinessUnit) => bu._id === buId)?.name || "";
+        results.push({ id: dept._id, name: dept.name, type: "department", description: dept.description, businessUnitId: buId, businessUnitName: buName });
       }
     });
 
     apps.forEach((app: IExternalApp) => {
-      if (
-        app.name.toLowerCase().includes(query) ||
-        app.description.toLowerCase().includes(query)
-      ) {
-        const buId =
-          typeof app.businessUnitId === "object"
-            ? app.businessUnitId._id
-            : app.businessUnitId;
-        const buName =
-          typeof app.businessUnitId === "object"
-            ? app.businessUnitId.name
-            : businessUnits.find((bu: BusinessUnit) => bu._id === buId)?.name ||
-              "";
-        results.push({
-          id: app._id,
-          name: app.name,
-          type: "app",
-          description: app.description,
-          businessUnitId: buId,
-          businessUnitName: buName,
-        });
+      if (app.name.toLowerCase().includes(query) || app.description.toLowerCase().includes(query)) {
+        const buId = typeof app.businessUnitId === "object" ? app.businessUnitId._id : app.businessUnitId;
+        const buName = typeof app.businessUnitId === "object" ? app.businessUnitId.name : businessUnits.find((bu: BusinessUnit) => bu._id === buId)?.name || "";
+        results.push({ id: app._id, name: app.name, type: "app", description: app.description, businessUnitId: buId, businessUnitName: buName });
       }
     });
 
@@ -154,9 +102,7 @@ const TopBar: React.FC = () => {
     } else if (result.type === "app") {
       try {
         const response = await launchApp(result.id);
-        if (response.launchUrl) {
-          window.open(response.launchUrl, "_blank", "noopener,noreferrer");
-        }
+        if (response.launchUrl) window.open(response.launchUrl, "_blank", "noopener,noreferrer");
       } catch (error) {
         console.error("Failed to launch app:", error);
       }
@@ -167,12 +113,10 @@ const TopBar: React.FC = () => {
     if (!searchResults.length) return;
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setSelectedResultIndex((prev) =>
-        prev < searchResults.length - 1 ? prev + 1 : prev,
-      );
+      setSelectedResultIndex((prev) => prev < searchResults.length - 1 ? prev + 1 : prev);
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setSelectedResultIndex((prev) => (prev > 0 ? prev - 1 : -1));
+      setSelectedResultIndex((prev) => prev > 0 ? prev - 1 : -1);
     } else if (e.key === "Enter" && selectedResultIndex >= 0) {
       e.preventDefault();
       handleResultClick(searchResults[selectedResultIndex]);
@@ -189,200 +133,165 @@ const TopBar: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    setSelectedResultIndex(-1);
-  }, [searchQuery]);
+  useEffect(() => { setSelectedResultIndex(-1); }, [searchQuery]);
 
   const getResultIcon = (type: SearchResult["type"]) => {
     switch (type) {
-      case "businessUnit":
-        return "corporate_fare";
-      case "department":
-        return "domain";
-      case "app":
-        return "apps";
-      default:
-        return "search";
+      case "businessUnit": return "corporate_fare";
+      case "department": return "domain";
+      case "app": return "apps";
+      default: return "search";
     }
   };
 
   const getResultTypeLabel = (type: SearchResult["type"]) => {
     switch (type) {
-      case "businessUnit":
-        return "Business Unit";
-      case "department":
-        return "Department";
-      case "app":
-        return "Application";
-      default:
-        return "";
+      case "businessUnit": return "Business Unit";
+      case "department": return "Department";
+      case "app": return "Application";
+      default: return "";
     }
   };
 
   return (
     <>
-      <MobileNav
-        isOpen={isMobileNavOpen}
-        onClose={() => setIsMobileNavOpen(false)}
-      />
-      <MobileSearch
-        isOpen={isMobileSearchOpen}
-        onClose={() => setIsMobileSearchOpen(false)}
-      />
+      <MobileNav isOpen={isMobileNavOpen} onClose={() => setIsMobileNavOpen(false)} />
+      <MobileSearch isOpen={isMobileSearchOpen} onClose={() => setIsMobileSearchOpen(false)} />
 
       <header
-        className="h-12 flex items-center justify-between px-4 sm:px-6 fixed top-0 left-0 right-0 z-40 border-b border-gray-200"
-        style={{ background: "white" }}
+        style={{
+          height: 60,
+          background: "#ffffff",
+          borderBottom: "1px solid #e5e8ed",
+          display: "flex",
+          alignItems: "center",
+          gap: 16,
+          padding: "0 24px",
+          position: "fixed",
+          top: 0,
+          left: sidebarWidth,
+          right: 0,
+          zIndex: 50,
+          transition: "left .25s ease",
+        }}
+        className="lg:flex hidden"
       >
-        {/* Mobile menu button */}
-        <button
-          onClick={() => setIsMobileNavOpen(true)}
-          className="lg:hidden p-1.5 -ml-1 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation"
-          aria-label="Open navigation menu"
-        >
-          <span
-            className="material-symbols-outlined text-xl text-gray-600"
-            aria-hidden="true"
-          >
-            menu
-          </span>
-        </button>
-
-        {/* Logo */}
-        <Link to="/dashboard" className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-osi-primary to-osi-primary-dark flex-shrink-0 glow-amber-sm">
-            <span
-              className="material-symbols-outlined text-base text-black"
-              aria-hidden="true"
+        {/* Search */}
+        <form onSubmit={handleSearch} style={{ flex: 1, maxWidth: 440 }}>
+          <div style={{ position: "relative" }} ref={searchRef}>
+            <svg
+              fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"
+              style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#8a94a6", width: 16, height: 16 }}
             >
-              factory
-            </span>
-          </div>
-          <h1 className="text-sm font-bold tracking-tight text-gray-900 hidden md:block">
-            Odessa Separator Inc.
-          </h1>
-          <h1 className="text-sm font-bold tracking-tight text-gray-900 md:hidden">
-            OSI
-          </h1>
-        </Link>
-
-        {/* Desktop Search */}
-        <form
-          onSubmit={handleSearch}
-          className="hidden lg:flex flex-1 max-w-xl mx-8"
-        >
-          <div className="relative w-full" ref={searchRef}>
-            <div
-              className="flex items-center gap-2.5 px-3 py-1.5 rounded-full border transition-all"
+              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+            </svg>
+            <input
+              type="text"
+              placeholder="Search applications, business units, departments…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setIsSearchFocused(true)}
+              onKeyDown={handleKeyDown}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
               style={{
-                background: isSearchFocused ? "#f3f4f6" : "#f9fafb",
-                borderColor: isSearchFocused
-                  ? "rgba(251,173,55,0.6)"
-                  : "#e5e7eb",
+                width: "100%",
+                padding: "8px 12px 8px 36px",
+                border: `1px solid ${isSearchFocused ? "#6e7f96" : "#e5e8ed"}`,
+                borderRadius: 20,
+                background: "#f4f5f7",
+                fontSize: 13.5,
+                color: "#1a2332",
+                outline: "none",
+                boxShadow: isSearchFocused ? "0 0 0 3px rgba(88,99,121,.1)" : "none",
+                transition: "border-color .15s, box-shadow .15s",
               }}
-            >
-              <span
-                className="material-symbols-outlined text-gray-400 text-lg"
-                aria-hidden="true"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#8a94a6", padding: 2 }}
               >
-                search
-              </span>
-              <input
-                type="text"
-                placeholder="Search applications, business units, departments…"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={() => setIsSearchFocused(true)}
-                onKeyDown={handleKeyDown}
-                className="flex-1 bg-transparent border-none focus:outline-none text-sm text-gray-900 placeholder:text-gray-400"
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck={false}
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="text-gray-400 hover:text-gray-700 p-0.5 rounded transition-colors touch-manipulation"
-                  aria-label="Clear search"
-                >
-                  <span
-                    className="material-symbols-outlined text-base"
-                    aria-hidden="true"
-                  >
-                    close
-                  </span>
-                </button>
-              )}
-            </div>
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
+              </button>
+            )}
 
             {/* Search results dropdown */}
             {isSearchFocused && searchQuery.trim() && (
               <div
-                className="absolute top-full left-0 right-0 mt-2 rounded-xl border border-gray-200 max-h-96 overflow-y-auto z-50 shadow-2xl"
-                style={{ background: "white" }}
+                style={{
+                  position: "absolute",
+                  top: "calc(100% + 8px)",
+                  left: 0,
+                  right: 0,
+                  background: "#fff",
+                  border: "1px solid #e5e8ed",
+                  borderRadius: 10,
+                  boxShadow: "0 4px 12px rgba(0,0,0,.10)",
+                  maxHeight: 384,
+                  overflowY: "auto",
+                  zIndex: 50,
+                }}
               >
                 {searchResults.length > 0 ? (
-                  <div className="py-2">
+                  <div style={{ padding: "8px 0" }}>
                     {searchResults.map((result, index) => (
                       <button
                         key={`${result.type}-${result.id}`}
                         onClick={() => handleResultClick(result)}
-                        className={`w-full px-4 py-3 transition-colors text-left flex items-start gap-3 ${
-                          index === selectedResultIndex
-                            ? "bg-amber-50"
-                            : "hover:bg-gray-50"
-                        }`}
+                        style={{
+                          width: "100%",
+                          padding: "10px 16px",
+                          background: index === selectedResultIndex ? "#fff8ed" : "transparent",
+                          border: "none",
+                          cursor: "pointer",
+                          textAlign: "left",
+                          display: "flex",
+                          alignItems: "flex-start",
+                          gap: 12,
+                          transition: "background .1s",
+                        }}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#fafbfc"; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = index === selectedResultIndex ? "#fff8ed" : "transparent"; }}
                       >
                         <span
-                          className={`material-symbols-outlined text-xl mt-0.5 ${
-                            result.type === "businessUnit"
-                              ? "text-osi-primary"
-                              : result.type === "department"
-                                ? "text-blue-400"
-                                : "text-emerald-400"
-                          }`}
-                          aria-hidden="true"
+                          className="material-symbols-outlined"
+                          style={{
+                            fontSize: 20,
+                            marginTop: 2,
+                            color: result.type === "businessUnit" ? "#586379" : result.type === "department" ? "#60a5fa" : "#34d399",
+                          }}
                         >
                           {getResultIcon(result.type)}
                         </span>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-semibold text-gray-900">
-                              {result.name}
-                            </p>
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ fontSize: 13.5, fontWeight: 600, color: "#1a2332" }}>{result.name}</span>
+                            <span style={{ fontSize: 11, background: "#f4f5f7", color: "#8a94a6", borderRadius: 4, padding: "1px 6px", fontWeight: 500 }}>
                               {getResultTypeLabel(result.type)}
                             </span>
                           </div>
                           {result.description && (
-                            <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">
+                            <p style={{ fontSize: 12, color: "#8a94a6", margin: "2px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                               {result.description}
                             </p>
                           )}
-                          {result.businessUnitName &&
-                            result.type !== "businessUnit" && (
-                              <p className="text-xs text-gray-400 mt-0.5">
-                                {result.businessUnitName}
-                                {result.type === "app" && " · Click to launch"}
-                              </p>
-                            )}
+                          {result.businessUnitName && result.type !== "businessUnit" && (
+                            <p style={{ fontSize: 12, color: "#8a94a6", marginTop: 1 }}>
+                              {result.businessUnitName}{result.type === "app" && " · Click to launch"}
+                            </p>
+                          )}
                         </div>
                       </button>
                     ))}
                   </div>
                 ) : (
-                  <div className="px-4 py-8 text-center">
-                    <span
-                      className="material-symbols-outlined text-gray-300 text-4xl mb-2"
-                      aria-hidden="true"
-                    >
-                      search_off
-                    </span>
-                    <p className="text-sm text-gray-400">
-                      No results for "{searchQuery}"
-                    </p>
+                  <div style={{ padding: "32px 16px", textAlign: "center" }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 40, color: "#b0b8c4", display: "block", marginBottom: 8 }}>search_off</span>
+                    <p style={{ fontSize: 13.5, color: "#8a94a6" }}>No results for "{searchQuery}"</p>
                   </div>
                 )}
               </div>
@@ -391,111 +300,157 @@ const TopBar: React.FC = () => {
         </form>
 
         {/* Right side */}
-        <div className="flex items-center gap-2">
-          {/* Mobile search */}
-          <button
-            onClick={() => setIsMobileSearchOpen(true)}
-            className="lg:hidden p-1.5 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation"
-            aria-label="Open search"
-          >
-            <span
-              className="material-symbols-outlined text-xl text-gray-600"
-              aria-hidden="true"
-            >
-              search
-            </span>
-          </button>
-
-          {/* Notifications */}
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
           <NotificationBell />
 
           {/* User dropdown */}
-          <div className="relative">
+          <div style={{ position: "relative" }}>
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center gap-2 touch-manipulation p-1 hover:bg-gray-50 rounded-lg transition-colors"
+              style={{ display: "flex", alignItems: "center", gap: 8, padding: 4, background: "none", border: "none", cursor: "pointer", borderRadius: 8 }}
               aria-label="User menu"
             >
-              <div className="text-right hidden sm:block">
-                <p className="text-xs font-semibold text-gray-900 leading-none">
-                  {user?.firstName} {user?.lastName}
-                </p>
-                <p className="text-[10px] text-gray-400 mt-0.5 capitalize">
-                  {user?.role === "superadmin"
-                    ? "System Administrator"
-                    : user?.role}
+              <div style={{ textAlign: "right" }}>
+                <p style={{ fontSize: 13, fontWeight: 600, color: "#1a2332", margin: 0 }}>{user?.firstName} {user?.lastName}</p>
+                <p style={{ fontSize: 11, color: "#8a94a6", margin: 0, textTransform: "capitalize" }}>
+                  {user?.role === "superadmin" ? "System Administrator" : user?.role}
                 </p>
               </div>
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-osi-primary to-osi-primary-dark border border-osi-primary/30 flex items-center justify-center text-black font-bold text-xs flex-shrink-0 glow-amber-sm">
+              <div
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: "50%",
+                  background: "#fea920",
+                  display: "grid",
+                  placeItems: "center",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: "#fff",
+                  flexShrink: 0,
+                }}
+              >
                 {getInitials()}
               </div>
             </button>
 
             {isDropdownOpen && (
               <>
+                <div className="fixed inset-0 z-10" onClick={() => setIsDropdownOpen(false)} aria-hidden="true" />
                 <div
-                  className="fixed inset-0 z-10"
-                  onClick={() => setIsDropdownOpen(false)}
-                  aria-hidden="true"
-                />
-                <div
-                  className="absolute right-0 mt-2 w-52 rounded-xl border border-gray-200 py-1 z-20 shadow-2xl overflow-hidden"
-                  style={{ background: "white" }}
+                  style={{
+                    position: "absolute",
+                    right: 0,
+                    top: "calc(100% + 8px)",
+                    width: 210,
+                    background: "#fff",
+                    border: "1px solid #e5e8ed",
+                    borderRadius: 10,
+                    boxShadow: "0 4px 12px rgba(0,0,0,.10)",
+                    zIndex: 20,
+                    overflow: "hidden",
+                    padding: "4px 0",
+                  }}
                 >
-                  <div className="px-4 py-3 border-b border-gray-100 sm:hidden">
-                    <p className="text-sm font-semibold text-gray-900">
-                      {user?.firstName} {user?.lastName}
-                    </p>
-                    <p className="text-xs text-gray-400 capitalize mt-0.5">
-                      {user?.role === "superadmin"
-                        ? "System Administrator"
-                        : user?.role}
-                    </p>
-                  </div>
                   <Link
                     to="/dashboard"
-                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors touch-manipulation"
+                    style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", fontSize: 13.5, color: "#1a2332", textDecoration: "none" }}
                     onClick={() => setIsDropdownOpen(false)}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = "#f4f5f7"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = "transparent"; }}
                   >
-                    <span
-                      className="material-symbols-outlined text-lg"
-                      aria-hidden="true"
-                    >
-                      dashboard
-                    </span>
+                    <span className="material-symbols-outlined" style={{ fontSize: 18 }}>dashboard</span>
                     Dashboard
                   </Link>
                   {(user?.role === "admin" || user?.role === "superadmin") && (
                     <Link
                       to="/admin"
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors touch-manipulation"
+                      style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", fontSize: 13.5, color: "#1a2332", textDecoration: "none" }}
                       onClick={() => setIsDropdownOpen(false)}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = "#f4f5f7"; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = "transparent"; }}
                     >
-                      <span
-                        className="material-symbols-outlined text-lg"
-                        aria-hidden="true"
-                      >
-                        admin_panel_settings
-                      </span>
+                      <span className="material-symbols-outlined" style={{ fontSize: 18 }}>admin_panel_settings</span>
                       Admin Panel
                     </Link>
                   )}
                   <button
                     onClick={handleLogout}
-                    className="flex items-center gap-2.5 w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-red-50 transition-colors touch-manipulation"
+                    style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 16px", fontSize: 13.5, color: "#dc2626", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#fee2e2"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
                   >
-                    <span
-                      className="material-symbols-outlined text-lg"
-                      aria-hidden="true"
-                    >
-                      logout
-                    </span>
+                    <span className="material-symbols-outlined" style={{ fontSize: 18 }}>logout</span>
                     Logout
                   </button>
                 </div>
               </>
             )}
           </div>
+        </div>
+      </header>
+
+      {/* Mobile TopBar */}
+      <header
+        className="lg:hidden flex items-center justify-between px-4 fixed top-0 left-0 right-0 z-40"
+        style={{ height: 60, background: "#ffffff", borderBottom: "1px solid #e5e8ed" }}
+      >
+        <button
+          onClick={() => setIsMobileNavOpen(true)}
+          className="p-1.5 -ml-1 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation"
+          aria-label="Open navigation menu"
+        >
+          <span className="material-symbols-outlined text-xl text-gray-600">menu</span>
+        </button>
+
+        <Link to="/dashboard" className="flex items-center gap-2.5">
+          <div
+            style={{ width: 28, height: 28, background: "#fea920", borderRadius: 6, display: "grid", placeItems: "center", fontWeight: 800, fontSize: 12, color: "#fff" }}
+          >
+            OSI
+          </div>
+          <span className="text-sm font-bold text-gray-900 hidden sm:block">Odessa Separator Inc.</span>
+          <span className="text-sm font-bold text-gray-900 sm:hidden">OSI</span>
+        </Link>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsMobileSearchOpen(true)}
+            className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation"
+            aria-label="Open search"
+          >
+            <span className="material-symbols-outlined text-xl text-gray-600">search</span>
+          </button>
+          <NotificationBell />
+          <button
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className="touch-manipulation"
+            aria-label="User menu"
+          >
+            <div
+              style={{ width: 32, height: 32, borderRadius: "50%", background: "#fea920", display: "grid", placeItems: "center", fontSize: 12, fontWeight: 700, color: "#fff" }}
+            >
+              {getInitials()}
+            </div>
+          </button>
+          {isDropdownOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setIsDropdownOpen(false)} aria-hidden="true" />
+              <div className="absolute right-4 top-[60px] w-48 bg-white rounded-xl border border-gray-200 py-1 z-20 shadow-xl overflow-hidden">
+                <Link to="/dashboard" className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors" onClick={() => setIsDropdownOpen(false)}>
+                  <span className="material-symbols-outlined text-lg">dashboard</span>Dashboard
+                </Link>
+                {(user?.role === "admin" || user?.role === "superadmin") && (
+                  <Link to="/admin" className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors" onClick={() => setIsDropdownOpen(false)}>
+                    <span className="material-symbols-outlined text-lg">admin_panel_settings</span>Admin Panel
+                  </Link>
+                )}
+                <button onClick={handleLogout} className="flex items-center gap-2.5 w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-red-50 transition-colors">
+                  <span className="material-symbols-outlined text-lg">logout</span>Logout
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </header>
     </>

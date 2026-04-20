@@ -22,6 +22,7 @@ import DepartmentManagement from "./pages/Admin/DepartmentManagement";
 import AuditLogs from "./pages/Admin/AuditLogs";
 import NotificationManagement from "./pages/Admin/NotificationManagement";
 import FileBankManager from "./pages/Admin/FileBankManager";
+import ApplicationDetails from "./pages/ApplicationDetails";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -119,6 +120,7 @@ const App: React.FC = () => {
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="business-unit/:id" element={<BusinessUnitView />} />
+              <Route path="app/:id" element={<ApplicationDetails />} />
 
               {/* Admin Routes */}
               <Route

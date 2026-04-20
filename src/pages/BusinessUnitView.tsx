@@ -1,128 +1,268 @@
 import React, { useState, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useBusinessUnit } from "../hooks/useBusinessUnits";
 import { departmentService } from "../services/department.service";
 import { getApps } from "../services/apps.service";
+import { useLaunchApp } from "../hooks/useApps";
+import { useAuth } from "../hooks/useAuth";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { IExternalApp } from "../types/app.types";
 import { AppCardSkeleton } from "../components/SkeletonLoader";
 
+const PRIMARY = "#586379";
+const ACCENT = "#fea920";
+const ACCENT_DARK = "#e5941a";
+const BG = "#f4f5f7";
+const SURFACE = "#ffffff";
+const BORDER = "#e5e8ed";
+const TEXT = "#1a2332";
+const TEXT_MUTED = "#8a94a6";
+const SUCCESS = "#16a34a";
+const SUCCESS_BG = "#dcfce7";
+
+const categoryColors: Record<string, [string, string]> = {
+  gas: ["#2563eb", "#1e40af"],
+  chemical: ["#7c3aed", "#5b21b6"],
+  sand: ["#d97706", "#b45309"],
+  pumps: ["#586379", "#3f4d60"],
+  admin: ["#dc2626", "#b91c1c"],
+  other: ["#6b7280", "#4b5563"],
+};
+
+interface AppListItemProps {
+  app: IExternalApp;
+}
+
+const AppListItem: React.FC<AppListItemProps> = ({ app }) => {
+  const { mutate: launchApp, isPending } = useLaunchApp();
+  const { user } = useAuth();
+
+  const handleLaunch = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (app.comingSoon) return;
+    if (app.ssoEndpoint && !user?.microsoftId) {
+      alert("This application requires Microsoft SSO. Please sign in with Microsoft to access.");
+      return;
+    }
+    launchApp(app._id);
+  };
+
+  const [c1, c2] = categoryColors[app.category] || categoryColors.other;
+  const initials = app.name.split(" ").map((w) => w[0]).join("").slice(0, 3).toUpperCase();
+
+  return (
+    <div
+      style={{
+        background: SURFACE,
+        border: `1px solid ${BORDER}`,
+        borderRadius: 10,
+        padding: "18px 20px",
+        display: "flex",
+        alignItems: "center",
+        gap: 18,
+        boxShadow: "0 1px 3px rgba(0,0,0,.08)",
+        transition: "box-shadow .2s, border-color .2s",
+        position: "relative",
+      }}
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLDivElement).style.boxShadow = "0 4px 12px rgba(0,0,0,.10)";
+        (e.currentTarget as HTMLDivElement).style.borderColor = "#6e7f96";
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLDivElement).style.boxShadow = "0 1px 3px rgba(0,0,0,.08)";
+        (e.currentTarget as HTMLDivElement).style.borderColor = BORDER;
+      }}
+    >
+      {/* App Thumb */}
+      <div
+        style={{
+          width: 60,
+          height: 60,
+          borderRadius: 12,
+          background: app.iconUrl ? "#f4f5f7" : `linear-gradient(135deg, ${c1}, ${c2})`,
+          display: "grid",
+          placeItems: "center",
+          fontWeight: 800,
+          fontSize: 14,
+          color: "#fff",
+          flexShrink: 0,
+          letterSpacing: -1,
+          overflow: "hidden",
+        }}
+      >
+        {app.iconUrl ? (
+          <img src={app.iconUrl} alt={app.name} style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+        ) : initials}
+      </div>
+
+      {/* App Info */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+          <span
+            style={{
+              background: "rgba(88,99,121,.1)",
+              color: PRIMARY,
+              fontSize: 11,
+              fontWeight: 600,
+              padding: "2px 8px",
+              borderRadius: 20,
+              letterSpacing: ".02em",
+              textTransform: "uppercase",
+            }}
+          >
+            {app.category}
+          </span>
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              background: SUCCESS_BG,
+              color: SUCCESS,
+              fontSize: 11,
+              fontWeight: 600,
+              padding: "2px 8px",
+              borderRadius: 20,
+            }}
+          >
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: SUCCESS, display: "inline-block" }} />
+            {app.comingSoon ? "Coming Soon" : "Online"}
+          </span>
+        </div>
+        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{app.name}</div>
+        <div style={{ fontSize: 13, color: TEXT_MUTED, lineHeight: 1.5, maxWidth: 560, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {app.description}
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+        <Link
+          to={`/app/${app._id}`}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "6px 14px",
+            borderRadius: 6,
+            fontSize: 12.5,
+            fontWeight: 600,
+            background: BG,
+            color: TEXT,
+            border: `1px solid ${BORDER}`,
+            textDecoration: "none",
+            cursor: "pointer",
+            transition: "background .15s",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          Details
+        </Link>
+        <button
+          onClick={handleLaunch}
+          disabled={isPending || app.comingSoon}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "6px 14px",
+            borderRadius: 6,
+            fontSize: 12.5,
+            fontWeight: 600,
+            background: ACCENT,
+            color: "#fff",
+            border: "none",
+            cursor: app.comingSoon ? "default" : "pointer",
+            opacity: app.comingSoon ? 0.6 : 1,
+            transition: "background .15s",
+          }}
+          onMouseEnter={(e) => { if (!app.comingSoon) (e.currentTarget as HTMLButtonElement).style.background = ACCENT_DARK; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = ACCENT; }}
+        >
+          {isPending ? (
+            <span className="flex items-center gap-1.5">
+              <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              Launching…
+            </span>
+          ) : (
+            <>
+              <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" width="13" height="13">
+                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+                <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+              {app.comingSoon ? "Coming Soon" : "Launch"}
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Version badge */}
+      <div
+        style={{
+          position: "absolute",
+          top: 12,
+          right: 14,
+          fontSize: 11,
+          fontWeight: 600,
+          color: TEXT_MUTED,
+          background: BG,
+          border: `1px solid ${BORDER}`,
+          borderRadius: 20,
+          padding: "2px 8px",
+        }}
+      >
+        v4.2.0
+      </div>
+    </div>
+  );
+};
+
 const BusinessUnitView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [selectedDepartment, setSelectedDepartment] = useState<string | null>(
-    null,
-  );
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
 
-  // Fetch Business Unit
-  const {
-    data: businessUnit,
-    isLoading: isLoadingBU,
-    error: errorBU,
-  } = useBusinessUnit(id!);
+  const { data: businessUnit, isLoading: isLoadingBU, error: errorBU } = useBusinessUnit(id!);
 
-  // Fetch Departments for this BU
   const { data: departments, error: errorDepts } = useQuery({
     queryKey: ["departments", id],
     queryFn: () => departmentService.getDepartmentsByBusinessUnit(id!),
     enabled: !!id,
   });
 
-  // Fetch Apps (we'll filter by BU on frontend)
-  const {
-    data: allApps,
-    isLoading: isLoadingApps,
-    error: errorApps,
-  } = useQuery({
+  const { data: allApps, isLoading: isLoadingApps, error: errorApps } = useQuery({
     queryKey: ["apps"],
     queryFn: getApps,
   });
 
-  // Get placeholder image URL based on category
-  const getPlaceholderImage = (category?: string) => {
-    const fallbackImage =
-      "https://via.placeholder.com/800x400/6366f1/ffffff?text=Application";
-
-    if (!category) return fallbackImage;
-
-    const categoryLower = category.toLowerCase();
-
-    if (categoryLower.includes("analytics") || categoryLower.includes("data")) {
-      return "https://via.placeholder.com/800x400/3b82f6/ffffff?text=Analytics";
-    }
-    if (
-      categoryLower.includes("communication") ||
-      categoryLower.includes("collaboration")
-    ) {
-      return "https://via.placeholder.com/800x400/8b5cf6/ffffff?text=Communication";
-    }
-    if (
-      categoryLower.includes("productivity") ||
-      categoryLower.includes("workflow")
-    ) {
-      return "https://via.placeholder.com/800x400/10b981/ffffff?text=Productivity";
-    }
-    if (categoryLower.includes("hr") || categoryLower.includes("human")) {
-      return "https://via.placeholder.com/800x400/f59e0b/ffffff?text=HR";
-    }
-    if (
-      categoryLower.includes("finance") ||
-      categoryLower.includes("accounting")
-    ) {
-      return "https://via.placeholder.com/800x400/ef4444/ffffff?text=Finance";
-    }
-
-    return fallbackImage;
-  };
-
-  // Filter apps by business unit, department, and search query
   const filteredApps = useMemo(() => {
     if (!allApps || !Array.isArray(allApps)) return [];
-
     let filtered = allApps.filter((app: IExternalApp) => {
       if (!app.businessUnitId) return false;
-      const buId =
-        typeof app.businessUnitId === "string"
-          ? app.businessUnitId
-          : app.businessUnitId._id;
+      const buId = typeof app.businessUnitId === "string" ? app.businessUnitId : app.businessUnitId._id;
       return buId === id && app.isActive;
     });
-
-    // Filter by selected department
     if (selectedDepartment) {
       filtered = filtered.filter((app: IExternalApp) => {
         if (!app.departmentId) return false;
-        const deptId =
-          typeof app.departmentId === "string"
-            ? app.departmentId
-            : app.departmentId._id;
+        const deptId = typeof app.departmentId === "string" ? app.departmentId : app.departmentId._id;
         return deptId === selectedDepartment;
       });
     }
-
     return filtered;
   }, [allApps, id, selectedDepartment]);
 
-  // Group apps by department for counting
   const appsByDepartment = useMemo(() => {
     if (!allApps || !Array.isArray(allApps)) return {};
-
     const grouped: Record<string, number> = {};
     allApps.forEach((app: IExternalApp) => {
-      if (!app.businessUnitId) return;
-      const buId =
-        typeof app.businessUnitId === "string"
-          ? app.businessUnitId
-          : app.businessUnitId._id;
-      if (buId !== id || !app.isActive) return;
-
+      if (!app.businessUnitId || !app.isActive) return;
+      const buId = typeof app.businessUnitId === "string" ? app.businessUnitId : app.businessUnitId._id;
+      if (buId !== id) return;
       if (!app.departmentId) return;
-      const deptId =
-        typeof app.departmentId === "string"
-          ? app.departmentId
-          : app.departmentId._id;
+      const deptId = typeof app.departmentId === "string" ? app.departmentId : app.departmentId._id;
       grouped[deptId] = (grouped[deptId] || 0) + 1;
     });
     return grouped;
@@ -132,10 +272,7 @@ const BusinessUnitView: React.FC = () => {
 
   if (isLoadingBU) {
     return (
-      <div
-        className="flex items-center justify-center min-h-screen"
-        style={{ background: "#f8fafc" }}
-      >
+      <div className="flex items-center justify-center min-h-screen" style={{ background: BG }}>
         <LoadingSpinner size="lg" />
       </div>
     );
@@ -143,22 +280,10 @@ const BusinessUnitView: React.FC = () => {
 
   if (error || !businessUnit) {
     return (
-      <div
-        className="flex items-center justify-center min-h-screen"
-        style={{ background: "#f8fafc" }}
-      >
-        <div
-          className="rounded-lg p-6 text-center max-w-md"
-          style={{
-            background: "rgba(239,68,68,0.1)",
-            border: "1px solid rgba(239,68,68,0.25)",
-          }}
-        >
-          <p className="text-red-300">Failed to load business unit details.</p>
-          <button
-            onClick={() => navigate("/dashboard")}
-            className="mt-4 text-osi-primary underline"
-          >
+      <div className="flex items-center justify-center min-h-screen" style={{ background: BG }}>
+        <div style={{ background: "#fee2e2", border: "1px solid #fca5a5", borderRadius: 10, padding: 24, textAlign: "center", maxWidth: 400 }}>
+          <p style={{ color: "#dc2626" }}>Failed to load business unit details.</p>
+          <button onClick={() => navigate("/dashboard")} style={{ marginTop: 16, color: PRIMARY, background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
             Return to Dashboard
           </button>
         </div>
@@ -167,465 +292,183 @@ const BusinessUnitView: React.FC = () => {
   }
 
   return (
-    <div className="flex min-h-screen" style={{ background: "#f8fafc" }}>
-      {/* Mobile Sidebar Backdrop */}
-      {isMobileSidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 lg:hidden"
-          style={{ background: "rgba(0,0,0,0.4)" }}
-          onClick={() => setIsMobileSidebarOpen(false)}
-        />
-      )}
+    <div style={{ minHeight: "100%", background: BG }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "28px 28px" }}>
 
-      {/* Left Sidebar */}
-      <aside
-        className={`fixed lg:sticky lg:top-12 lg:h-[calc(100vh-3rem)] inset-y-0 left-0 z-50 w-64 sm:w-72 lg:w-[220px] flex flex-col transform transition-transform duration-300 ${
-          isMobileSidebarOpen
-            ? "translate-x-0"
-            : "-translate-x-full lg:translate-x-0"
-        }`}
-        style={{
-          background: "white",
-          backdropFilter: "blur(12px)",
-          borderRight: "1px solid #e5e7eb",
-        }}
-      >
-        {/* Logo Section */}
-        <div
-          className="p-4 sm:p-5 flex-shrink-0"
-          style={{ borderBottom: "1px solid #e5e7eb" }}
-        >
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsMobileSidebarOpen(false)}
-              className="lg:hidden p-2 rounded-lg touch-manipulation text-gray-600 hover:text-gray-900"
-              style={{ background: "#f3f4f6" }}
-              aria-label="Close menu"
-            >
-              <span className="material-symbols-outlined text-lg">close</span>
-            </button>
-            <img
-              src={
-                businessUnit.logoUrl ||
-                "https://via.placeholder.com/200x200/fbad37/0a0a12?text=OSI"
-              }
-              alt={`${businessUnit.name} logo`}
-              className="w-9 h-9 rounded-lg object-cover"
-              width="36"
-              height="36"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src =
-                  "https://via.placeholder.com/200x200/fbad37/0a0a12?text=OSI";
-              }}
-            />
-            <div className="flex-1 min-w-0">
-              <h2 className="text-xs font-bold text-gray-800 truncate">
-                Odessa Separator
-              </h2>
-              <p className="text-[10px] text-gray-400 uppercase tracking-wide truncate">
-                {businessUnit.name}
-              </p>
-            </div>
+        {/* Breadcrumb */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, color: TEXT_MUTED, marginBottom: 12 }}>
+          <Link to="/dashboard" style={{ color: PRIMARY, textDecoration: "none" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.textDecoration = "underline"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.textDecoration = "none"; }}
+          >
+            Dashboard
+          </Link>
+          <span style={{ color: "#b0b8c4" }}>›</span>
+          <span>{businessUnit.name}</span>
+        </div>
+
+        {/* Page Header */}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24 }}>
+          <div>
+            <h1 style={{ fontSize: 24, fontWeight: 700, color: TEXT, margin: 0 }}>{businessUnit.name}</h1>
+            <p style={{ color: TEXT_MUTED, fontSize: 14, marginTop: 4 }}>{businessUnit.description}</p>
           </div>
-        </div>
-
-        {/* Departments Navigation */}
-        <nav className="flex-1 overflow-y-auto py-3">
-          {departments &&
-            Array.isArray(departments) &&
-            departments
-              .filter((dept) => dept != null)
-              .map((dept) => {
-                const appCount = appsByDepartment[dept._id] || 0;
-                const isSelected = selectedDepartment === dept._id;
-
-                return (
-                  <button
-                    key={dept._id}
-                    onClick={() => {
-                      setSelectedDepartment(dept._id);
-                      setIsMobileSidebarOpen(false);
-                    }}
-                    className={`w-full flex items-center justify-between px-4 sm:px-5 py-3 transition-all touch-manipulation border-l-2 ${
-                      isSelected
-                        ? "border-osi-primary text-gray-900 font-medium"
-                        : "border-transparent text-gray-500 hover:text-gray-800"
-                    }`}
-                    style={
-                      isSelected
-                        ? { background: "rgba(251,173,55,0.1)" }
-                        : { background: "transparent" }
-                    }
-                  >
-                    <div className="flex items-center gap-3">
-                      <span
-                        className={`material-symbols-outlined text-lg ${isSelected ? "text-osi-primary" : "text-gray-400"}`}
-                        aria-hidden="true"
-                      >
-                        {dept.name.toLowerCase().includes("technical")
-                          ? "engineering"
-                          : dept.name.toLowerCase().includes("sales")
-                            ? "trending_up"
-                            : dept.name.toLowerCase().includes("manufacturing")
-                              ? "factory"
-                              : dept.name.toLowerCase().includes("operations")
-                                ? "settings"
-                                : dept.name.toLowerCase().includes("quality")
-                                  ? "verified"
-                                  : dept.name.toLowerCase().includes("hse")
-                                    ? "health_and_safety"
-                                    : "domain"}
-                      </span>
-                      <span className="text-sm">{dept.name}</span>
-                    </div>
-                    <span className="text-xs text-gray-400">{appCount}</span>
-                  </button>
-                );
-              })}
-        </nav>
-
-        {/* Back to Dashboard */}
-        <div
-          className="p-3 flex-shrink-0"
-          style={{ borderTop: "1px solid #e5e7eb" }}
-        >
           <button
-            onClick={() => navigate("/dashboard")}
-            className="flex items-center gap-2 w-full px-3 py-2.5 rounded-lg transition-colors text-sm text-gray-500 hover:text-gray-900 hover:bg-gray-50 touch-manipulation"
+            onClick={() => setSelectedDepartment(null)}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "6px 14px",
+              borderRadius: 6,
+              fontSize: 12.5,
+              fontWeight: 600,
+              background: BG,
+              color: TEXT,
+              border: `1px solid ${BORDER}`,
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
           >
-            <span
-              className="material-symbols-outlined text-lg"
-              aria-hidden="true"
-            >
-              arrow_back
-            </span>
-            <span>Back to Dashboard</span>
+            <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" width="14" height="14">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+            </svg>
+            All Apps
           </button>
         </div>
-      </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0">
-        {/* Mobile Header */}
-        <div
-          className="lg:hidden sticky top-0 z-30 px-4 py-3 flex items-center gap-3 flex-shrink-0"
-          style={{
-            background: "white",
-            backdropFilter: "blur(12px)",
-            borderBottom: "1px solid #e5e7eb",
-          }}
-        >
-          <button
-            onClick={() => setIsMobileSidebarOpen(true)}
-            className="p-2 rounded-lg touch-manipulation text-gray-600 hover:text-gray-900"
-            style={{ background: "#f3f4f6" }}
-            aria-label="Open departments menu"
-          >
-            <span className="material-symbols-outlined text-xl">menu</span>
-          </button>
-          <button
-            onClick={() => navigate("/dashboard")}
-            className="p-2 rounded-lg touch-manipulation text-gray-600 hover:text-gray-900"
-            style={{ background: "#f3f4f6" }}
-            aria-label="Back to dashboard"
-          >
-            <span className="material-symbols-outlined text-xl">
-              arrow_back
-            </span>
-          </button>
-          <div className="flex-1 min-w-0">
-            <h1 className="font-bold text-gray-900 text-sm truncate">
-              {businessUnit.name}
-            </h1>
-            {selectedDepartment && (
-              <p className="text-xs text-gray-400 truncate">
-                {
-                  departments
-                    ?.filter((d) => d != null)
-                    .find((d) => d._id === selectedDepartment)?.name
-                }
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Header with Title and Description */}
-        <div
-          className="px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 flex-shrink-0"
-          style={{ borderBottom: "1px solid #e5e7eb" }}
-        >
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-            <div className="flex-1">
-              <h1 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 mb-2">
-                {selectedDepartment
-                  ? `${departments?.filter((d) => d != null).find((d) => d._id === selectedDepartment)?.name} Division Apps`
-                  : `${businessUnit.name} Applications`}
-              </h1>
-              <p className="text-gray-400 text-sm sm:text-base">
-                {selectedDepartment
-                  ? `Specialized engineering and monitoring tools for ${departments
-                      ?.filter((d) => d != null)
-                      .find((d) => d._id === selectedDepartment)
-                      ?.name.toLowerCase()} operations.`
-                  : businessUnit.description}
-              </p>
-            </div>
+        {/* Department Filter Chips */}
+        {departments && Array.isArray(departments) && departments.length > 0 && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
             <button
               onClick={() => setSelectedDepartment(null)}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-all text-sm font-medium touch-manipulation shrink-0 text-gray-600 hover:text-gray-900"
               style={{
-                background: "#f3f4f6",
-                border: "1px solid #e5e7eb",
+                padding: "5px 14px",
+                borderRadius: 20,
+                border: `1px solid ${selectedDepartment === null ? PRIMARY : BORDER}`,
+                fontSize: 12.5,
+                fontWeight: 500,
+                cursor: "pointer",
+                background: selectedDepartment === null ? PRIMARY : SURFACE,
+                color: selectedDepartment === null ? "#fff" : TEXT_MUTED,
+                transition: "all .15s",
               }}
             >
-              <span
-                className="material-symbols-outlined text-lg"
-                aria-hidden="true"
-              >
-                apps
-              </span>
-              <span className="hidden sm:inline">All Apps</span>
-              <span className="sm:hidden">All</span>
+              All
             </button>
-          </div>
-        </div>
-
-        {/* Apps Grid */}
-        <div className="flex-1 px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-          <div className="flex flex-col lg:flex-row gap-6">
-            {/* Apps Column */}
-            <div className="flex-1">
-              {isLoadingApps ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
-                  {[...Array(4)].map((_, i) => (
-                    <AppCardSkeleton key={i} />
-                  ))}
-                </div>
-              ) : filteredApps.length === 0 ? (
-                <div
-                  className="rounded-lg p-8 sm:p-12 text-center"
+            {departments.filter((d) => d != null).map((dept) => {
+              const count = appsByDepartment[dept._id] || 0;
+              const isActive = selectedDepartment === dept._id;
+              return (
+                <button
+                  key={dept._id}
+                  onClick={() => setSelectedDepartment(dept._id)}
                   style={{
-                    background: "#f9fafb",
-                    border: "1px solid #e5e7eb",
+                    padding: "5px 14px",
+                    borderRadius: 20,
+                    border: `1px solid ${isActive ? PRIMARY : BORDER}`,
+                    fontSize: 12.5,
+                    fontWeight: 500,
+                    cursor: "pointer",
+                    background: isActive ? PRIMARY : SURFACE,
+                    color: isActive ? "#fff" : TEXT_MUTED,
+                    transition: "all .15s",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
                   }}
                 >
+                  {dept.name}
                   <span
-                    className="material-symbols-outlined text-gray-400 text-5xl sm:text-6xl mb-4"
-                    aria-hidden="true"
+                    style={{
+                      background: isActive ? "rgba(255,255,255,.2)" : BORDER,
+                      borderRadius: 10,
+                      padding: "1px 6px",
+                      fontSize: 11,
+                      color: isActive ? "#fff" : TEXT_MUTED,
+                    }}
                   >
-                    apps
+                    {count}
                   </span>
-                  <p className="text-gray-400 text-base sm:text-lg">
-                    No applications found
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
-                  {filteredApps.map((app) => (
-                    <div
-                      key={app._id}
-                      className="rounded-xl overflow-hidden transition-all duration-200 hover:scale-[1.015]"
-                      style={{
-                        background: "#f9fafb",
-                        border: "1px solid #e5e7eb",
-                      }}
-                      onMouseEnter={(e) => {
-                        (e.currentTarget as HTMLDivElement).style.border =
-                          "1px solid rgba(251,173,55,0.3)";
-                        (e.currentTarget as HTMLDivElement).style.boxShadow =
-                          "0 0 24px rgba(251,173,55,0.08)";
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLDivElement).style.border =
-                          "1px solid #e5e7eb";
-                        (e.currentTarget as HTMLDivElement).style.boxShadow =
-                          "none";
-                      }}
-                    >
-                      {/* Image Banner */}
-                      <div className="h-40 sm:h-48 overflow-hidden relative">
-                        <img
-                          src={app.iconUrl || getPlaceholderImage(app.category)}
-                          alt={app.name}
-                          className="w-full h-full object-cover opacity-70"
-                          width="800"
-                          height="400"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = getPlaceholderImage(app.category);
-                          }}
-                        />
-                        {/* Version Badge */}
-                        <div
-                          className="absolute top-2 right-2 sm:top-3 sm:right-3 px-2 sm:px-3 py-1 rounded-md text-xs font-semibold text-gray-700"
-                          style={{ background: "rgba(255,255,255,0.9)" }}
-                        >
-                          v4.2.0
-                        </div>
-                      </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
-                      {/* Content Section */}
-                      <div className="p-4 sm:p-5">
-                        {/* Category and Status */}
-                        <div className="flex items-center gap-2 mb-3">
-                          {app.category && (
-                            <span
-                              className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold text-blue-600"
-                              style={{ background: "rgba(59,130,246,0.1)" }}
-                            >
-                              {app.category.toUpperCase()}
-                            </span>
-                          )}
-                          <div className="flex items-center gap-1.5 ml-auto">
-                            <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full"></div>
-                            <span className="text-xs font-semibold text-emerald-400 uppercase">
-                              Online
-                            </span>
-                          </div>
-                        </div>
+        {/* Content Layout */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 240px", gap: 20, alignItems: "start" }}>
 
-                        <h3 className="font-bold text-lg sm:text-xl text-gray-900 mb-2">
-                          {app.name}
-                        </h3>
+          {/* App List */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {isLoadingApps ? (
+              <>
+                {[...Array(3)].map((_, i) => <AppCardSkeleton key={i} />)}
+              </>
+            ) : filteredApps.length === 0 ? (
+              <div
+                style={{
+                  background: SURFACE,
+                  border: `1px solid ${BORDER}`,
+                  borderRadius: 10,
+                  padding: "48px 24px",
+                  textAlign: "center",
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 48, color: "#b0b8c4", display: "block", marginBottom: 12 }}>apps</span>
+                <p style={{ color: TEXT_MUTED }}>No applications found</p>
+              </div>
+            ) : (
+              filteredApps.map((app) => <AppListItem key={app._id} app={app} />)
+            )}
+          </div>
 
-                        <p className="text-sm text-gray-400 mb-4 line-clamp-2">
-                          {app.description}
-                        </p>
+          {/* Side Panel */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
-                        <a
-                          href={app.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center justify-center gap-2 w-full font-semibold py-3 rounded-lg transition-all touch-manipulation text-black active:scale-95"
-                          style={{
-                            background:
-                              "linear-gradient(135deg, #fbad37 0%, #ffd280 100%)",
-                            boxShadow: "0 0 16px rgba(251,173,55,0.25)",
-                          }}
-                        >
-                          <span
-                            className="material-symbols-outlined text-lg"
-                            aria-hidden="true"
-                          >
-                            rocket_launch
-                          </span>
-                          Launch App
-                        </a>
-                      </div>
+            {/* Service Health */}
+            <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 18, boxShadow: "0 1px 3px rgba(0,0,0,.08)" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase", color: TEXT_MUTED, marginBottom: 14 }}>
+                Service Health
+              </div>
+              {[{ label: "Global API", pct: 99.9 }, { label: "License Server", pct: 100 }].map(({ label, pct }) => (
+                <div key={label} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                  <div style={{ fontSize: 13, fontWeight: 500, flex: 1 }}>{label}</div>
+                  <div style={{ flex: 1, maxWidth: 80 }}>
+                    <div style={{ height: 6, background: BORDER, borderRadius: 3, overflow: "hidden" }}>
+                      <div style={{ height: "100%", borderRadius: 3, background: SUCCESS, width: `${pct}%` }} />
                     </div>
-                  ))}
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: SUCCESS, minWidth: 42, textAlign: "right" }}>{pct}%</div>
                 </div>
-              )}
-
-              {/* Footer */}
-              <div className="text-center py-6 text-xs text-gray-400">
-                <p>
-                  © 2026 Odessa Separator Inc. Technical Division. All rights
-                  reserved.
-                </p>
-                <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mt-2">
-                  <a
-                    href="#"
-                    className="hover:text-gray-400 transition-colors touch-manipulation"
-                  >
-                    INTERNAL POLICIES
-                  </a>
-                  <a
-                    href="#"
-                    className="hover:text-gray-400 transition-colors touch-manipulation"
-                  >
-                    IT SUPPORT
-                  </a>
-                  <a
-                    href="#"
-                    className="hover:text-gray-400 transition-colors touch-manipulation"
-                  >
-                    SYSTEM ARCHITECTURE
-                  </a>
-                </div>
+              ))}
+              <div style={{ fontSize: 11.5, color: TEXT_MUTED, marginTop: 12, display: "flex", flexDirection: "column", gap: 3 }}>
+                <span>Last sync: 12 minutes ago</span>
+                <span>Update: UX Division, 1 hour ago</span>
               </div>
             </div>
 
-            {/* Right Sidebar - Service Health */}
-            <div className="w-full lg:w-72">
-              <div
-                className="rounded-xl p-5 sm:p-6 lg:sticky lg:top-6"
-                style={{
-                  background: "#f9fafb",
-                  border: "1px solid #e5e7eb",
-                }}
-              >
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-4">
-                  Service Health
-                </h3>
-
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-gray-600 font-medium">
-                        Global API
-                      </span>
-                      <span className="text-sm font-bold text-emerald-400">
-                        99.9%
-                      </span>
-                    </div>
-                    <div
-                      className="h-1.5 rounded-full overflow-hidden"
-                      style={{ background: "#f3f4f6" }}
-                    >
-                      <div
-                        className="h-full bg-emerald-400 rounded-full"
-                        style={{ width: "99.9%" }}
-                        role="progressbar"
-                        aria-valuenow={99.9}
-                        aria-valuemin={0}
-                        aria-valuemax={100}
-                      ></div>
-                    </div>
+            {/* Summary */}
+            <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 18, boxShadow: "0 1px 3px rgba(0,0,0,.08)" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase", color: TEXT_MUTED, marginBottom: 14 }}>
+                Summary
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {[
+                  { label: "Total Apps", value: filteredApps.length, color: TEXT },
+                  { label: "Online", value: filteredApps.filter((a) => !a.comingSoon).length, color: SUCCESS },
+                  { label: "Coming Soon", value: filteredApps.filter((a) => a.comingSoon).length, color: "#b0b8c4" },
+                ].map(({ label, value, color }) => (
+                  <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: 13, color: TEXT_MUTED }}>{label}</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color }}>{value}</span>
                   </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-gray-600 font-medium">
-                        License Server
-                      </span>
-                      <span className="text-sm font-bold text-emerald-400">
-                        100%
-                      </span>
-                    </div>
-                    <div
-                      className="h-1.5 rounded-full overflow-hidden"
-                      style={{ background: "#f3f4f6" }}
-                    >
-                      <div
-                        className="h-full bg-emerald-400 rounded-full"
-                        style={{ width: "100%" }}
-                        role="progressbar"
-                        aria-valuenow={100}
-                        aria-valuemin={0}
-                        aria-valuemax={100}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-
-                <div
-                  className="mt-5 pt-5"
-                  style={{ borderTop: "1px solid #e5e7eb" }}
-                >
-                  <p className="text-xs text-gray-400">
-                    Last sync: 12 minutes ago
-                  </p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    Update: UX Division, 1 hour ago
-                  </p>
-                </div>
+                ))}
               </div>
             </div>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 };

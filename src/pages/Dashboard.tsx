@@ -1,367 +1,268 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useBusinessUnits } from "../hooks/useBusinessUnits";
+import { useQuery } from "@tanstack/react-query";
+import { getApps } from "../services/apps.service";
+import { IExternalApp } from "../types/app.types";
+import { BusinessUnit } from "../types/businessUnit.types";
 import { BusinessUnitCardSkeleton } from "../components/SkeletonLoader";
+
+const PRIMARY = "#586379";
+const PRIMARY_DARK = "#3f4d60";
+const ACCENT = "#fea920";
+const BG = "#f4f5f7";
+const SURFACE = "#ffffff";
+const BORDER = "#e5e8ed";
+const TEXT = "#1a2332";
+const TEXT_MUTED = "#8a94a6";
+const SUCCESS = "#16a34a";
+const SUCCESS_BG = "#dcfce7";
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const { data: businessUnits, isLoading, error } = useBusinessUnits();
-  const navigate = useNavigate();
+
+  const { data: apps = [] } = useQuery({ queryKey: ["apps"], queryFn: getApps });
+
+  const appCountByBU = React.useMemo(() => {
+    const counts: Record<string, number> = {};
+    (apps as IExternalApp[]).forEach((app) => {
+      if (!app.isActive) return;
+      const buId = typeof app.businessUnitId === "string" ? app.businessUnitId : app.businessUnitId._id;
+      counts[buId] = (counts[buId] || 0) + 1;
+    });
+    return counts;
+  }, [apps]);
+
+  // Generate initials-based placeholder color for BU cards
+  const getBUColor = (name: string) => {
+    const colors = [
+      ["#586379", "#3f4d60"],
+      ["#4a6080", "#2e4060"],
+      ["#2563eb", "#1e40af"],
+      ["#7c3aed", "#5b21b6"],
+      ["#c0392b", "#922b21"],
+      ["#16a34a", "#15803d"],
+    ];
+    const idx = name.charCodeAt(0) % colors.length;
+    return colors[idx];
+  };
+
+  const getInitials = (name: string) =>
+    name.split(" ").map((w) => w[0]).join("").slice(0, 4).toUpperCase();
 
   return (
-    <div className="min-h-full" style={{ background: "#f8fafc" }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
-        {/* Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          {/* Main Content - Left Column */}
-          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-            {/* Welcome Banner */}
-            <div
-              className="rounded-xl p-6 sm:p-8 relative overflow-hidden"
-              style={{
-                background:
-                  "linear-gradient(135deg, rgba(251,173,55,0.18) 0%, rgba(251,173,55,0.06) 100%)",
-                border: "1px solid rgba(251,173,55,0.25)",
-              }}
-            >
-              <div
-                className="absolute top-0 right-0 w-48 h-48 rounded-full pointer-events-none"
-                style={{
-                  background:
-                    "radial-gradient(circle, rgba(251,173,55,0.12) 0%, transparent 70%)",
-                  transform: "translate(30%, -30%)",
-                }}
-              />
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 relative z-10">
-                Welcome back,{" "}
-                <span
-                  style={{
-                    background:
-                      "linear-gradient(90deg, #fbad37 0%, #ffd280 100%)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                  }}
-                >
-                  {user?.firstName}
-                </span>
-                !
-              </h1>
-              <p className="text-gray-500 text-base sm:text-lg relative z-10">
-                Monitor and manage your industrial separator operations
-              </p>
+    <div style={{ minHeight: "100%", background: BG }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "28px 28px" }}>
+
+        {/* Welcome Banner */}
+        <div
+          style={{
+            background: `linear-gradient(120deg, ${PRIMARY} 0%, ${PRIMARY_DARK} 100%)`,
+            borderRadius: 10,
+            padding: "28px 32px",
+            color: "#fff",
+            marginBottom: 28,
+            position: "relative",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              right: -20,
+              top: -20,
+              width: 180,
+              height: 180,
+              borderRadius: "50%",
+              background: "rgba(254,169,32,.15)",
+              pointerEvents: "none",
+            }}
+          />
+          <h1 style={{ fontSize: 26, fontWeight: 700, margin: 0, position: "relative", zIndex: 1 }}>
+            Welcome back, <span style={{ color: ACCENT }}>{user?.firstName}</span>!
+          </h1>
+          <p style={{ fontSize: 14.5, color: "rgba(255,255,255,.7)", marginTop: 6, position: "relative", zIndex: 1 }}>
+            Monitor and manage your industrial separator operations
+          </p>
+        </div>
+
+        {/* Content Layout */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 264px", gap: 20, alignItems: "start" }}>
+
+          {/* Left: Business Units */}
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+              <h2 style={{ fontSize: 15.5, fontWeight: 700, color: TEXT, display: "flex", alignItems: "center", gap: 8, margin: 0 }}>
+                <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" width="18" height="18">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                </svg>
+                Business Units
+              </h2>
             </div>
 
-            {/* System Status Cards */}
-            {/* <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-              <div
-                className="rounded-lg p-4 sm:p-5"
-                style={{
-                  background: "#f9fafb",
-                  border: "1px solid #e5e7eb",
-                }}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs sm:text-sm font-medium text-gray-400">
-                    Total Units
-                  </span>
-                  <span
-                    className="material-symbols-outlined text-blue-400 text-xl sm:text-2xl"
-                    aria-hidden="true"
-                  >
-                    factory
-                  </span>
-                </div>
-                <div className="text-2xl sm:text-3xl font-bold text-gray-900">
-                  {totalCount}
-                </div>
+            {isLoading ? (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+                {[...Array(3)].map((_, i) => <BusinessUnitCardSkeleton key={i} />)}
               </div>
-
-              <div
-                className="rounded-lg p-4 sm:p-5"
-                style={{
-                  background: "#f9fafb",
-                  border: "1px solid #e5e7eb",
-                }}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs sm:text-sm font-medium text-gray-400">
-                    Active Units
-                  </span>
-                  <span
-                    className="material-symbols-outlined text-emerald-400 text-xl sm:text-2xl"
-                    aria-hidden="true"
-                  >
-                    check_circle
-                  </span>
-                </div>
-                <div className="text-2xl sm:text-3xl font-bold text-gray-900">
-                  {activeCount}
-                </div>
-                <div className="text-[10px] sm:text-xs text-emerald-400 mt-1">
-                  All Systems Operational
-                </div>
+            ) : error ? (
+              <div style={{ background: "#fee2e2", border: "1px solid #fca5a5", borderRadius: 10, padding: "20px 24px", textAlign: "center" }}>
+                <p style={{ color: "#dc2626", fontSize: 14 }}>Failed to load business units. Please try again.</p>
               </div>
-
-              <div
-                className="rounded-lg p-4 sm:p-5 col-span-2 sm:col-span-1"
-                style={{
-                  background: "#f9fafb",
-                  border: "1px solid #e5e7eb",
-                }}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs sm:text-sm font-medium text-gray-400">
-                    System Health
-                  </span>
-                  <span
-                    className="material-symbols-outlined text-emerald-400 text-xl sm:text-2xl"
-                    aria-hidden="true"
-                  >
-                    health_and_safety
-                  </span>
-                </div>
-                <div className="text-2xl sm:text-3xl font-bold text-emerald-400">
-                  98.5%
-                </div>
-                <div className="text-[10px] sm:text-xs text-emerald-400 mt-1">
-                  +2.3% from last week
-                </div>
+            ) : !businessUnits || businessUnits.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "48px 0", color: TEXT_MUTED }}>
+                <p>No business units available</p>
               </div>
-            </div> */}
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+                {(businessUnits as BusinessUnit[]).map((bu) => {
+                  const [c1, c2] = getBUColor(bu.name);
+                  const count = appCountByBU[bu._id] || 0;
+                  return (
+                    <Link
+                      key={bu._id}
+                      to={`/business-unit/${bu._id}`}
+                      style={{
+                        background: SURFACE,
+                        border: `1px solid ${BORDER}`,
+                        borderRadius: 10,
+                        overflow: "hidden",
+                        boxShadow: "0 1px 3px rgba(0,0,0,.08)",
+                        cursor: "pointer",
+                        transition: "box-shadow .2s, transform .2s",
+                        textDecoration: "none",
+                        color: "inherit",
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLAnchorElement).style.boxShadow = "0 4px 12px rgba(0,0,0,.10)";
+                        (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(-2px)";
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLAnchorElement).style.boxShadow = "0 1px 3px rgba(0,0,0,.08)";
+                        (e.currentTarget as HTMLAnchorElement).style.transform = "none";
+                      }}
+                    >
+                      {/* Card image area */}
+                      <div
+                        style={{
+                          height: 130,
+                          background: bu.logoUrl ? "#f4f5f7" : `linear-gradient(135deg, ${c1}, ${c2})`,
+                          display: "grid",
+                          placeItems: "center",
+                          position: "relative",
+                          overflow: "hidden",
+                        }}
+                      >
+                        {bu.logoUrl ? (
+                          <img
+                            src={bu.logoUrl}
+                            alt={bu.name}
+                            style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.85 }}
+                            onError={(e) => {
+                              const t = e.target as HTMLImageElement;
+                              t.style.display = "none";
+                              if (t.parentElement) {
+                                t.parentElement.style.background = `linear-gradient(135deg, ${c1}, ${c2})`;
+                              }
+                            }}
+                          />
+                        ) : (
+                          <span style={{ fontSize: 42, fontWeight: 900, color: "rgba(255,255,255,.15)", letterSpacing: -2 }}>
+                            {getInitials(bu.name)}
+                          </span>
+                        )}
+                      </div>
 
-            {/* Business Units Section */}
-            <div
-              className="rounded-lg overflow-hidden"
-              style={{
-                background: "#f9fafb",
-                border: "1px solid #e5e7eb",
-              }}
-            >
-              <div
-                className="px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between"
-                style={{ borderBottom: "1px solid #e5e7eb" }}
-              >
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-                  Business Units
-                </h2>
-              </div>
+                      {/* Body */}
+                      <div style={{ padding: 16, flex: 1 }}>
+                        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{bu.name}</div>
+                        <div style={{ fontSize: 12.5, color: TEXT_MUTED, lineHeight: 1.5 }}>{bu.description}</div>
+                      </div>
 
-              <div className="p-4 sm:p-6">
-                {isLoading ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                    {[...Array(4)].map((_, i) => (
-                      <BusinessUnitCardSkeleton key={i} />
-                    ))}
-                  </div>
-                ) : error ? (
-                  <div
-                    className="rounded-lg p-4 sm:p-6 text-center"
-                    style={{
-                      background: "rgba(239,68,68,0.1)",
-                      border: "1px solid rgba(239,68,68,0.2)",
-                    }}
-                  >
-                    <p className="text-red-300 text-sm sm:text-base">
-                      Failed to load business units. Please try again.
-                    </p>
-                  </div>
-                ) : !businessUnits || businessUnits.length === 0 ? (
-                  <div className="text-center py-12 text-gray-400">
-                    <p className="text-sm sm:text-base">
-                      No business units available
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                    {Array.isArray(businessUnits) &&
-                      businessUnits.map((bu) => (
-                        <div
-                          key={bu._id}
-                          className="rounded-lg overflow-hidden transition-all duration-200 hover:scale-[1.02] cursor-pointer group"
+                      {/* Footer */}
+                      <div
+                        style={{
+                          padding: "12px 16px",
+                          borderTop: `1px solid ${BORDER}`,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <span style={{ fontSize: 12, color: TEXT_MUTED }}>{count} application{count !== 1 ? "s" : ""}</span>
+                        <span
                           style={{
-                            background: "#f9fafb",
-                            border: "1px solid #e5e7eb",
-                          }}
-                          onMouseEnter={(e) => {
-                            (e.currentTarget as HTMLDivElement).style.border =
-                              "1px solid rgba(251,173,55,0.3)";
-                            (
-                              e.currentTarget as HTMLDivElement
-                            ).style.boxShadow =
-                              "0 0 20px rgba(251,173,55,0.08)";
-                          }}
-                          onMouseLeave={(e) => {
-                            (e.currentTarget as HTMLDivElement).style.border =
-                              "1px solid #e5e7eb";
-                            (
-                              e.currentTarget as HTMLDivElement
-                            ).style.boxShadow = "none";
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 4,
+                            background: SUCCESS_BG,
+                            color: SUCCESS,
+                            fontSize: 11,
+                            fontWeight: 600,
+                            padding: "2px 8px",
+                            borderRadius: 20,
                           }}
                         >
-                          {/* Image Section */}
-                          <div
-                            className="h-28 sm:h-32 flex items-center justify-center overflow-hidden relative"
-                            style={{
-                              background: "#f9fafb",
-                            }}
-                          >
-                            <img
-                              src={
-                                bu.logoUrl ||
-                                "https://via.placeholder.com/400x200/0d0d1a/444?text=Business+Unit"
-                              }
-                              alt={`${bu.name} logo`}
-                              width="400"
-                              height="200"
-                              loading="lazy"
-                              className="w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.src =
-                                  "https://via.placeholder.com/400x200/0d0d1a/444?text=Business+Unit";
-                              }}
-                            />
-                          </div>
-
-                          {/* Content Section */}
-                          <div className="p-3 sm:p-4">
-                            <div className="flex items-start justify-between mb-2">
-                              <h3 className="font-bold text-base sm:text-lg text-gray-900 line-clamp-2">
-                                {bu.name}
-                              </h3>
-                              <span
-                                className="px-2 py-0.5 text-[10px] sm:text-xs rounded-full font-medium flex-shrink-0 ml-2 text-emerald-400"
-                                style={{ background: "rgba(52,211,153,0.12)" }}
-                              >
-                                Active
-                              </span>
-                            </div>
-
-                            <p className="text-xs sm:text-sm text-gray-400 mb-3 line-clamp-2">
-                              {bu.description}
-                            </p>
-
-                            <button
-                              onClick={() =>
-                                navigate(`/business-unit/${bu._id}`)
-                              }
-                              className="w-full font-medium py-2 rounded-lg transition-all touch-manipulation text-black text-sm font-bold"
-                              style={{
-                                background:
-                                  "linear-gradient(135deg, #fbad37 0%, #ffd280 100%)",
-                              }}
-                            >
-                              View Details
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                )}
+                          <span style={{ width: 6, height: 6, borderRadius: "50%", background: SUCCESS, display: "inline-block" }} />
+                          Active
+                        </span>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
-            </div>
-
-            {/* Performance Chart */}
-            <div
-              className="rounded-lg p-6"
-              style={{
-                background: "#f9fafb",
-                border: "1px solid #e5e7eb",
-              }}
-            >
-              <h3 className="text-lg font-bold text-gray-900 mb-4">
-                Performance Overview
-              </h3>
-              <div
-                className="h-64 flex items-center justify-center rounded-lg"
-                style={{ background: "#f9fafb" }}
-              >
-                <div className="text-center">
-                  <span
-                    className="material-symbols-outlined text-gray-300 text-6xl mb-2"
-                    aria-hidden="true"
-                  >
-                    show_chart
-                  </span>
-                  <p className="text-gray-400 text-sm">
-                    Performance metrics visualization
-                  </p>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
 
-          {/* Right Sidebar */}
-          <div className="space-y-6">
-            {/* Critical Alerts */}
-            <div
-              className="rounded-lg overflow-hidden"
-              style={{
-                background: "#f9fafb",
-                border: "1px solid #e5e7eb",
-              }}
-            >
-              <div
-                className="px-5 py-4 flex items-center gap-2"
-                style={{ borderBottom: "1px solid #e5e7eb" }}
-              >
-                <span
-                  className="material-symbols-outlined text-red-400 text-lg"
-                  aria-hidden="true"
-                >
-                  warning
-                </span>
-                <h3 className="text-base font-bold text-gray-900">
-                  Critical Alerts
-                </h3>
+          {/* Right: Side Panels */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+            {/* Service Health */}
+            <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 18, boxShadow: "0 1px 3px rgba(0,0,0,.08)" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase", color: TEXT_MUTED, marginBottom: 14 }}>
+                Service Health
               </div>
-              <div className="p-5">
-                <div className="text-center py-8">
-                  <span
-                    className="material-symbols-outlined text-gray-300 text-5xl mb-3"
-                    aria-hidden="true"
-                  >
-                    notifications_off
-                  </span>
-                  <p className="text-gray-400 text-sm">No critical alerts</p>
+              {[{ label: "Global API", pct: 99.9 }, { label: "License Server", pct: 100 }].map(({ label, pct }) => (
+                <div key={label} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                  <div style={{ fontSize: 13, fontWeight: 500, flex: 1 }}>{label}</div>
+                  <div style={{ flex: 1, maxWidth: 80 }}>
+                    <div style={{ height: 6, background: BORDER, borderRadius: 3, overflow: "hidden" }}>
+                      <div style={{ height: "100%", borderRadius: 3, background: SUCCESS, width: `${pct}%` }} />
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: SUCCESS, minWidth: 42, textAlign: "right" }}>{pct}%</div>
                 </div>
+              ))}
+              <div style={{ fontSize: 11.5, color: TEXT_MUTED, marginTop: 12, display: "flex", flexDirection: "column", gap: 3 }}>
+                <span>Last sync: 12 minutes ago</span>
+                <span>Update: UX Division, 1 hour ago</span>
               </div>
             </div>
 
             {/* Recent Activity */}
-            <div
-              className="rounded-lg overflow-hidden"
-              style={{
-                background: "#f9fafb",
-                border: "1px solid #e5e7eb",
-              }}
-            >
-              <div
-                className="px-5 py-4 flex items-center gap-2"
-                style={{ borderBottom: "1px solid #e5e7eb" }}
-              >
-                <span
-                  className="material-symbols-outlined text-blue-400 text-lg"
-                  aria-hidden="true"
-                >
-                  history
-                </span>
-                <h3 className="text-base font-bold text-gray-900">
-                  Recent Activity
-                </h3>
+            <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 18, boxShadow: "0 1px 3px rgba(0,0,0,.08)" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase", color: TEXT_MUTED, marginBottom: 14, display: "flex", alignItems: "center", gap: 6 }}>
+                <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" width="12" height="12" style={{ display: "inline" }}>
+                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                </svg>
+                Recent Activity
               </div>
-              <div className="p-5">
-                <div className="text-center py-8">
-                  <span
-                    className="material-symbols-outlined text-gray-300 text-5xl mb-3"
-                    aria-hidden="true"
-                  >
-                    history_toggle_off
-                  </span>
-                  <p className="text-gray-400 text-sm">No recent activity</p>
-                </div>
+              <div style={{ textAlign: "center", padding: "20px 0", color: "#b0b8c4", fontSize: 13 }}>No recent activity</div>
+            </div>
+
+            {/* Critical Alerts */}
+            <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 18, boxShadow: "0 1px 3px rgba(0,0,0,.08)" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase", color: TEXT_MUTED, marginBottom: 14, display: "flex", alignItems: "center", gap: 6 }}>
+                <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" width="12" height="12" style={{ display: "inline" }}>
+                  <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                Critical Alerts
               </div>
+              <div style={{ textAlign: "center", padding: "20px 0", color: "#b0b8c4", fontSize: 13 }}>No critical alerts</div>
             </div>
           </div>
         </div>

@@ -1,6 +1,5 @@
-// client/src/components/Layout/Layout.tsx
 import React, { useState } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import TopBar from "./TopBar";
 import Sidebar from "./Sidebar";
 import ChatbotWidget from "../../features/chatbot/ChatbotWidget";
@@ -20,20 +19,22 @@ const Layout: React.FC = () => {
     });
   };
 
-  const location = useLocation();
-  const isBUPage = location.pathname.startsWith("/business-unit");
-
   return (
-    <div className="min-h-screen bg-white">
-      <TopBar />
-      {!isBUPage && <Sidebar collapsed={collapsed} onToggle={handleToggle} />}
-      <main
-        className={`transition-all duration-200 ease-in-out pt-12 ${
-          !isBUPage ? (collapsed ? "lg:ml-[60px]" : "lg:ml-[220px]") : ""
-        }`}
+    <div className="min-h-screen" style={{ background: "#f4f5f7" }}>
+      {/* Sidebar always visible on desktop */}
+      <Sidebar collapsed={collapsed} onToggle={handleToggle} />
+
+      {/* Main content area offset by sidebar */}
+      <div
+        className="transition-all duration-[250ms] ease-in-out"
+        style={{ marginLeft: collapsed ? 64 : 240 }}
       >
-        <Outlet />
-      </main>
+        <TopBar sidebarCollapsed={collapsed} sidebarWidth={collapsed ? 64 : 240} />
+        <main className="pt-[60px]">
+          <Outlet />
+        </main>
+      </div>
+
       <ChatbotWidget />
     </div>
   );
