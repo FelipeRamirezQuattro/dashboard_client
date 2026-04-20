@@ -49,7 +49,9 @@ const FileBankManager: React.FC = () => {
       formData.append("file", selectedFile);
       formData.append("description", description);
       formData.append("tags", tags);
-      await api.post("/file-bank/upload", formData);
+      await api.post("/file-bank/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["fileBank"] });
