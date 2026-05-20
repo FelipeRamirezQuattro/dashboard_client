@@ -69,7 +69,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
     }
   };
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -153,8 +153,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
         )}
 
         {/* Text input */}
-        <input
-          type="text"
+        <textarea
           id="chatbot-message-input"
           name="chatbot-message"
           value={input}
@@ -167,7 +166,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="sentences"
-          className="flex-1 px-3 sm:px-4 py-2.5 sm:py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-osi-primary focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-sm sm:text-base"
+          rows={2}
+          className="flex-1 min-h-[44px] max-h-28 px-3 sm:px-4 py-2.5 sm:py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-osi-primary focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-sm sm:text-base resize-none"
         />
 
         {/* Send button */}

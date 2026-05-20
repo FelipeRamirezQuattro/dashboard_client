@@ -203,6 +203,54 @@ const MobileNav: React.FC<MobileNavProps> = ({
                 <span className="text-sm">Dashboard</span>
               </Link>
 
+              <Link
+                to="/workflow-brain"
+                onClick={onClose}
+                className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-all touch-manipulation ${
+                  location.pathname.startsWith("/workflow-brain")
+                    ? "text-osi-primary font-semibold border-l-2 border-osi-primary pl-[10px]"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+                style={
+                  location.pathname.startsWith("/workflow-brain")
+                    ? { background: "rgba(251,173,55,0.1)" }
+                    : { background: "transparent" }
+                }
+              >
+                <span
+                  className="material-symbols-outlined text-xl"
+                  aria-hidden="true"
+                >
+                  account_tree
+                </span>
+                <span className="text-sm">Workflow Brain</span>
+              </Link>
+
+              {isAdmin && (
+                <Link
+                  to="/file-bank"
+                  onClick={onClose}
+                  className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-all touch-manipulation ${
+                    location.pathname.startsWith("/file-bank")
+                      ? "text-osi-primary font-semibold border-l-2 border-osi-primary pl-[10px]"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                  style={
+                    location.pathname.startsWith("/file-bank")
+                      ? { background: "rgba(251,173,55,0.1)" }
+                      : { background: "transparent" }
+                  }
+                >
+                  <span
+                    className="material-symbols-outlined text-xl"
+                    aria-hidden="true"
+                  >
+                    folder_open
+                  </span>
+                  <span className="text-sm">File Bank</span>
+                </Link>
+              )}
+
               {isAdmin && (
                 <Link
                   to="/admin/users"

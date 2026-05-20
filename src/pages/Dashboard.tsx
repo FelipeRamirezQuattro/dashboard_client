@@ -89,7 +89,7 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Content Layout */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 264px", gap: 20, alignItems: "start" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 20, alignItems: "start" }}>
 
           {/* Left: Business Units */}
           <div>
@@ -217,54 +217,6 @@ const Dashboard: React.FC = () => {
             )}
           </div>
 
-          {/* Right: Side Panels */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-
-            {/* Service Health */}
-            <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 18, boxShadow: "0 1px 3px rgba(0,0,0,.08)" }}>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase", color: TEXT_MUTED, marginBottom: 14 }}>
-                Service Health
-              </div>
-              {[{ label: "Global API", pct: 99.9 }, { label: "License Server", pct: 100 }].map(({ label, pct }) => (
-                <div key={label} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                  <div style={{ fontSize: 13, fontWeight: 500, flex: 1 }}>{label}</div>
-                  <div style={{ flex: 1, maxWidth: 80 }}>
-                    <div style={{ height: 6, background: BORDER, borderRadius: 3, overflow: "hidden" }}>
-                      <div style={{ height: "100%", borderRadius: 3, background: SUCCESS, width: `${pct}%` }} />
-                    </div>
-                  </div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: SUCCESS, minWidth: 42, textAlign: "right" }}>{pct}%</div>
-                </div>
-              ))}
-              <div style={{ fontSize: 11.5, color: TEXT_MUTED, marginTop: 12, display: "flex", flexDirection: "column", gap: 3 }}>
-                <span>Last sync: 12 minutes ago</span>
-                <span>Update: UX Division, 1 hour ago</span>
-              </div>
-            </div>
-
-            {/* Recent Activity */}
-            <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 18, boxShadow: "0 1px 3px rgba(0,0,0,.08)" }}>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase", color: TEXT_MUTED, marginBottom: 14, display: "flex", alignItems: "center", gap: 6 }}>
-                <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" width="12" height="12" style={{ display: "inline" }}>
-                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                </svg>
-                Recent Activity
-              </div>
-              <div style={{ textAlign: "center", padding: "20px 0", color: "#b0b8c4", fontSize: 13 }}>No recent activity</div>
-            </div>
-
-            {/* Critical Alerts */}
-            <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 18, boxShadow: "0 1px 3px rgba(0,0,0,.08)" }}>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase", color: TEXT_MUTED, marginBottom: 14, display: "flex", alignItems: "center", gap: 6 }}>
-                <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" width="12" height="12" style={{ display: "inline" }}>
-                  <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-                  <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-                </svg>
-                Critical Alerts
-              </div>
-              <div style={{ textAlign: "center", padding: "20px 0", color: "#b0b8c4", fontSize: 13 }}>No critical alerts</div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

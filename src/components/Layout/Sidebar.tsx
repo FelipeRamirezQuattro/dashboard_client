@@ -101,6 +101,8 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
   };
 
   const isDashboardActive = location.pathname === "/dashboard";
+  const isWorkflowBrainActive = location.pathname.startsWith("/workflow-brain");
+  const isFileBankActive = location.pathname.startsWith("/file-bank");
   const isAdminActive = location.pathname.startsWith("/admin");
 
   return (
@@ -173,6 +175,34 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
             </svg>
           }
         />
+        <NavItem
+          to="/workflow-brain"
+          active={isWorkflowBrainActive}
+          collapsed={collapsed}
+          label="Workflow Brain"
+          icon={
+            <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" width="18" height="18">
+              <path d="M9 3a3 3 0 00-3 3v1a3 3 0 000 6v1a3 3 0 003 3"/>
+              <path d="M15 3a3 3 0 013 3v1a3 3 0 010 6v1a3 3 0 01-3 3"/>
+              <path d="M9 7h6M9 12h6M9 17h6"/>
+            </svg>
+          }
+        />
+        {isAdmin && (
+          <NavItem
+            to="/file-bank"
+            active={isFileBankActive}
+            collapsed={collapsed}
+            label="File Bank"
+            icon={
+              <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" width="18" height="18">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                <path d="M14 2v6h6"/>
+                <path d="M8 13h8M8 17h6"/>
+              </svg>
+            }
+          />
+        )}
 
         <SectionLabel label="Business Units" collapsed={collapsed} />
         {(businessUnits as BusinessUnit[]).map((bu) => (

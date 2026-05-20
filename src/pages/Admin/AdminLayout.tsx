@@ -11,7 +11,6 @@ const AdminLayout: React.FC = () => {
     { path: "/admin/apps", label: "App Management" },
     { path: "/admin/notifications", label: "Notifications" },
     { path: "/admin/audit", label: "Audit Logs" },
-    { path: "/admin/file-bank", label: "File Bank" },
   ];
 
   const handleCreateUser = () => {

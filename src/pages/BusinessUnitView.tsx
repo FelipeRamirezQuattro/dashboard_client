@@ -426,28 +426,6 @@ const BusinessUnitView: React.FC = () => {
           {/* Side Panel */}
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
-            {/* Service Health */}
-            <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 18, boxShadow: "0 1px 3px rgba(0,0,0,.08)" }}>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase", color: TEXT_MUTED, marginBottom: 14 }}>
-                Service Health
-              </div>
-              {[{ label: "Global API", pct: 99.9 }, { label: "License Server", pct: 100 }].map(({ label, pct }) => (
-                <div key={label} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                  <div style={{ fontSize: 13, fontWeight: 500, flex: 1 }}>{label}</div>
-                  <div style={{ flex: 1, maxWidth: 80 }}>
-                    <div style={{ height: 6, background: BORDER, borderRadius: 3, overflow: "hidden" }}>
-                      <div style={{ height: "100%", borderRadius: 3, background: SUCCESS, width: `${pct}%` }} />
-                    </div>
-                  </div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: SUCCESS, minWidth: 42, textAlign: "right" }}>{pct}%</div>
-                </div>
-              ))}
-              <div style={{ fontSize: 11.5, color: TEXT_MUTED, marginTop: 12, display: "flex", flexDirection: "column", gap: 3 }}>
-                <span>Last sync: 12 minutes ago</span>
-                <span>Update: UX Division, 1 hour ago</span>
-              </div>
-            </div>
-
             {/* Summary */}
             <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 18, boxShadow: "0 1px 3px rgba(0,0,0,.08)" }}>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase", color: TEXT_MUTED, marginBottom: 14 }}>

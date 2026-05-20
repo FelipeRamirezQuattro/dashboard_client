@@ -1,17 +1,23 @@
-import React, { useState } from "react";
+import React from "react";
 import ChatbotWindow from "./ChatbotWindow";
 
-const ChatbotWidget: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
+interface ChatbotWidgetProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+}
 
+const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
+  isOpen,
+  onOpenChange,
+}) => {
   return (
     <>
       {/* Chatbot Window */}
-      {isOpen && <ChatbotWindow onClose={() => setIsOpen(false)} />}
+      {isOpen && <ChatbotWindow onClose={() => onOpenChange(false)} />}
 
       {/* Floating Button - Responsive positioning */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => onOpenChange(!isOpen)}
         className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 h-14 w-14 sm:h-16 sm:w-16 bg-gradient-to-br from-[#FFC149] to-osi-primary text-white rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-transform duration-200 z-40 flex items-center justify-center group touch-manipulation"
         aria-label={isOpen ? "Close chatbot" : "Open chatbot"}
       >

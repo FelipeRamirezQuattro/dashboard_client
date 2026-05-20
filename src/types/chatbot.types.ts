@@ -11,6 +11,26 @@ export interface ChatResponse {
   timestamp: string;
   confidence?: number;
   sessionId?: string;
+  source?:
+    | "static"
+    | "file_bank"
+    | "onedrive"
+    | "app"
+    | "ai"
+    | "workflow_brain"
+    | "n8n"
+    | "error";
+  routedTo?: string;
+  documents?: ChatDocumentResult[];
+}
+
+export interface ChatDocumentResult {
+  id: string;
+  name: string;
+  url: string;
+  source: "local" | "onedrive";
+  description?: string;
+  tags?: string[];
 }
 
 export interface ChatContextTurn {
@@ -23,7 +43,15 @@ export interface ChatRequest {
   sessionId?: string;
   context?: {
     history?: ChatContextTurn[];
+    target?: ChatTarget;
   };
+}
+
+export interface ChatTarget {
+  type: "auto" | "workflow_brain" | "external_app" | "file_bank";
+  workflowBrainCategoryId?: string;
+  appName?: string;
+  documentSource?: "all" | "local" | "onedrive";
 }
 
 export interface ChatHistoryResponse {

@@ -273,20 +273,6 @@ const ApplicationDetails: React.FC = () => {
           </div>
         </div>
 
-        {/* Stats Row */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
-          {[
-            { value: "247", label: "Active Users" },
-            { value: "99.8%", label: "Uptime (30d)", color: SUCCESS },
-            { value: "1.2h", label: "Last Session Avg" },
-          ].map(({ value, label, color }) => (
-            <div key={label} style={{ background: BG, borderRadius: 6, padding: 14, textAlign: "center" }}>
-              <div style={{ fontSize: 22, fontWeight: 800, color: color || TEXT }}>{value}</div>
-              <div style={{ fontSize: 11.5, color: TEXT_MUTED, marginTop: 2 }}>{label}</div>
-            </div>
-          ))}
-        </div>
-
         {/* Details Layout */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: 20, alignItems: "start" }}>
 
@@ -371,42 +357,6 @@ const ApplicationDetails: React.FC = () => {
               </div>
             </div>
 
-            {/* Recent Activity */}
-            <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 10, boxShadow: "0 1px 3px rgba(0,0,0,.08)" }}>
-              <div style={{ padding: "16px 20px", borderBottom: `1px solid ${BORDER}`, fontSize: 13.5, fontWeight: 700, color: TEXT, display: "flex", alignItems: "center", gap: 8 }}>
-                <svg fill="none" stroke={PRIMARY} strokeWidth="2" viewBox="0 0 24 24" width="16" height="16">
-                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                </svg>
-                Recent Activity
-              </div>
-              <div style={{ padding: "0 20px" }}>
-                {[
-                  { text: "App launched", by: "Will Smith", time: "2 hours ago", color: ACCENT },
-                  { text: "Version 4.2.0 deployed", by: null, time: "April 18, 2026", color: SUCCESS },
-                  { text: "User permissions updated", by: "Admin User", time: "April 15, 2026", color: "#6e7f96" },
-                  { text: "Rikul Joshi granted access", by: null, time: "April 10, 2026", color: "#6e7f96" },
-                ].map(({ text, by, time, color }, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: 14,
-                      padding: "14px 0",
-                      borderBottom: i < 3 ? `1px solid ${BORDER}` : "none",
-                    }}
-                  >
-                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: color, flexShrink: 0, marginTop: 5 }} />
-                    <div>
-                      <div style={{ fontSize: 13.5 }}>
-                        {text}{by && <> by <strong>{by}</strong></>}
-                      </div>
-                      <div style={{ fontSize: 11.5, color: TEXT_MUTED, marginTop: 2 }}>{time}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
 
           {/* Right column */}
@@ -453,33 +403,6 @@ const ApplicationDetails: React.FC = () => {
                 </svg>
                 {app.comingSoon ? "Coming Soon" : "Launch App"}
               </button>
-            </div>
-
-            {/* Service Health */}
-            <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 10, boxShadow: "0 1px 3px rgba(0,0,0,.08)" }}>
-              <div style={{ padding: "16px 20px", borderBottom: `1px solid ${BORDER}`, fontSize: 13.5, fontWeight: 700, color: TEXT, display: "flex", alignItems: "center", gap: 8 }}>
-                <svg fill="none" stroke={PRIMARY} strokeWidth="2" viewBox="0 0 24 24" width="16" height="16">
-                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-                </svg>
-                Service Health
-              </div>
-              <div style={{ padding: "18px 20px" }}>
-                {[
-                  { label: "API Response", pct: 99.8, color: SUCCESS },
-                  { label: "Database", pct: 100, color: SUCCESS },
-                  { label: "Auth Service", pct: 97.2, color: ACCENT_DARK },
-                ].map(({ label, pct, color }, i) => (
-                  <div key={label} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: i < 2 ? 10 : 0 }}>
-                    <div style={{ fontSize: 12.5, flex: 1 }}>{label}</div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ height: 6, background: BORDER, borderRadius: 3, overflow: "hidden" }}>
-                        <div style={{ height: "100%", borderRadius: 3, background: color, width: `${pct}%` }} />
-                      </div>
-                    </div>
-                    <div style={{ fontSize: 12.5, fontWeight: 700, color, minWidth: 42, textAlign: "right" }}>{pct}%</div>
-                  </div>
-                ))}
-              </div>
             </div>
 
             {/* Assigned Departments */}

@@ -24,6 +24,7 @@ import NotificationManagement from "./pages/Admin/NotificationManagement";
 import FileBankManager from "./pages/Admin/FileBankManager";
 import ApplicationDetails from "./pages/ApplicationDetails";
 import NotFound from "./pages/NotFound";
+import WorkflowBrainPage from "./pages/WorkflowBrainPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -119,6 +120,15 @@ const App: React.FC = () => {
             >
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
+              <Route path="workflow-brain" element={<WorkflowBrainPage />} />
+              <Route
+                path="file-bank"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <FileBankManager />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="business-unit/:id" element={<BusinessUnitView />} />
               <Route path="app/:id" element={<ApplicationDetails />} />
 
@@ -144,7 +154,7 @@ const App: React.FC = () => {
                   path="notifications"
                   element={<NotificationManagement />}
                 />
-                <Route path="file-bank" element={<FileBankManager />} />
+                <Route path="file-bank" element={<Navigate to="/file-bank" replace />} />
               </Route>
             </Route>
 
