@@ -123,6 +123,73 @@
   }
 }
 
+@media (max-width: 1023px) {
+  .osi-page-shell {
+    padding: 20px !important;
+    max-width: 100% !important;
+  }
+
+  .osi-page-header {
+    flex-direction: column !important;
+    gap: 12px !important;
+    align-items: stretch !important;
+  }
+
+  .osi-page-header > * {
+    min-width: 0;
+  }
+
+  .osi-two-column-grid,
+  .osi-workflow-layout,
+  .osi-workflow-form-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .osi-workflow-scope-card {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .osi-page-shell {
+    padding: 16px !important;
+  }
+
+  .osi-card-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .osi-app-list-item,
+  .osi-app-hero {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 14px !important;
+  }
+
+  .osi-app-hero {
+    padding: 20px !important;
+  }
+
+  .osi-app-actions {
+    width: 100% !important;
+    flex-wrap: wrap !important;
+  }
+
+  .osi-app-actions > a,
+  .osi-app-actions > button {
+    flex: 1 1 140px !important;
+    justify-content: center !important;
+  }
+
+  .osi-app-description {
+    max-width: none !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+}
+
 /* Keyframes */
 @keyframes slideUp {
   from {

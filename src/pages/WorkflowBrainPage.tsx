@@ -324,8 +324,9 @@ const WorkflowBrainPage: React.FC = () => {
 
   return (
     <div style={{ minHeight: "100%", background: BG }}>
-      <div style={{ maxWidth: 1400, margin: "0 auto", padding: "24px" }}>
+      <div className="osi-page-shell" style={{ maxWidth: 1400, margin: "0 auto", padding: "24px" }}>
         <div
+          className="osi-page-header"
           style={{
             display: "flex",
             alignItems: "flex-start",
@@ -360,6 +361,7 @@ const WorkflowBrainPage: React.FC = () => {
             </div>
           </div>
           <div
+            className="osi-workflow-scope-card"
             style={{
               ...cardStyle,
               padding: "10px 12px",
@@ -378,6 +380,7 @@ const WorkflowBrainPage: React.FC = () => {
         </div>
 
         <div
+          className="osi-workflow-layout"
           style={{
             display: "grid",
             gridTemplateColumns: "300px minmax(0, 1fr)",
@@ -547,6 +550,7 @@ const WorkflowBrainPage: React.FC = () => {
                 </section>
 
                 <section
+                  className="osi-workflow-form-grid"
                   style={{
                     display: "grid",
                     gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",

@@ -311,7 +311,8 @@ const FileBankManager: React.FC = () => {
         className="rounded-lg border overflow-hidden"
         style={{ borderColor: "#e5e7eb" }}
       >
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[760px] text-sm">
           <thead>
             <tr
               style={{
@@ -446,7 +447,8 @@ const FileBankManager: React.FC = () => {
               ))
             )}
           </tbody>
-        </table>
+          </table>
+        </div>
       </div>
     </div>
   );

@@ -53,6 +53,7 @@ const AppListItem: React.FC<AppListItemProps> = ({ app }) => {
 
   return (
     <div
+      className="osi-app-list-item"
       style={{
         background: SURFACE,
         border: `1px solid ${BORDER}`,
@@ -132,13 +133,13 @@ const AppListItem: React.FC<AppListItemProps> = ({ app }) => {
           </span>
         </div>
         <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{app.name}</div>
-        <div style={{ fontSize: 13, color: TEXT_MUTED, lineHeight: 1.5, maxWidth: 560, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <div className="osi-app-description" style={{ fontSize: 13, color: TEXT_MUTED, lineHeight: 1.5, maxWidth: 560, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {app.description}
         </div>
       </div>
 
       {/* Actions */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+      <div className="osi-app-actions" style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
         <Link
           to={`/app/${app._id}`}
           style={{
@@ -293,7 +294,7 @@ const BusinessUnitView: React.FC = () => {
 
   return (
     <div style={{ minHeight: "100%", background: BG }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "28px 28px" }}>
+      <div className="osi-page-shell" style={{ maxWidth: 1200, margin: "0 auto", padding: "28px 28px" }}>
 
         {/* Breadcrumb */}
         <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, color: TEXT_MUTED, marginBottom: 12 }}>
@@ -308,7 +309,7 @@ const BusinessUnitView: React.FC = () => {
         </div>
 
         {/* Page Header */}
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24 }}>
+        <div className="osi-page-header" style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24 }}>
           <div>
             <h1 style={{ fontSize: 24, fontWeight: 700, color: TEXT, margin: 0 }}>{businessUnit.name}</h1>
             <p style={{ color: TEXT_MUTED, fontSize: 14, marginTop: 4 }}>{businessUnit.description}</p>
@@ -397,7 +398,7 @@ const BusinessUnitView: React.FC = () => {
         )}
 
         {/* Content Layout */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 240px", gap: 20, alignItems: "start" }}>
+        <div className="osi-two-column-grid" style={{ display: "grid", gridTemplateColumns: "1fr 240px", gap: 20, alignItems: "start" }}>
 
           {/* App List */}
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>

@@ -63,7 +63,7 @@ const Layout: React.FC = () => {
       <div
         className="transition-all duration-[250ms] ease-in-out"
         style={{
-          marginLeft: collapsed ? 64 : 240,
+          marginLeft: desktopViewport ? (collapsed ? 64 : 240) : 0,
           marginRight: chatOpen && desktopViewport ? 560 : 0,
         }}
       >

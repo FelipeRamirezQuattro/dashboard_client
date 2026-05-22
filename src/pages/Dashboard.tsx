@@ -54,7 +54,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <div style={{ minHeight: "100%", background: BG }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "28px 28px" }}>
+      <div className="osi-page-shell" style={{ maxWidth: 1200, margin: "0 auto", padding: "28px 28px" }}>
 
         {/* Welcome Banner */}
         <div
@@ -103,7 +103,7 @@ const Dashboard: React.FC = () => {
             </div>
 
             {isLoading ? (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+              <div className="osi-card-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
                 {[...Array(3)].map((_, i) => <BusinessUnitCardSkeleton key={i} />)}
               </div>
             ) : error ? (
@@ -115,7 +115,7 @@ const Dashboard: React.FC = () => {
                 <p>No business units available</p>
               </div>
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+              <div className="osi-card-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
                 {(businessUnits as BusinessUnit[]).map((bu) => {
                   const [c1, c2] = getBUColor(bu.name);
                   const count = appCountByBU[bu._id] || 0;

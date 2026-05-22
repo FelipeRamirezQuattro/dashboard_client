@@ -102,7 +102,7 @@ const ApplicationDetails: React.FC = () => {
 
   return (
     <div style={{ minHeight: "100%", background: BG }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "28px 28px" }}>
+      <div className="osi-page-shell" style={{ maxWidth: 1200, margin: "0 auto", padding: "28px 28px" }}>
 
         {/* Breadcrumb */}
         <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, color: TEXT_MUTED, marginBottom: 12 }}>
@@ -129,6 +129,7 @@ const ApplicationDetails: React.FC = () => {
 
         {/* Hero */}
         <div
+          className="osi-app-hero"
           style={{
             background: SURFACE,
             border: `1px solid ${BORDER}`,
@@ -205,7 +206,7 @@ const ApplicationDetails: React.FC = () => {
             <div style={{ fontSize: 14, color: TEXT_MUTED, lineHeight: 1.65, maxWidth: 680 }}>{app.description}</div>
 
             {/* Actions */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 20 }}>
+            <div className="osi-app-actions" style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 20 }}>
               <button
                 onClick={handleLaunch}
                 disabled={isLaunching || app.comingSoon}
@@ -274,7 +275,7 @@ const ApplicationDetails: React.FC = () => {
         </div>
 
         {/* Details Layout */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: 20, alignItems: "start" }}>
+        <div className="osi-two-column-grid" style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: 20, alignItems: "start" }}>
 
           {/* Left column */}
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
