@@ -291,11 +291,21 @@ const ChatbotWindow: React.FC<ChatbotWindowProps> = ({ onClose }) => {
     }`;
 
   return (
-    <aside className="fixed inset-y-0 right-0 w-full sm:w-[560px] bg-white shadow-2xl flex flex-col z-50 border-l border-gray-200">
+    <aside className="fixed inset-y-0 right-0 w-full sm:w-[560px] bg-white shadow-2xl flex flex-col z-[120] border-l border-gray-200">
       {/* Header */}
-      <div className="bg-gradient-to-r from-osi-primary to-osi-primary/90 text-white px-4 sm:px-6 py-4 flex items-center justify-between flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 sm:h-10 sm:w-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm flex-shrink-0">
+      <div className="bg-gradient-to-r from-osi-primary to-osi-primary/90 text-white px-3 py-3 sm:px-6 sm:py-4 flex items-center justify-between gap-2 flex-shrink-0">
+        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+          <button
+            onClick={onClose}
+            className="inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/20 active:bg-white/30 sm:hidden"
+            aria-label="Close chatbot"
+          >
+            <span className="material-symbols-outlined text-xl" aria-hidden="true">
+              arrow_back
+            </span>
+            Close
+          </button>
+          <div className="hidden h-9 w-9 sm:flex sm:h-10 sm:w-10 bg-white/20 rounded-full items-center justify-center backdrop-blur-sm flex-shrink-0">
             <span
               className="material-symbols-outlined text-xl sm:text-2xl"
               aria-hidden="true"
@@ -303,16 +313,16 @@ const ChatbotWindow: React.FC<ChatbotWindowProps> = ({ onClose }) => {
               smart_toy
             </span>
           </div>
-          <div className="min-w-0">
-            <h3 className="font-semibold text-base sm:text-lg truncate">
+          <div className="min-w-0 flex-1">
+            <h3 className="truncate text-base font-semibold leading-tight sm:text-lg">
               OSI Assistant
             </h3>
-            <p className="text-xs text-white/80 truncate">
+            <p className="hidden truncate text-xs text-white/80 sm:block">
               Drawer mode for long workflow and document answers
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
           {/* Auto-speak toggle */}
           {isTTSSupported && (
             <button
@@ -335,7 +345,7 @@ const ChatbotWindow: React.FC<ChatbotWindowProps> = ({ onClose }) => {
           )}
           <button
             onClick={onClose}
-            className="text-white hover:bg-white/20 active:bg-white/30 rounded-lg p-2 transition-colors touch-manipulation flex-shrink-0"
+            className="hidden text-white hover:bg-white/20 active:bg-white/30 rounded-lg p-2 transition-colors touch-manipulation flex-shrink-0 sm:block"
             aria-label="Close chatbot"
           >
             <span

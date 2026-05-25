@@ -2,11 +2,11 @@ import React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
-  Brain,
   CheckCircle2,
   ClipboardCheck,
   FileText,
   GitBranch,
+  Workflow,
   Plus,
   Search,
   Send,
@@ -348,7 +348,7 @@ const WorkflowBrainPage: React.FC = () => {
                   placeItems: "center",
                 }}
               >
-                <Brain size={21} />
+                <Workflow size={21} />
               </div>
               <div>
                 <h1 style={{ margin: 0, color: DARK, fontSize: 26, fontWeight: 800 }}>
@@ -379,6 +379,37 @@ const WorkflowBrainPage: React.FC = () => {
           </div>
         </div>
 
+        {categories.length > 0 && (
+          <div className="osi-workflow-mobile-picker" style={{ ...cardStyle, padding: 14, marginBottom: 16 }}>
+            <label
+              htmlFor="workflow-brain-mobile-category"
+              style={{ display: "block", fontSize: 12, fontWeight: 800, color: DARK, marginBottom: 8 }}
+            >
+              Category
+            </label>
+            <select
+              id="workflow-brain-mobile-category"
+              value={selectedCategoryId}
+              onChange={(event) => setSelectedCategoryId(event.target.value)}
+              style={{
+                width: "100%",
+                border: `1px solid ${BORDER}`,
+                borderRadius: 6,
+                padding: "11px 10px",
+                fontSize: 14,
+                background: SURFACE,
+                color: DARK,
+              }}
+            >
+              {categories.map((category: WorkflowBrainCategory) => (
+                <option key={category._id} value={category._id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div
           className="osi-workflow-layout"
           style={{
@@ -388,8 +419,8 @@ const WorkflowBrainPage: React.FC = () => {
             alignItems: "start",
           }}
         >
-          <aside style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <div style={{ ...cardStyle, padding: 14 }}>
+          <aside className="osi-workflow-sidebar" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div className="osi-workflow-categories-card" style={{ ...cardStyle, padding: 14 }}>
               <div style={{ fontSize: 12, fontWeight: 800, color: DARK, marginBottom: 10 }}>
                 Categories
               </div>
@@ -503,7 +534,7 @@ const WorkflowBrainPage: React.FC = () => {
             </form>
           </aside>
 
-          <main style={{ minWidth: 0 }}>
+          <main className="osi-workflow-main" style={{ minWidth: 0 }}>
             {stateQuery.isLoading || categoriesQuery.isLoading ? (
               <div style={{ ...cardStyle, padding: 32, color: MUTED }}>Loading workflow brain...</div>
             ) : !selectedCategory || !state ? (

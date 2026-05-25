@@ -9,7 +9,6 @@ import { IExternalApp } from "../../types/app.types";
 import { BusinessUnit } from "../../types/businessUnit.types";
 import { Department } from "../../types/department.types";
 import MobileNav from "./MobileNav";
-import MobileSearch from "./MobileSearch";
 import NotificationBell from "../NotificationBell";
 
 interface SearchResult {
@@ -34,8 +33,8 @@ const TopBar: React.FC<TopBarProps> = ({ sidebarWidth = 240 }) => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [selectedResultIndex, setSelectedResultIndex] = useState(-1);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
-  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
-  const searchRef = useRef<HTMLDivElement>(null);
+  const desktopSearchRef = useRef<HTMLDivElement>(null);
+  const mobileSearchRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = async () => {
     await logout();
@@ -53,7 +52,11 @@ const TopBar: React.FC<TopBarProps> = ({ sidebarWidth = 240 }) => {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        !desktopSearchRef.current?.contains(target) &&
+        !mobileSearchRef.current?.contains(target)
+      ) {
         setIsSearchFocused(false);
       }
     };
@@ -130,6 +133,8 @@ const TopBar: React.FC<TopBarProps> = ({ sidebarWidth = 240 }) => {
     e.preventDefault();
     if (selectedResultIndex >= 0 && searchResults[selectedResultIndex]) {
       handleResultClick(searchResults[selectedResultIndex]);
+    } else if (searchResults.length === 1) {
+      handleResultClick(searchResults[0]);
     }
   };
 
@@ -156,14 +161,12 @@ const TopBar: React.FC<TopBarProps> = ({ sidebarWidth = 240 }) => {
   return (
     <>
       <MobileNav isOpen={isMobileNavOpen} onClose={() => setIsMobileNavOpen(false)} />
-      <MobileSearch isOpen={isMobileSearchOpen} onClose={() => setIsMobileSearchOpen(false)} />
 
       <header
         style={{
           height: 60,
           background: "#ffffff",
           borderBottom: "1px solid #e5e8ed",
-          display: "flex",
           alignItems: "center",
           gap: 16,
           padding: "0 24px",
@@ -177,8 +180,8 @@ const TopBar: React.FC<TopBarProps> = ({ sidebarWidth = 240 }) => {
         className="lg:flex hidden"
       >
         {/* Search */}
-        <form onSubmit={handleSearch} style={{ flex: 1, maxWidth: 440 }}>
-          <div style={{ position: "relative" }} ref={searchRef}>
+        <form onSubmit={handleSearch} style={{ flex: 1, maxWidth: 680 }}>
+          <div style={{ position: "relative" }} ref={desktopSearchRef}>
             <svg
               fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"
               style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#8a94a6", width: 16, height: 16 }}
@@ -311,8 +314,8 @@ const TopBar: React.FC<TopBarProps> = ({ sidebarWidth = 240 }) => {
               aria-label="User menu"
             >
               <div style={{ textAlign: "right" }}>
-                <p style={{ fontSize: 13, fontWeight: 600, color: "#1a2332", margin: 0 }}>{user?.firstName} {user?.lastName}</p>
-                <p style={{ fontSize: 11, color: "#8a94a6", margin: 0, textTransform: "capitalize" }}>
+                <p className="hidden xl:block" style={{ fontSize: 13, fontWeight: 600, color: "#1a2332", margin: 0 }}>{user?.firstName} {user?.lastName}</p>
+                <p className="hidden xl:block" style={{ fontSize: 11, color: "#8a94a6", margin: 0, textTransform: "capitalize" }}>
                   {user?.role === "superadmin" ? "System Administrator" : user?.role}
                 </p>
               </div>
@@ -392,39 +395,89 @@ const TopBar: React.FC<TopBarProps> = ({ sidebarWidth = 240 }) => {
 
       {/* Mobile TopBar */}
       <header
-        className="lg:hidden flex items-center justify-between px-4 fixed top-0 left-0 right-0 z-40"
+        className="lg:hidden fixed top-0 left-0 right-0 z-40 flex items-center gap-2 px-3"
         style={{ height: 60, background: "#ffffff", borderBottom: "1px solid #e5e8ed" }}
       >
-        <button
-          onClick={() => setIsMobileNavOpen(true)}
-          className="p-1.5 -ml-1 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation"
-          aria-label="Open navigation menu"
-        >
-          <span className="material-symbols-outlined text-xl text-gray-600">menu</span>
-        </button>
-
-        <Link to="/dashboard" className="flex items-center gap-2.5">
+        <Link to="/dashboard" className="flex items-center shrink-0" aria-label="Dashboard">
           <div
             style={{ width: 28, height: 28, background: "#fea920", borderRadius: 6, display: "grid", placeItems: "center", fontWeight: 800, fontSize: 12, color: "#fff" }}
           >
             OSI
           </div>
-          <span className="text-sm font-bold text-gray-900 hidden sm:block">Odessa Separator Inc.</span>
-          <span className="text-sm font-bold text-gray-900 sm:hidden">OSI</span>
         </Link>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsMobileSearchOpen(true)}
-            className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation"
-            aria-label="Open search"
-          >
-            <span className="material-symbols-outlined text-xl text-gray-600">search</span>
-          </button>
+        <button
+          onClick={() => setIsMobileNavOpen(true)}
+          className="p-2 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation shrink-0"
+          aria-label="Open navigation menu"
+        >
+          <span className="material-symbols-outlined text-xl text-gray-600">menu</span>
+        </button>
+
+        <form onSubmit={handleSearch} className="min-w-0 flex-1">
+          <div className="relative" ref={mobileSearchRef}>
+            <span
+              className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg text-gray-400"
+              aria-hidden="true"
+            >
+              search
+            </span>
+            <input
+              type="text"
+              placeholder="Search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setIsSearchFocused(true)}
+              onKeyDown={handleKeyDown}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              className="h-10 w-full rounded-full border border-gray-200 bg-gray-50 pl-9 pr-8 text-sm text-gray-900 outline-none transition focus:border-gray-400 focus:bg-white focus:ring-2 focus:ring-gray-200"
+            />
+
+            {isSearchFocused && searchQuery.trim() && (
+              <div className="fixed left-3 right-3 top-[68px] max-h-[70vh] overflow-y-auto rounded-lg border border-gray-200 bg-white py-2 shadow-xl">
+                {searchResults.length > 0 ? (
+                  searchResults.map((result, index) => (
+                    <button
+                      key={`${result.type}-${result.id}`}
+                      type="button"
+                      onClick={() => handleResultClick(result)}
+                      className="flex w-full items-start gap-3 px-4 py-3 text-left"
+                      style={{
+                        background: index === selectedResultIndex ? "#fff8ed" : "transparent",
+                      }}
+                    >
+                      <span className="material-symbols-outlined mt-0.5 text-xl text-gray-500" aria-hidden="true">
+                        {getResultIcon(result.type)}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-semibold text-gray-900">
+                          {result.name}
+                        </span>
+                        <span className="mt-0.5 block truncate text-xs text-gray-500">
+                          {getResultTypeLabel(result.type)}
+                          {result.businessUnitName ? ` · ${result.businessUnitName}` : ""}
+                        </span>
+                      </span>
+                    </button>
+                  ))
+                ) : (
+                  <div className="px-4 py-6 text-center text-sm text-gray-500">
+                    No results for "{searchQuery}"
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </form>
+
+        <div className="flex items-center gap-1 shrink-0">
           <NotificationBell />
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="touch-manipulation"
+            className="hidden touch-manipulation sm:block"
             aria-label="User menu"
           >
             <div

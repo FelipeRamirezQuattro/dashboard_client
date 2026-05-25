@@ -123,6 +123,10 @@
   }
 }
 
+.osi-workflow-mobile-picker {
+  display: none;
+}
+
 @media (max-width: 1023px) {
   .osi-page-shell {
     padding: 20px !important;
@@ -148,6 +152,22 @@
   .osi-workflow-scope-card {
     width: 100% !important;
     min-width: 0 !important;
+  }
+
+  .osi-workflow-mobile-picker {
+    display: block !important;
+  }
+
+  .osi-workflow-main {
+    order: 1;
+  }
+
+  .osi-workflow-sidebar {
+    order: 2;
+  }
+
+  .osi-workflow-categories-card {
+    display: none !important;
   }
 }
 
