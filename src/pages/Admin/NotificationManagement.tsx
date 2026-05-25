@@ -16,6 +16,7 @@ import {
   NotificationSeverity,
   NotificationType,
 } from "../../types/notification.types";
+import { exportRowsToCsv } from "../../utils/csvExport";
 
 const typeOptions: { value: NotificationType; label: string }[] = [
   { value: "app_released", label: "App Released" },
@@ -81,6 +82,17 @@ const NotificationManagement: React.FC = () => {
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [severityFilter, setSeverityFilter] = useState<"all" | NotificationSeverity>(
+    "all",
+  );
+  const [scopeFilter, setScopeFilter] = useState<"all" | NotificationScope>(
+    "all",
+  );
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">(
+    "all",
+  );
   const [formData, setFormData] =
     useState<CreateNotificationPayload>(defaultForm);
 
@@ -133,34 +145,144 @@ const NotificationManagement: React.FC = () => {
     return "—";
   };
 
+  const filteredNotifications = notifications.filter((notification) => {
+    const query = searchTerm.toLowerCase();
+    const matchesSearch =
+      notification.title.toLowerCase().includes(query) ||
+      notification.message.toLowerCase().includes(query) ||
+      (typeOptions.find((t) => t.value === notification.type)?.label ?? "")
+        .toLowerCase()
+        .includes(query);
+    const matchesSeverity =
+      severityFilter === "all" || notification.severity === severityFilter;
+    const matchesScope =
+      scopeFilter === "all" || notification.targetScope === scopeFilter;
+    const matchesStatus =
+      statusFilter === "all" ||
+      (statusFilter === "active" && notification.isActive) ||
+      (statusFilter === "inactive" && !notification.isActive);
+    return matchesSearch && matchesSeverity && matchesScope && matchesStatus;
+  });
+
+  const handleExport = () => {
+    exportRowsToCsv(
+      "notifications.csv",
+      ["Title", "Message", "Type", "Severity", "Scope", "Status", "Created By", "Date"],
+      filteredNotifications.map((notification) => [
+        notification.title,
+        notification.message,
+        typeOptions.find((t) => t.value === notification.type)?.label ??
+          notification.type,
+        notification.severity,
+        scopeLabels[notification.targetScope],
+        notification.isActive ? "Active" : "Inactive",
+        getCreatedByName(notification),
+        new Date(notification.createdAt).toLocaleDateString(),
+      ]),
+    );
+  };
+
   return (
-    <div className="space-y-6 mt-6">
-      {/* Page header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
-          Notification Management
-        </h2>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="font-medium px-5 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-95 w-full sm:w-auto text-black touch-manipulation"
-          style={{
-            background: "linear-gradient(135deg, #fbad37 0%, #ffd280 100%)",
-            boxShadow: "0 0 16px rgba(251,173,55,0.25)",
-          }}
-        >
+    <div className="rounded-b-lg bg-gray-50 border border-gray-200">
+      {/* Notification Header */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200">
+        <div className="flex items-center gap-2">
           <span
-            className="material-symbols-outlined text-xl"
+            className="material-symbols-outlined text-amber-500 text-xl sm:text-2xl"
             aria-hidden="true"
           >
-            add_alert
+            notifications
           </span>
-          Create Notification
-        </button>
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+            Notification Management
+          </h2>
+        </div>
+        <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto">
+          <button
+            onClick={() => setShowFilters((value) => !value)}
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-gray-600 touch-manipulation whitespace-nowrap shrink-0"
+          >
+            <span className="material-symbols-outlined text-lg" aria-hidden="true">
+              tune
+            </span>
+            <span className="hidden sm:inline">Filter</span>
+          </button>
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-gray-600 touch-manipulation whitespace-nowrap shrink-0"
+          >
+            <span className="material-symbols-outlined text-lg" aria-hidden="true">
+              download
+            </span>
+            <span className="hidden sm:inline">Export</span>
+          </button>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-osi-primary text-gray-900 rounded-lg hover:bg-osi-primary-dark transition-colors text-sm font-medium touch-manipulation active:scale-95 whitespace-nowrap shrink-0"
+          >
+            <span className="material-symbols-outlined text-lg" aria-hidden="true">
+              add_alert
+            </span>
+            <span className="hidden sm:inline">Create Notification</span>
+            <span className="sm:hidden">Add</span>
+          </button>
+        </div>
       </div>
+
+      {showFilters && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4 sm:px-6 py-4 border-b border-gray-200">
+          <input
+            type="search"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            className="input-field"
+            placeholder="Search notifications..."
+          />
+          <select
+            value={severityFilter}
+            onChange={(event) =>
+              setSeverityFilter(event.target.value as "all" | NotificationSeverity)
+            }
+            className="input-field"
+          >
+            <option value="all">All Severities</option>
+            {severityOptions.map((severity) => (
+              <option key={severity.value} value={severity.value}>
+                {severity.label}
+              </option>
+            ))}
+          </select>
+          <select
+            value={scopeFilter}
+            onChange={(event) =>
+              setScopeFilter(event.target.value as "all" | NotificationScope)
+            }
+            className="input-field"
+          >
+            <option value="all">All Scopes</option>
+            {Object.entries(scopeLabels).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+          <select
+            value={statusFilter}
+            onChange={(event) =>
+              setStatusFilter(event.target.value as "all" | "active" | "inactive")
+            }
+            className="input-field"
+          >
+            <option value="all">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+      )}
 
       {/* Table */}
       {isLoading ? (
-        <div className="rounded-lg bg-gray-50 border border-gray-200 p-8 text-center">
+        <div className="p-8 text-center">
           <div
             className="w-8 h-8 rounded-full animate-spin mx-auto"
             style={{
@@ -170,13 +292,13 @@ const NotificationManagement: React.FC = () => {
           />
         </div>
       ) : error ? (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center m-6">
           <p className="text-red-600">Failed to load notifications</p>
         </div>
-      ) : notifications.length === 0 ? (
+      ) : filteredNotifications.length === 0 ? (
         <div
-          className="rounded-lg p-12 text-center"
-          style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}
+          className="p-12 text-center"
+          style={{ background: "#f9fafb" }}
         >
           <span
             className="material-symbols-outlined text-5xl text-gray-300 mb-3"
@@ -187,8 +309,7 @@ const NotificationManagement: React.FC = () => {
           <p className="text-gray-400">No notifications created yet</p>
         </div>
       ) : (
-        <div className="rounded-lg border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
             <table className="w-full min-w-max">
               <thead
                 style={{
@@ -217,7 +338,7 @@ const NotificationManagement: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 bg-white">
-                {notifications.map((n) => (
+                {filteredNotifications.map((n) => (
                   <tr
                     key={n._id}
                     className="hover:bg-gray-50 transition-colors"
@@ -282,7 +403,6 @@ const NotificationManagement: React.FC = () => {
                 ))}
               </tbody>
             </table>
-          </div>
         </div>
       )}
 

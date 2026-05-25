@@ -1,18 +1,17 @@
 import React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  AlertTriangle,
-  CheckCircle2,
   ClipboardCheck,
   FileText,
   GitBranch,
   Workflow,
-  Plus,
   Search,
+  Plus,
   Send,
   ShieldCheck,
 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
+import StatusBanner, { StatusBannerVariant } from "../components/StatusBanner";
 import {
   BrainMemory,
   WorkflowBrainCategory,
@@ -44,16 +43,12 @@ const domains: Array<{ value: WorkflowBrainDomain; label: string }> = [
 
 type TabKey =
   | "workflow"
-  | "bottlenecks"
-  | "recommendations"
   | "memory"
   | "unknowns"
   | "designs";
 
 const tabs: Array<{ key: TabKey; label: string }> = [
   { key: "workflow", label: "Workflow" },
-  { key: "bottlenecks", label: "Bottlenecks" },
-  { key: "recommendations", label: "Recommendations" },
   { key: "memory", label: "Memory" },
   { key: "unknowns", label: "Unknown Areas" },
   { key: "designs", label: "Design Outputs" },
@@ -189,6 +184,11 @@ const Metric: React.FC<{
 const WorkflowBrainPage: React.FC = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [banner, setBanner] = React.useState<{
+    variant: StatusBannerVariant;
+    title: string;
+    message: string;
+  } | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = React.useState("");
   const [activeTab, setActiveTab] = React.useState<TabKey>("workflow");
   const [newCategory, setNewCategory] = React.useState({
@@ -229,29 +229,71 @@ const WorkflowBrainPage: React.FC = () => {
     ]);
   };
 
+  const getErrorMessage = (error: unknown, fallback: string) => {
+    if (error && typeof error === "object") {
+      const response = (error as { response?: { data?: { error?: string; message?: string } } })
+        .response;
+      return response?.data?.error || response?.data?.message || fallback;
+    }
+    return fallback;
+  };
+
   const createCategory = useMutation({
     mutationFn: workflowBrainService.createCategory,
     onSuccess: async (category) => {
       setNewCategory({ name: "", description: "", domain: "general" });
       setSelectedCategoryId(category._id);
+      setBanner({
+        variant: "success",
+        title: "Category created",
+        message: `${category.name} is ready for category-specific memory.`,
+      });
       await refreshState();
     },
+    onError: (error) =>
+      setBanner({
+        variant: "error",
+        title: "Category was not created",
+        message: getErrorMessage(error, "Failed to create Workflow Brain category."),
+      }),
   });
 
   const addMemory = useMutation({
     mutationFn: () => workflowBrainService.addMemory(selectedCategoryId, memoryText),
     onSuccess: async () => {
       setMemoryText("");
+      setBanner({
+        variant: "success",
+        title: "Memory saved",
+        message: "This fact is now available as context for Brain answers.",
+      });
       await refreshState();
     },
+    onError: (error) =>
+      setBanner({
+        variant: "error",
+        title: "Memory was not saved",
+        message: getErrorMessage(error, "Failed to save memory."),
+      }),
   });
 
   const analyzeNote = useMutation({
     mutationFn: () => workflowBrainService.analyzeNote(selectedCategoryId, noteText),
     onSuccess: async () => {
       setNoteText("");
+      setBanner({
+        variant: "success",
+        title: "Workflow note analyzed",
+        message: "The category memory and workflow view were updated.",
+      });
       await refreshState();
     },
+    onError: (error) =>
+      setBanner({
+        variant: "error",
+        title: "Workflow note was not analyzed",
+        message: getErrorMessage(error, "Failed to analyze workflow note."),
+      }),
   });
 
   const createDesign = useMutation({
@@ -259,8 +301,19 @@ const WorkflowBrainPage: React.FC = () => {
     onSuccess: async () => {
       setDesignText("");
       setActiveTab("designs");
+      setBanner({
+        variant: "success",
+        title: "Design output generated",
+        message: "The new process/design-support output is saved in this category.",
+      });
       await refreshState();
     },
+    onError: (error) =>
+      setBanner({
+        variant: "error",
+        title: "Design output was not generated",
+        message: getErrorMessage(error, "Failed to generate design output."),
+      }),
   });
 
   const updateMemory = useMutation({
@@ -269,24 +322,41 @@ const WorkflowBrainPage: React.FC = () => {
     onSuccess: async () => {
       setEditingMemory(null);
       setEditMemoryText("");
+      setBanner({
+        variant: "success",
+        title: "Memory updated",
+        message: "The saved memory content was updated.",
+      });
       await refreshState();
     },
+    onError: (error) =>
+      setBanner({
+        variant: "error",
+        title: "Memory was not updated",
+        message: getErrorMessage(error, "Failed to update memory."),
+      }),
   });
 
   const deleteMemory = useMutation({
     mutationFn: (memoryId: string) => workflowBrainService.deleteMemory(memoryId),
-    onSuccess: refreshState,
-  });
-
-  const resolveBottleneck = useMutation({
-    mutationFn: (bottleneckId: string) =>
-      workflowBrainService.resolveBottleneck(selectedCategoryId, bottleneckId),
-    onSuccess: refreshState,
+    onSuccess: async () => {
+      setBanner({
+        variant: "success",
+        title: "Memory deleted",
+        message: "The memory item was removed from this category.",
+      });
+      await refreshState();
+    },
+    onError: (error) =>
+      setBanner({
+        variant: "error",
+        title: "Memory was not deleted",
+        message: getErrorMessage(error, "Failed to delete memory."),
+      }),
   });
 
   const categories = categoriesQuery.data || [];
   const state = stateQuery.data as WorkflowBrainState | undefined;
-  const openBottlenecks = state?.bottlenecks.filter((item) => item.status === "open") || [];
   const openUnknowns = state?.unknownAreas.filter((item) => item.status === "open") || [];
 
   const selectedCategory = categories.find(
@@ -378,6 +448,30 @@ const WorkflowBrainPage: React.FC = () => {
             Category-scoped OSI context
           </div>
         </div>
+
+        {banner && (
+          <div style={{ marginBottom: 16 }}>
+            <StatusBanner
+              variant={banner.variant}
+              title={banner.title}
+              message={banner.message}
+              onDismiss={() => setBanner(null)}
+            />
+          </div>
+        )}
+
+        {!banner && (categoriesQuery.error || stateQuery.error) && (
+          <div style={{ marginBottom: 16 }}>
+            <StatusBanner
+              variant="error"
+              title="Workflow Brain data did not load"
+              message={getErrorMessage(
+                categoriesQuery.error || stateQuery.error,
+                "Failed to load Workflow Brain data. Please try again.",
+              )}
+            />
+          </div>
+        )}
 
         {categories.length > 0 && (
           <div className="osi-workflow-mobile-picker" style={{ ...cardStyle, padding: 14, marginBottom: 16 }}>
@@ -575,7 +669,6 @@ const WorkflowBrainPage: React.FC = () => {
                   >
                     <Metric icon={<FileText size={18} />} label="Memory items" value={state.memories.length} />
                     <Metric icon={<GitBranch size={18} />} label="Workflow steps" value={state.workflowSteps.length} />
-                    <Metric icon={<AlertTriangle size={18} />} label="Open bottlenecks" value={openBottlenecks.length} />
                     <Metric icon={<Search size={18} />} label="Unknown areas" value={openUnknowns.length} />
                   </div>
                 </section>
@@ -769,76 +862,6 @@ const WorkflowBrainPage: React.FC = () => {
         </div>
       ) : (
         <EmptyState text="No workflow steps have been identified for this category yet." />
-      );
-    }
-
-    if (activeTab === "bottlenecks") {
-      return state.bottlenecks.length ? (
-        <div style={{ display: "grid", gap: 10 }}>
-          {state.bottlenecks.map((bottleneck) => (
-            <div key={bottleneck._id} style={{ ...cardStyle, padding: 14 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                <div>
-                  <div style={{ color: DARK, fontSize: 14, fontWeight: 800 }}>
-                    {bottleneck.title}
-                  </div>
-                  <p style={{ color: MUTED, fontSize: 13, margin: "5px 0", lineHeight: 1.5 }}>
-                    {bottleneck.description}
-                  </p>
-                  <div style={{ display: "flex", gap: 6 }}>
-                    <Pill tone={severityColor(bottleneck.severity)}>{bottleneck.severity}</Pill>
-                    <Pill>{bottleneck.category.replace(/_/g, " ")}</Pill>
-                    <Pill>{bottleneck.status}</Pill>
-                  </div>
-                </div>
-                {canEdit && bottleneck.status !== "resolved" && (
-                  <ActionButton
-                    variant="secondary"
-                    disabled={resolveBottleneck.isPending}
-                    onClick={() => resolveBottleneck.mutate(bottleneck._id)}
-                  >
-                    <CheckCircle2 size={15} /> Resolve
-                  </ActionButton>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <EmptyState text="No bottlenecks have been identified for this category yet." />
-      );
-    }
-
-    if (activeTab === "recommendations") {
-      return state.recommendations.length ? (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 10 }}>
-          {state.recommendations.map((recommendation) => (
-            <div key={recommendation._id} style={{ ...cardStyle, padding: 14 }}>
-              <div style={{ color: DARK, fontSize: 14, fontWeight: 800 }}>
-                {recommendation.title}
-              </div>
-              <p style={{ color: MUTED, fontSize: 13, lineHeight: 1.5 }}>
-                {recommendation.description}
-              </p>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
-                <Pill tone={ACCENT}>{recommendation.recommendationType}</Pill>
-                <Pill tone={severityColor(recommendation.estimatedImpact)}>
-                  {recommendation.estimatedImpact} impact
-                </Pill>
-                <Pill>{recommendation.difficulty}</Pill>
-              </div>
-              {recommendation.requiredInputs.length > 0 && (
-                <ul style={{ margin: "8px 0 0", paddingLeft: 18, color: MUTED, fontSize: 12.5 }}>
-                  {recommendation.requiredInputs.slice(0, 5).map((input) => (
-                    <li key={input}>{input}</li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          ))}
-        </div>
-      ) : (
-        <EmptyState text="No recommendations have been generated for this category yet." />
       );
     }
 

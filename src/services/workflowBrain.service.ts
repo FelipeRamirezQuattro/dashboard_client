@@ -56,27 +56,6 @@ export interface BrainWorkflowEdge {
   label: string;
 }
 
-export interface BrainBottleneck {
-  _id: string;
-  title: string;
-  description: string;
-  severity: "low" | "medium" | "high";
-  category: string;
-  status: "open" | "improved" | "resolved";
-  createdAt: string;
-}
-
-export interface BrainRecommendation {
-  _id: string;
-  title: string;
-  description: string;
-  recommendationType: string;
-  estimatedImpact: "low" | "medium" | "high";
-  difficulty: "easy" | "medium" | "hard";
-  requiredInputs: string[];
-  implementationNotes: string;
-}
-
 export interface BrainInsight {
   _id: string;
   type: string;
@@ -114,8 +93,6 @@ export interface WorkflowBrainState {
   entities: BrainEntity[];
   workflowSteps: BrainWorkflowStep[];
   workflowEdges: BrainWorkflowEdge[];
-  bottlenecks: BrainBottleneck[];
-  recommendations: BrainRecommendation[];
   insights: BrainInsight[];
   unknownAreas: BrainUnknownArea[];
   designOutputs: BrainDesignOutput[];
@@ -177,10 +154,4 @@ export const workflowBrainService = {
     return response.data;
   },
 
-  async resolveBottleneck(categoryId: string, bottleneckId: string): Promise<BrainBottleneck> {
-    const response = await api.post(
-      `/workflow-brain/categories/${categoryId}/bottlenecks/${bottleneckId}/resolve`,
-    );
-    return response.data;
-  },
 };

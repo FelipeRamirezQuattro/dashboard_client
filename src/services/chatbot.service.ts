@@ -17,4 +17,8 @@ export const chatbotService = {
     );
     return response.data;
   },
+
+  async clearHistory(sessionId: string): Promise<void> {
+    await api.delete(`/chatbot/history?sessionId=${encodeURIComponent(sessionId)}`);
+  },
 };

@@ -1,9 +1,7 @@
 import React from "react";
-import { Outlet, NavLink, useLocation } from "react-router-dom";
+import { Outlet, NavLink } from "react-router-dom";
 
 const AdminLayout: React.FC = () => {
-  const location = useLocation();
-
   const navItems = [
     { path: "/admin/users", label: "User Management" },
     { path: "/admin/business-units", label: "Business Units" },
@@ -12,11 +10,6 @@ const AdminLayout: React.FC = () => {
     { path: "/admin/notifications", label: "Notifications" },
     { path: "/admin/audit", label: "Audit Logs" },
   ];
-
-  const handleCreateUser = () => {
-    // TODO: Implement create user modal
-    console.log("Create user clicked");
-  };
 
   return (
     <div className="min-h-[calc(100vh-48px)]" style={{ background: "#f8fafc" }}>
@@ -32,25 +25,6 @@ const AdminLayout: React.FC = () => {
               permissions.
             </p>
           </div>
-          {location.pathname === "/admin/users" && (
-            <button
-              onClick={handleCreateUser}
-              className="font-medium px-5 py-3 rounded-lg flex items-center justify-center gap-2 transition-all touch-manipulation active:scale-95 w-full sm:w-auto shrink-0 text-black"
-              style={{
-                background: "linear-gradient(135deg, #fbad37 0%, #ffd280 100%)",
-                boxShadow: "0 0 20px rgba(251,173,55,0.3)",
-              }}
-            >
-              <span
-                className="material-symbols-outlined text-xl"
-                aria-hidden="true"
-              >
-                person_add
-              </span>
-              <span className="hidden sm:inline">+ Create User</span>
-              <span className="sm:hidden">Create User</span>
-            </button>
-          )}
         </div>
 
         {/* Navigation Tabs */}

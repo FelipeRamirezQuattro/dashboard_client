@@ -189,6 +189,19 @@ const ChatbotWindow: React.FC<ChatbotWindowProps> = ({ onClose }) => {
       workflowBrainService.addMemory(workflowCategoryId, text),
   });
 
+  const clearHistoryMutation = useMutation({
+    mutationFn: () => chatbotService.clearHistory(sessionIdRef.current),
+    onSuccess: () => {
+      stop();
+      setCurrentlySpeakingId(null);
+      setSavedMessageId(null);
+      setPendingBrainSave(null);
+      sessionIdRef.current = createSessionId();
+      localStorage.setItem(SESSION_STORAGE_KEY, sessionIdRef.current);
+      setMessages([WELCOME_MESSAGE]);
+    },
+  });
+
   const handleSendMessage = (message: string, isVoice?: boolean) => {
     // Stop any ongoing speech when user sends a new message
     if (isSpeaking) {
@@ -223,13 +236,31 @@ const ChatbotWindow: React.FC<ChatbotWindowProps> = ({ onClose }) => {
     // Show typing indicator
     setIsTyping(true);
 
+    const target = buildTarget();
+    console.debug("[WorkflowBrainDebug][client:send]", {
+      assistantMode,
+      workflowCategoryId,
+      selectedCategoryName: selectedCategory?.name,
+      target,
+      topLevelWorkflowBrainCategoryId:
+        target.type === "workflow_brain"
+          ? target.workflowBrainCategoryId
+          : undefined,
+      message,
+    });
+
     // Send to backend
     sendMessageMutation.mutate({
       message,
       sessionId: sessionIdRef.current,
+      target,
+      workflowBrainCategoryId:
+        target.type === "workflow_brain"
+          ? target.workflowBrainCategoryId
+          : undefined,
       context: {
         history: contextHistory,
-        target: buildTarget(),
+        target,
       },
     });
   };
@@ -405,9 +436,18 @@ const ChatbotWindow: React.FC<ChatbotWindowProps> = ({ onClose }) => {
                 </option>
               ))}
             </select>
-            <span className="text-xs text-gray-500">
-              {selectedCategory ? selectedCategory.domain.replace(/_/g, " ") : "Category memory"}
-            </span>
+            <button
+              type="button"
+              onClick={() => clearHistoryMutation.mutate()}
+              disabled={clearHistoryMutation.isPending}
+              className="inline-flex min-h-[38px] items-center justify-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 text-xs font-semibold text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+              title="Clear chatbot history"
+            >
+              <span className="material-symbols-outlined text-base" aria-hidden="true">
+                delete
+              </span>
+              Clear History
+            </button>
           </div>
         )}
 

@@ -41,6 +41,8 @@ export interface ChatContextTurn {
 export interface ChatRequest {
   message: string;
   sessionId?: string;
+  target?: ChatTarget;
+  workflowBrainCategoryId?: string;
   context?: {
     history?: ChatContextTurn[];
     target?: ChatTarget;
