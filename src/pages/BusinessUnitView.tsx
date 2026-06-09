@@ -9,6 +9,7 @@ import { useAuth } from "../hooks/useAuth";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { IExternalApp } from "../types/app.types";
 import { AppCardSkeleton } from "../components/SkeletonLoader";
+import NoticeModal from "../components/NoticeModal";
 
 const PRIMARY = "#586379";
 const ACCENT = "#fea920";
@@ -37,12 +38,13 @@ interface AppListItemProps {
 const AppListItem: React.FC<AppListItemProps> = ({ app }) => {
   const { mutate: launchApp, isPending } = useLaunchApp();
   const { user } = useAuth();
+  const [isSsoNoticeOpen, setIsSsoNoticeOpen] = useState(false);
 
   const handleLaunch = (e: React.MouseEvent) => {
     e.preventDefault();
     if (app.comingSoon) return;
     if (app.ssoEndpoint && !user?.microsoftId) {
-      alert("This application requires Microsoft SSO. Please sign in with Microsoft to access.");
+      setIsSsoNoticeOpen(true);
       return;
     }
     launchApp(app._id);
@@ -52,6 +54,7 @@ const AppListItem: React.FC<AppListItemProps> = ({ app }) => {
   const initials = app.name.split(" ").map((w) => w[0]).join("").slice(0, 3).toUpperCase();
 
   return (
+    <>
     <div
       className="osi-app-list-item"
       style={{
@@ -217,6 +220,13 @@ const AppListItem: React.FC<AppListItemProps> = ({ app }) => {
         v4.2.0
       </div>
     </div>
+      <NoticeModal
+        isOpen={isSsoNoticeOpen}
+        title="Microsoft SSO Required"
+        message="This application requires Microsoft SSO. Please sign in with Microsoft to access."
+        onClose={() => setIsSsoNoticeOpen(false)}
+      />
+    </>
   );
 };
 

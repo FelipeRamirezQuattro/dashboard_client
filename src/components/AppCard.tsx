@@ -2,6 +2,7 @@ import React from "react";
 import { IExternalApp, categoryLabels } from "../types/app.types";
 import { useLaunchApp } from "../hooks/useApps";
 import { useAuth } from "../hooks/useAuth";
+import NoticeModal from "./NoticeModal";
 
 interface AppCardProps {
   app: IExternalApp;
@@ -46,6 +47,7 @@ const categoryIconsAndColors: Record<
 const AppCard: React.FC<AppCardProps> = ({ app }) => {
   const { mutate: launchApp, isPending, error } = useLaunchApp();
   const { user } = useAuth();
+  const [isSsoNoticeOpen, setIsSsoNoticeOpen] = React.useState(false);
 
   const handleLaunch = () => {
     // Check if app is coming soon
@@ -55,9 +57,7 @@ const AppCard: React.FC<AppCardProps> = ({ app }) => {
 
     // Check if SSO is required and user doesn't have Microsoft linked
     if (app.ssoEndpoint && !user?.microsoftId) {
-      alert(
-        "This application requires Microsoft SSO. Please sign in with Microsoft to access.",
-      );
+      setIsSsoNoticeOpen(true);
       return;
     }
 
@@ -68,6 +68,7 @@ const AppCard: React.FC<AppCardProps> = ({ app }) => {
     categoryIconsAndColors[app.category] || categoryIconsAndColors.other;
 
   return (
+    <>
     <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 sm:p-6 flex flex-col hover:shadow-xl transition-all hover:-translate-y-1 touch-manipulation">
       <div className="flex justify-between items-start mb-3 sm:mb-4">
         <div
@@ -142,6 +143,13 @@ const AppCard: React.FC<AppCardProps> = ({ app }) => {
         )}
       </div>
     </div>
+      <NoticeModal
+        isOpen={isSsoNoticeOpen}
+        title="Microsoft SSO Required"
+        message="This application requires Microsoft SSO. Please sign in with Microsoft to access."
+        onClose={() => setIsSsoNoticeOpen(false)}
+      />
+    </>
   );
 };
 

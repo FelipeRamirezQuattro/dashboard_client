@@ -10,12 +10,16 @@ import { permissionsService } from "../../services/permissions.service";
 import { businessUnitService } from "../../services/businessUnit.service";
 import { departmentService } from "../../services/department.service";
 import { TableRowSkeleton } from "../../components/SkeletonLoader";
+import ConfirmationModal from "../../components/ConfirmationModal";
+import { useAuth } from "../../hooks/useAuth";
+import { exportRowsToCsv } from "../../utils/csvExport";
 
 interface UserFormData {
   firstName: string;
   lastName: string;
   email: string;
   password?: string;
+  confirmPassword?: string;
   role: UserRole;
   isActive: boolean;
   businessUnitIds: string[];
@@ -24,21 +28,35 @@ interface UserFormData {
 
 const UserManagement: React.FC = () => {
   const queryClient = useQueryClient();
+  const { user, setUser } = useAuth();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 4;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState<"all" | UserRole>("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">(
+    "all",
+  );
+  const [ssoFilter, setSsoFilter] = useState<"all" | "linked" | "not-linked">(
+    "all",
+  );
+  const [deleteTarget, setDeleteTarget] = useState<IUser | null>(null);
   const [selectedUser, setSelectedUser] = useState<IUser | null>(null);
   const [formData, setFormData] = useState<UserFormData>({
     firstName: "",
     lastName: "",
     email: "",
     password: "",
+    confirmPassword: "",
     role: "viewer",
     isActive: true,
     businessUnitIds: [],
     departmentIds: [],
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [selectedBusinessUnitForDepts, setSelectedBusinessUnitForDepts] =
     useState<string>("");
@@ -83,6 +101,7 @@ const UserManagement: React.FC = () => {
         lastName: selectedUser.lastName,
         email: selectedUser.email,
         password: "",
+        confirmPassword: "",
         role: selectedUser.role,
         isActive: selectedUser.isActive,
         businessUnitIds: extractBusinessUnitIds(userPermissions),
@@ -222,6 +241,16 @@ const UserManagement: React.FC = () => {
       queryClient.invalidateQueries({
         queryKey: ["userPermissions", variables.id],
       });
+      if (user?._id === variables.id) {
+        setUser({
+          ...user,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          role: formData.role,
+          isActive: formData.isActive,
+        });
+      }
       handleCloseModal();
     },
   });
@@ -243,12 +272,15 @@ const UserManagement: React.FC = () => {
       lastName: "",
       email: "",
       password: "",
+      confirmPassword: "",
       role: "viewer",
       isActive: true,
       businessUnitIds: [],
       departmentIds: [],
     });
     setErrors({});
+    setShowPassword(false);
+    setShowConfirmPassword(false);
     setIsModalOpen(true);
   };
 
@@ -265,6 +297,7 @@ const UserManagement: React.FC = () => {
       lastName: "",
       email: "",
       password: "",
+      confirmPassword: "",
       role: "viewer",
       isActive: true,
       businessUnitIds: [],
@@ -272,6 +305,8 @@ const UserManagement: React.FC = () => {
     });
     setErrors({});
     setSelectedBusinessUnitForDepts("");
+    setShowPassword(false);
+    setShowConfirmPassword(false);
   };
 
   const validateForm = (): boolean => {
@@ -293,6 +328,17 @@ const UserManagement: React.FC = () => {
     }
     if (!selectedUser && formData.password && formData.password.length < 6) {
       newErrors.password = "Password must be at least 6 characters";
+    }
+    if (!selectedUser && !formData.confirmPassword) {
+      newErrors.confirmPassword = "Confirm password is required";
+    }
+    if (
+      !selectedUser &&
+      formData.password &&
+      formData.confirmPassword &&
+      formData.password !== formData.confirmPassword
+    ) {
+      newErrors.confirmPassword = "Passwords do not match";
     }
 
     setErrors(newErrors);
@@ -334,6 +380,18 @@ const UserManagement: React.FC = () => {
     });
   };
 
+  const handleAllBusinessUnitsToggle = () => {
+    const allBusinessUnitIds = businessUnits.map((bu) => bu._id);
+    const allSelected =
+      allBusinessUnitIds.length > 0 &&
+      allBusinessUnitIds.every((id) => formData.businessUnitIds.includes(id));
+
+    setFormData((prev) => ({
+      ...prev,
+      businessUnitIds: allSelected ? [] : allBusinessUnitIds,
+    }));
+  };
+
   const handleDepartmentToggle = (deptId: string) => {
     setFormData((prev) => {
       const newIds = prev.departmentIds.includes(deptId)
@@ -341,6 +399,22 @@ const UserManagement: React.FC = () => {
         : [...prev.departmentIds, deptId];
       return { ...prev, departmentIds: newIds };
     });
+  };
+
+  const handleFilteredDepartmentsToggle = () => {
+    const filteredDepartmentIds = getFilteredDepartments().map(
+      (dept) => dept._id,
+    );
+    const allSelected =
+      filteredDepartmentIds.length > 0 &&
+      filteredDepartmentIds.every((id) => formData.departmentIds.includes(id));
+
+    setFormData((prev) => ({
+      ...prev,
+      departmentIds: allSelected
+        ? prev.departmentIds.filter((id) => !filteredDepartmentIds.includes(id))
+        : Array.from(new Set([...prev.departmentIds, ...filteredDepartmentIds])),
+    }));
   };
 
   const getFilteredDepartments = (): Department[] => {
@@ -356,14 +430,11 @@ const UserManagement: React.FC = () => {
     });
   };
 
-  const handleDeleteUser = (user: IUser) => {
-    if (
-      window.confirm(
-        `Are you sure you want to delete ${user.firstName} ${user.lastName}?`,
-      )
-    ) {
-      deleteUserMutation.mutate(user._id);
-    }
+  const confirmDeleteUser = () => {
+    if (!deleteTarget) return;
+    deleteUserMutation.mutate(deleteTarget._id, {
+      onSuccess: () => setDeleteTarget(null),
+    });
   };
 
   // Helper function to get user initials
@@ -401,12 +472,52 @@ const UserManagement: React.FC = () => {
     }
   };
 
+  const filteredUsers =
+    users?.filter((user) => {
+      const query = searchTerm.toLowerCase();
+      const fullName = `${user.firstName} ${user.lastName}`.toLowerCase();
+      const matchesSearch =
+        fullName.includes(query) || user.email.toLowerCase().includes(query);
+      const matchesRole = roleFilter === "all" || user.role === roleFilter;
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "active" && user.isActive) ||
+        (statusFilter === "inactive" && !user.isActive);
+      const matchesSso =
+        ssoFilter === "all" ||
+        (ssoFilter === "linked" && Boolean(user.microsoftId)) ||
+        (ssoFilter === "not-linked" && !user.microsoftId);
+      return matchesSearch && matchesRole && matchesStatus && matchesSso;
+    }) || [];
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, roleFilter, statusFilter, ssoFilter]);
+
+  const handleExport = () => {
+    exportRowsToCsv(
+      "users.csv",
+      ["Name", "Email", "Role", "SSO Status", "Status", "Last Login", "Created At"],
+      filteredUsers.map((user) => [
+        `${user.firstName} ${user.lastName}`,
+        user.email,
+        user.role,
+        user.microsoftId ? "Linked" : "Not Linked",
+        user.isActive ? "Active" : "Inactive",
+        user.lastLogin ? new Date(user.lastLogin).toLocaleString() : "",
+        new Date(user.createdAt).toLocaleString(),
+      ]),
+    );
+  };
+
   // Calculate pagination
-  const totalUsers = users?.length || 0;
-  const totalPages = Math.ceil(totalUsers / itemsPerPage);
+  const totalUsers = filteredUsers.length;
+  const totalPages = Math.max(1, Math.ceil(totalUsers / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentUsers = users?.slice(startIndex, endIndex);
+  const currentUsers = filteredUsers.slice(startIndex, endIndex);
+  const showingStart = totalUsers === 0 ? 0 : startIndex + 1;
+  const showingEnd = Math.min(endIndex, totalUsers);
 
   return (
     <div className="rounded-b-lg bg-gray-50 border border-gray-200">
@@ -424,7 +535,10 @@ const UserManagement: React.FC = () => {
           </h2>
         </div>
         <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto">
-          <button className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-gray-600 touch-manipulation whitespace-nowrap shrink-0">
+          <button
+            onClick={() => setShowFilters((value) => !value)}
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-gray-600 touch-manipulation whitespace-nowrap shrink-0"
+          >
             <span
               className="material-symbols-outlined text-lg"
               aria-hidden="true"
@@ -433,7 +547,10 @@ const UserManagement: React.FC = () => {
             </span>
             <span className="hidden sm:inline">Filter</span>
           </button>
-          <button className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-gray-600 touch-manipulation whitespace-nowrap shrink-0">
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-gray-600 touch-manipulation whitespace-nowrap shrink-0"
+          >
             <span
               className="material-symbols-outlined text-lg"
               aria-hidden="true"
@@ -457,6 +574,53 @@ const UserManagement: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {showFilters && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4 sm:px-6 py-4 border-b border-gray-200">
+          <input
+            type="search"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            className="input-field"
+            placeholder="Search users..."
+          />
+          <select
+            value={roleFilter}
+            onChange={(event) =>
+              setRoleFilter(event.target.value as "all" | UserRole)
+            }
+            className="input-field"
+          >
+            <option value="all">All Roles</option>
+            <option value="viewer">Viewer</option>
+            <option value="editor">Editor</option>
+            <option value="admin">Admin</option>
+            <option value="superadmin">Super Admin</option>
+          </select>
+          <select
+            value={statusFilter}
+            onChange={(event) =>
+              setStatusFilter(event.target.value as "all" | "active" | "inactive")
+            }
+            className="input-field"
+          >
+            <option value="all">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+          <select
+            value={ssoFilter}
+            onChange={(event) =>
+              setSsoFilter(event.target.value as "all" | "linked" | "not-linked")
+            }
+            className="input-field"
+          >
+            <option value="all">All SSO States</option>
+            <option value="linked">Linked</option>
+            <option value="not-linked">Not Linked</option>
+          </select>
+        </div>
+      )}
 
       {/* Users Table */}
       {isLoading ? (
@@ -519,7 +683,7 @@ const UserManagement: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-transparent divide-y divide-white/[0.08]">
-                {currentUsers?.map((user) => (
+                {currentUsers.map((user) => (
                   <tr key={user._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
@@ -590,7 +754,7 @@ const UserManagement: React.FC = () => {
                           </span>
                         </button>
                         <button
-                          onClick={() => handleDeleteUser(user)}
+                          onClick={() => setDeleteTarget(user)}
                           className="text-gray-500 hover:text-red-600"
                           title="Delete user"
                         >
@@ -609,8 +773,7 @@ const UserManagement: React.FC = () => {
           {/* Pagination */}
           <div className="flex justify-between items-center px-6 py-4 border-t border-gray-200">
             <div className="text-sm text-gray-500 font-medium">
-              SHOWING {startIndex + 1}-{Math.min(endIndex, totalUsers)} OF{" "}
-              {totalUsers} USERS
+              SHOWING {showingStart}-{showingEnd} OF {totalUsers} USERS
             </div>
             <div className="flex items-center gap-1">
               <button
@@ -657,9 +820,9 @@ const UserManagement: React.FC = () => {
       {/* Create/Edit Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl bg-white border border-gray-200  max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="rounded-xl bg-white border border-gray-200 max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
             {/* Modal Header */}
-            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 sticky top-0 bg-transparent">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 bg-white flex-shrink-0">
               <h3 className="text-xl font-bold text-gray-900">
                 {selectedUser ? "Edit User" : "Create New User"}
               </h3>
@@ -673,8 +836,9 @@ const UserManagement: React.FC = () => {
               </button>
             </div>
 
-            {/* Modal Body */}
-            <form onSubmit={handleSubmit} className="px-6 py-4 space-y-6">
+            <form onSubmit={handleSubmit} className="min-h-0 flex flex-1 flex-col">
+              {/* Modal Body */}
+              <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4 space-y-6">
               {/* Basic Information Section */}
               <div>
                 <h4 className="text-sm font-semibold text-gray-600 mb-4 flex items-center gap-2">
@@ -760,23 +924,95 @@ const UserManagement: React.FC = () => {
                         </span>
                       )}
                     </label>
-                    <input
-                      type="password"
-                      value={formData.password}
-                      onChange={(e) =>
-                        setFormData({ ...formData, password: e.target.value })
-                      }
-                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-osi-primary ${
-                        errors.password ? "border-red-500" : "border-gray-300"
-                      }`}
-                      placeholder={selectedUser ? "••••••••" : "Enter password"}
-                    />
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        value={formData.password}
+                        onChange={(e) =>
+                          setFormData({ ...formData, password: e.target.value })
+                        }
+                        className={`w-full px-3 py-2 pr-11 border rounded-lg focus:outline-none focus:ring-2 focus:ring-osi-primary ${
+                          errors.password ? "border-red-500" : "border-gray-300"
+                        }`}
+                        placeholder={
+                          selectedUser ? "••••••••" : "Enter password"
+                        }
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((value) => !value)}
+                        className="absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-lg text-gray-400 transition-colors hover:text-gray-700"
+                        aria-label={
+                          showPassword ? "Hide password" : "Show password"
+                        }
+                      >
+                        <span
+                          className="material-symbols-outlined text-lg"
+                          aria-hidden="true"
+                        >
+                          {showPassword ? "visibility_off" : "visibility"}
+                        </span>
+                      </button>
+                    </div>
                     {errors.password && (
                       <p className="text-red-500 text-xs mt-1">
                         {errors.password}
                       </p>
                     )}
                   </div>
+
+                  {!selectedUser && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-1">
+                        Confirm Password{" "}
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showConfirmPassword ? "text" : "password"}
+                          value={formData.confirmPassword}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              confirmPassword: e.target.value,
+                            })
+                          }
+                          className={`w-full px-3 py-2 pr-11 border rounded-lg focus:outline-none focus:ring-2 focus:ring-osi-primary ${
+                            errors.confirmPassword
+                              ? "border-red-500"
+                              : "border-gray-300"
+                          }`}
+                          placeholder="Confirm password"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowConfirmPassword((value) => !value)
+                          }
+                          className="absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-lg text-gray-400 transition-colors hover:text-gray-700"
+                          aria-label={
+                            showConfirmPassword
+                              ? "Hide confirm password"
+                              : "Show confirm password"
+                          }
+                        >
+                          <span
+                            className="material-symbols-outlined text-lg"
+                            aria-hidden="true"
+                          >
+                            {showConfirmPassword
+                              ? "visibility_off"
+                              : "visibility"}
+                          </span>
+                        </button>
+                      </div>
+                      {errors.confirmPassword && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors.confirmPassword}
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">
@@ -827,12 +1063,27 @@ const UserManagement: React.FC = () => {
 
               {/* Business Units Section */}
               <div>
-                <h4 className="text-sm font-semibold text-gray-600 mb-3 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-lg text-osi-primary">
-                    corporate_fare
-                  </span>
-                  Business Units
-                </h4>
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <h4 className="text-sm font-semibold text-gray-600 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-lg text-osi-primary">
+                      corporate_fare
+                    </span>
+                    Business Units
+                  </h4>
+                  {businessUnits.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleAllBusinessUnitsToggle}
+                      className="text-xs font-semibold text-osi-primary hover:text-osi-dark"
+                    >
+                      {businessUnits.every((bu) =>
+                        formData.businessUnitIds.includes(bu._id),
+                      )
+                        ? "Clear all"
+                        : "Select all"}
+                    </button>
+                  )}
+                </div>
                 <div className="border border-gray-200 rounded-lg p-4 max-h-48 overflow-y-auto">
                   {businessUnits.length === 0 ? (
                     <p className="text-gray-400 text-sm">
@@ -871,20 +1122,35 @@ const UserManagement: React.FC = () => {
                     Departments
                   </h4>
                   {allDepartments.length > 0 && (
-                    <select
-                      value={selectedBusinessUnitForDepts}
-                      onChange={(e) =>
-                        setSelectedBusinessUnitForDepts(e.target.value)
-                      }
-                      className="text-xs px-2 py-1 bg-gray-100 text-gray-900 placeholder-gray-400 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-osi-primary"
-                    >
-                      <option value="">All Departments</option>
-                      {businessUnits.map((bu: BusinessUnit) => (
-                        <option key={bu._id} value={bu._id}>
-                          {bu.name}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="flex items-center gap-2">
+                      {getFilteredDepartments().length > 0 && (
+                        <button
+                          type="button"
+                          onClick={handleFilteredDepartmentsToggle}
+                          className="text-xs font-semibold text-osi-primary hover:text-osi-dark"
+                        >
+                          {getFilteredDepartments().every((dept) =>
+                            formData.departmentIds.includes(dept._id),
+                          )
+                            ? "Clear all"
+                            : "Select all"}
+                        </button>
+                      )}
+                      <select
+                        value={selectedBusinessUnitForDepts}
+                        onChange={(e) =>
+                          setSelectedBusinessUnitForDepts(e.target.value)
+                        }
+                        className="text-xs px-2 py-1 bg-gray-100 text-gray-900 placeholder-gray-400 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-osi-primary"
+                      >
+                        <option value="">All Departments</option>
+                        {businessUnits.map((bu: BusinessUnit) => (
+                          <option key={bu._id} value={bu._id}>
+                            {bu.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   )}
                 </div>
                 <div className="border border-gray-200 rounded-lg p-4 max-h-48 overflow-y-auto">
@@ -932,8 +1198,10 @@ const UserManagement: React.FC = () => {
                 </div>
               </div>
 
+              </div>
+
               {/* Modal Footer */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+              <div className="flex justify-end gap-3 border-t border-gray-200 bg-white px-6 py-4 flex-shrink-0">
                 <button
                   type="button"
                   onClick={handleCloseModal}
@@ -959,6 +1227,15 @@ const UserManagement: React.FC = () => {
           </div>
         </div>
       )}
+      <ConfirmationModal
+        isOpen={Boolean(deleteTarget)}
+        title="Delete User"
+        message={`Delete ${deleteTarget?.firstName} ${deleteTarget?.lastName}? This action cannot be undone.`}
+        confirmLabel="Delete"
+        isPending={deleteUserMutation.isPending}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={confirmDeleteUser}
+      />
     </div>
   );
 };

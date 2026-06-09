@@ -5,17 +5,25 @@ import { Department, CreateDepartmentDTO } from "../../types/department.types";
 import { FolderTree, CheckCircle2, XCircle, Trash2, Edit2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { TableRowSkeleton } from "../../components/SkeletonLoader";
+import ConfirmationModal from "../../components/ConfirmationModal";
+import { useAuth } from "../../hooks/useAuth";
 import { exportRowsToCsv } from "../../utils/csvExport";
 
 const DepartmentManagement: React.FC = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === "superadmin";
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [businessUnitFilter, setBusinessUnitFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">(
-    "all",
+    "active",
   );
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [editingDept, setEditingDept] = useState<Department | null>(null);
   const [formData, setFormData] = useState<CreateDepartmentDTO>({
     name: "",
@@ -57,8 +65,43 @@ const DepartmentManagement: React.FC = () => {
 
   const deleteMutation = useMutation({
     mutationFn: departmentService.deleteDepartment,
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ["departments"] });
+
+      const previousDepartments =
+        queryClient.getQueryData<Department[]>(["departments"]);
+      const previousActiveDepartments =
+        queryClient.getQueryData<Department[]>(["departments", "active"]);
+
+      queryClient.setQueryData<Department[]>(["departments"], (current) =>
+        current?.map((dept) =>
+          dept._id === id ? { ...dept, isActive: false } : dept,
+        ),
+      );
+      queryClient.setQueryData<Department[]>(
+        ["departments", "active"],
+        (current) => current?.filter((dept) => dept._id !== id),
+      );
+
+      return { previousDepartments, previousActiveDepartments };
+    },
+    onError: (_error, _id, context) => {
+      if (context?.previousDepartments) {
+        queryClient.setQueryData(["departments"], context.previousDepartments);
+      }
+      if (context?.previousActiveDepartments) {
+        queryClient.setQueryData(
+          ["departments", "active"],
+          context.previousActiveDepartments,
+        );
+      }
+    },
     onSuccess: () => {
+      setDeleteTarget(null);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["departments"] });
+      queryClient.invalidateQueries({ queryKey: ["departments", "active"] });
     },
   });
 
@@ -85,10 +128,9 @@ const DepartmentManagement: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string, name: string) => {
-    if (window.confirm(`Are you sure you want to deactivate "${name}"?`)) {
-      await deleteMutation.mutateAsync(id);
-    }
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    await deleteMutation.mutateAsync(deleteTarget.id);
   };
 
   const toggleActive = async (id: string, currentStatus: boolean) => {
@@ -351,12 +393,17 @@ const DepartmentManagement: React.FC = () => {
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
-                      <button
-                        onClick={() => handleDelete(dept._id, dept.name)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {isSuperAdmin && (
+                        <button
+                          onClick={() =>
+                            setDeleteTarget({ id: dept._id, name: dept.name })
+                          }
+                          className="text-red-600 hover:text-red-900"
+                          title="Deactivate department"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -500,6 +547,15 @@ const DepartmentManagement: React.FC = () => {
           </div>
         </div>
       )}
+      <ConfirmationModal
+        isOpen={Boolean(deleteTarget)}
+        title="Deactivate Department"
+        message={`Deactivate "${deleteTarget?.name}"? Users will no longer see it as active.`}
+        confirmLabel="Deactivate"
+        isPending={deleteMutation.isPending}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 };

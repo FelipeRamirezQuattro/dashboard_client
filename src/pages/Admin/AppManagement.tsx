@@ -17,6 +17,7 @@ import { departmentService } from "../../services/department.service";
 import { BusinessUnit } from "../../types/businessUnit.types";
 import { Department } from "../../types/department.types";
 import { TableRowSkeleton } from "../../components/SkeletonLoader";
+import ConfirmationModal from "../../components/ConfirmationModal";
 import { exportRowsToCsv } from "../../utils/csvExport";
 
 const AppManagement: React.FC = () => {
@@ -33,6 +34,10 @@ const AppManagement: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">(
     "all",
   );
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   const { data: businessUnits } = useQuery({
     queryKey: ["businessUnits", "active"],
@@ -92,13 +97,13 @@ const AppManagement: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: string, name: string) => {
-    if (window.confirm(`Are you sure you want to delete "${name}"?`)) {
-      try {
-        await deleteApp.mutateAsync(id);
-      } catch (error) {
-        console.error("Failed to delete app:", error);
-      }
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteApp.mutateAsync(deleteTarget.id);
+      setDeleteTarget(null);
+    } catch (error) {
+      console.error("Failed to delete app:", error);
     }
   };
 
@@ -413,7 +418,9 @@ const AppManagement: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <button
-                        onClick={() => handleDelete(app._id, app.name)}
+                        onClick={() =>
+                          setDeleteTarget({ id: app._id, name: app.name })
+                        }
                         className="text-red-600 hover:text-red-800 inline-flex items-center gap-1.5"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -727,6 +734,15 @@ const AppManagement: React.FC = () => {
           </div>
         </div>
       )}
+      <ConfirmationModal
+        isOpen={Boolean(deleteTarget)}
+        title="Delete Application"
+        message={`Delete "${deleteTarget?.name}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        isPending={deleteApp.isPending}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 };

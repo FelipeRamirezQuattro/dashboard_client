@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Upload, Trash2, Download, FileText, Tag, RefreshCw, X } from "lucide-react";
 import api from "../../services/api";
 import { TableRowSkeleton } from "../../components/SkeletonLoader";
+import ConfirmationModal from "../../components/ConfirmationModal";
 import { downloadFileBankDocument } from "../../utils/fileBankDownload";
 
 interface FileBankRecord {
@@ -40,6 +41,7 @@ const FileBankManager: React.FC = () => {
   const [tags, setTags] = useState("");
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isUploadPanelOpen, setIsUploadPanelOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<FileBankRecord | null>(null);
 
   const {
     data: files,
@@ -96,6 +98,13 @@ const FileBankManager: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ["fileBank"] });
     },
   });
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+    deleteMutation.mutate(deleteTarget._id, {
+      onSuccess: () => setDeleteTarget(null),
+    });
+  };
 
   const oneDriveSyncMutation = useMutation({
     mutationFn: async () => {
@@ -426,15 +435,7 @@ const FileBankManager: React.FC = () => {
                         <Download size={16} />
                       </button>
                       <button
-                        onClick={() => {
-                          if (
-                            window.confirm(
-                              `Delete "${file.originalName}"? This cannot be undone.`,
-                            )
-                          ) {
-                            deleteMutation.mutate(file._id);
-                          }
-                        }}
+                        onClick={() => setDeleteTarget(file)}
                         disabled={deleteMutation.isPending}
                         className="p-1.5 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
                         title="Delete"
@@ -450,6 +451,15 @@ const FileBankManager: React.FC = () => {
           </table>
         </div>
       </div>
+      <ConfirmationModal
+        isOpen={Boolean(deleteTarget)}
+        title="Delete Document"
+        message={`Delete "${deleteTarget?.originalName}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        isPending={deleteMutation.isPending}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 };

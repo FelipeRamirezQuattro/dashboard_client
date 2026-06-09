@@ -68,7 +68,7 @@ const Layout: React.FC = () => {
         }}
       >
         <TopBar sidebarCollapsed={collapsed} sidebarWidth={collapsed ? 64 : 240} />
-        <main className="pt-[60px]">
+        <main className="pt-[60px] pb-28 sm:pb-32">
           <Outlet />
         </main>
       </div>

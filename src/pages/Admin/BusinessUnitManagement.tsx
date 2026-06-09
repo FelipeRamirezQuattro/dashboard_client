@@ -7,16 +7,24 @@ import {
 import { Building2, CheckCircle2, XCircle, Trash2, Edit2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { TableRowSkeleton } from "../../components/SkeletonLoader";
+import ConfirmationModal from "../../components/ConfirmationModal";
+import { useAuth } from "../../hooks/useAuth";
 import { exportRowsToCsv } from "../../utils/csvExport";
 
 const BusinessUnitManagement: React.FC = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === "superadmin";
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">(
-    "all",
+    "active",
   );
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [editingBU, setEditingBU] = useState<BusinessUnit | null>(null);
   const [formData, setFormData] = useState<CreateBusinessUnitDTO>({
     name: "",
@@ -53,8 +61,46 @@ const BusinessUnitManagement: React.FC = () => {
 
   const deleteMutation = useMutation({
     mutationFn: businessUnitService.deleteBusinessUnit,
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ["businessUnits"] });
+
+      const previousBusinessUnits =
+        queryClient.getQueryData<BusinessUnit[]>(["businessUnits"]);
+      const previousActiveBusinessUnits =
+        queryClient.getQueryData<BusinessUnit[]>(["businessUnits", "active"]);
+
+      queryClient.setQueryData<BusinessUnit[]>(["businessUnits"], (current) =>
+        current?.map((bu) =>
+          bu._id === id ? { ...bu, isActive: false } : bu,
+        ),
+      );
+      queryClient.setQueryData<BusinessUnit[]>(
+        ["businessUnits", "active"],
+        (current) => current?.filter((bu) => bu._id !== id),
+      );
+
+      return { previousBusinessUnits, previousActiveBusinessUnits };
+    },
+    onError: (_error, _id, context) => {
+      if (context?.previousBusinessUnits) {
+        queryClient.setQueryData(
+          ["businessUnits"],
+          context.previousBusinessUnits,
+        );
+      }
+      if (context?.previousActiveBusinessUnits) {
+        queryClient.setQueryData(
+          ["businessUnits", "active"],
+          context.previousActiveBusinessUnits,
+        );
+      }
+    },
     onSuccess: () => {
+      setDeleteTarget(null);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["businessUnits"] });
+      queryClient.invalidateQueries({ queryKey: ["businessUnits", "active"] });
     },
   });
 
@@ -78,10 +124,9 @@ const BusinessUnitManagement: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string, name: string) => {
-    if (window.confirm(`Are you sure you want to deactivate "${name}"?`)) {
-      await deleteMutation.mutateAsync(id);
-    }
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    await deleteMutation.mutateAsync(deleteTarget.id);
   };
 
   const toggleActive = async (id: string, currentStatus: boolean) => {
@@ -305,12 +350,17 @@ const BusinessUnitManagement: React.FC = () => {
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
-                      <button
-                        onClick={() => handleDelete(bu._id, bu.name)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {isSuperAdmin && (
+                        <button
+                          onClick={() =>
+                            setDeleteTarget({ id: bu._id, name: bu.name })
+                          }
+                          className="text-red-600 hover:text-red-900"
+                          title="Deactivate business unit"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -451,6 +501,15 @@ const BusinessUnitManagement: React.FC = () => {
           </div>
         </div>
       )}
+      <ConfirmationModal
+        isOpen={Boolean(deleteTarget)}
+        title="Deactivate Business Unit"
+        message={`Deactivate "${deleteTarget?.name}"? Users will no longer see it as active.`}
+        confirmLabel="Deactivate"
+        isPending={deleteMutation.isPending}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 };

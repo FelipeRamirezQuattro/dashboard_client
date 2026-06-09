@@ -16,6 +16,7 @@ import {
   NotificationSeverity,
   NotificationType,
 } from "../../types/notification.types";
+import ConfirmationModal from "../../components/ConfirmationModal";
 import { exportRowsToCsv } from "../../utils/csvExport";
 
 const typeOptions: { value: NotificationType; label: string }[] = [
@@ -93,6 +94,10 @@ const NotificationManagement: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">(
     "all",
   );
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
   const [formData, setFormData] =
     useState<CreateNotificationPayload>(defaultForm);
 
@@ -127,13 +132,13 @@ const NotificationManagement: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: string, title: string) => {
-    if (window.confirm(`Deactivate notification "${title}"?`)) {
-      try {
-        await deleteNotification.mutateAsync(id);
-      } catch (err) {
-        console.error("Failed to deactivate notification:", err);
-      }
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteNotification.mutateAsync(deleteTarget.id);
+      setDeleteTarget(null);
+    } catch (err) {
+      console.error("Failed to deactivate notification:", err);
     }
   };
 
@@ -391,7 +396,9 @@ const NotificationManagement: React.FC = () => {
                     <td className="px-5 py-4 whitespace-nowrap">
                       {n.isActive && (
                         <button
-                          onClick={() => handleDelete(n._id, n.title)}
+                          onClick={() =>
+                            setDeleteTarget({ id: n._id, title: n.title })
+                          }
                           disabled={deleteNotification.isPending}
                           className="text-xs text-red-400 hover:text-red-600 transition-colors font-medium touch-manipulation"
                         >
@@ -686,6 +693,15 @@ const NotificationManagement: React.FC = () => {
           </div>
         </div>
       )}
+      <ConfirmationModal
+        isOpen={Boolean(deleteTarget)}
+        title="Deactivate Notification"
+        message={`Deactivate "${deleteTarget?.title}"? It will no longer appear as an active notification.`}
+        confirmLabel="Deactivate"
+        isPending={deleteNotification.isPending}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 };

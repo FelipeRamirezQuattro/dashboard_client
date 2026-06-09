@@ -8,6 +8,7 @@ import { IExternalApp } from "../types/app.types";
 import { BusinessUnit } from "../types/businessUnit.types";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { useAuth } from "../hooks/useAuth";
+import NoticeModal from "../components/NoticeModal";
 
 const PRIMARY = "#586379";
 const ACCENT = "#fea920";
@@ -56,12 +57,13 @@ const ApplicationDetails: React.FC = () => {
 
   const [isLaunching, setIsLaunching] = React.useState(false);
   const [launchError, setLaunchError] = React.useState<string | null>(null);
+  const [isSsoNoticeOpen, setIsSsoNoticeOpen] = React.useState(false);
 
   const handleLaunch = async () => {
     if (!app) return;
     if (app.comingSoon) return;
     if (app.ssoEndpoint && !user?.microsoftId) {
-      alert("This application requires Microsoft SSO. Please sign in with Microsoft to access.");
+      setIsSsoNoticeOpen(true);
       return;
     }
     setIsLaunching(true);
@@ -453,6 +455,12 @@ const ApplicationDetails: React.FC = () => {
           </div>
         </div>
       </div>
+      <NoticeModal
+        isOpen={isSsoNoticeOpen}
+        title="Microsoft SSO Required"
+        message="This application requires Microsoft SSO. Please sign in with Microsoft to access."
+        onClose={() => setIsSsoNoticeOpen(false)}
+      />
     </div>
   );
 };
