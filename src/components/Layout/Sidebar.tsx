@@ -42,11 +42,11 @@ const CollapsedTip: React.FC<{
   label: React.ReactNode;
   children: React.ReactElement;
 }> = ({ collapsed, label, children }) => (
-  // Same tree in both states so the child never remounts (keeps keyboard focus). While expanded the
-  // tooltip is forced closed (controlled `open={false}`); while collapsed it is uncontrolled.
-  <Tooltip open={collapsed ? undefined : false}>
+  // Same tree in both states so the child never remounts (keeps keyboard focus). The tooltip stays
+  // uncontrolled; its content is only rendered while collapsed, so nothing shows while expanded.
+  <Tooltip>
     <TooltipTrigger asChild>{children}</TooltipTrigger>
-    <TooltipContent side="right">{label}</TooltipContent>
+    {collapsed && <TooltipContent side="right">{label}</TooltipContent>}
   </Tooltip>
 );
 
@@ -210,7 +210,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
             <SidebarToggle
               collapsed={collapsed}
               onClick={onToggle}
-              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              aria-label="Toggle sidebar"
               className="self-end"
             />
           </CollapsedTip>
