@@ -1,4 +1,5 @@
 import ReactDOM from "react-dom/client";
+import { Toaster } from "@odessa-separator/ui";
 import App from "./App";
 import "./index.css";
 
@@ -16,4 +17,9 @@ if (import.meta.env.DEV) {
 }
 */
 
-ReactDOM.createRoot(document.getElementById("root")!).render(<App />);
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <>
+    <App />
+    <Toaster />
+  </>,
+);

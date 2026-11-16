@@ -10,6 +10,7 @@
     "lint": "eslint . --ext ts,tsx"
   },
   "dependencies": {
+    "@odessa-separator/ui": "^0.1.0",
     "@tanstack/react-query": "^5.14.2",
     "axios": "^1.6.2",
     "clsx": "^2.0.0",

@@ -1,6 +1,8 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
 
 @import "tailwindcss";
+@import "@odessa-separator/ui/theme.css";
+@import "@odessa-separator/ui/fonts.css";
 @config "../tailwind.config.ts";
 
 /* Tailwind 4 compat: v3 default border color (gray-200) so bare `border`/`divide` look unchanged */
