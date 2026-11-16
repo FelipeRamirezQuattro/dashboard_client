@@ -2,6 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Building2 } from "lucide-react";
 import {
+  Badge,
   Button,
   Card,
   CardContent,
@@ -14,10 +15,16 @@ import { BusinessUnit } from "../types/businessUnit.types";
 
 interface BusinessUnitCardProps {
   businessUnit: BusinessUnit;
+  /** Optional: number of applications, shown as "N application(s)". */
+  appCount?: number;
+  /** Optional: status label shown as a success badge (e.g. "Active"). */
+  status?: string;
 }
 
 const BusinessUnitCard: React.FC<BusinessUnitCardProps> = ({
   businessUnit,
+  appCount,
+  status,
 }) => {
   const navigate = useNavigate();
   const [logoFailed, setLogoFailed] = React.useState(false);
@@ -58,6 +65,16 @@ const BusinessUnitCard: React.FC<BusinessUnitCardProps> = ({
         <CardDescription className="line-clamp-3">
           {businessUnit.description}
         </CardDescription>
+        {(appCount !== undefined || status) && (
+          <div className="mt-auto flex flex-wrap items-center justify-center gap-2 pt-2">
+            {appCount !== undefined && (
+              <Badge variant="neutral">
+                {`${appCount} application${appCount !== 1 ? "s" : ""}`}
+              </Badge>
+            )}
+            {status && <Badge variant="success">{status}</Badge>}
+          </div>
+        )}
       </CardContent>
 
       <CardFooter>

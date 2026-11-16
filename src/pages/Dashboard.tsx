@@ -27,10 +27,20 @@ const Dashboard: React.FC = () => {
 
   const { data: apps = [] } = useQuery({ queryKey: ["apps"], queryFn: getApps });
 
-  const activeAppCount = React.useMemo(
-    () => (apps as IExternalApp[]).filter((app) => app.isActive).length,
-    [apps],
-  );
+  const { activeAppCount, appCountByBU } = React.useMemo(() => {
+    const counts: Record<string, number> = {};
+    let total = 0;
+    (apps as IExternalApp[]).forEach((app) => {
+      if (!app.isActive) return;
+      total += 1;
+      const buId =
+        typeof app.businessUnitId === "string"
+          ? app.businessUnitId
+          : app.businessUnitId._id;
+      counts[buId] = (counts[buId] || 0) + 1;
+    });
+    return { activeAppCount: total, appCountByBU: counts };
+  }, [apps]);
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-6 sm:px-6 sm:py-8">
@@ -74,7 +84,12 @@ const Dashboard: React.FC = () => {
         ) : (
           <CardGrid className={gridClasses}>
             {(businessUnits as BusinessUnit[]).map((bu) => (
-              <BusinessUnitCard key={bu._id} businessUnit={bu} />
+              <BusinessUnitCard
+                key={bu._id}
+                businessUnit={bu}
+                appCount={appCountByBU[bu._id] || 0}
+                status="Active"
+              />
             ))}
           </CardGrid>
         )}

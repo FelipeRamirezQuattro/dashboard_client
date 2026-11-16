@@ -206,6 +206,23 @@ const ApplicationDetails: React.FC = () => {
         </CardContent>
       </Card>
 
+      {deptName && (
+        <Card>
+          <CardHeader>
+            <CardTitle as="h2">Assigned Departments</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between gap-3 rounded-control bg-surface-muted p-3">
+              <div className="min-w-0">
+                <p className="font-medium text-text">{deptName}</p>
+                <p className="text-xs text-text-muted">{buName}</p>
+              </div>
+              <Badge variant="success">Active</Badge>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <NoticeModal
         isOpen={isSsoNoticeOpen}
         title="Microsoft SSO Required"
