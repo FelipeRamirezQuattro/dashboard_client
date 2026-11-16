@@ -42,7 +42,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       }}
       title={title}
       description={message}
-      confirmLabel={confirmLabel}
+      confirmLabel={isPending ? "Working..." : confirmLabel}
       cancelLabel={cancelLabel}
       destructive={tone === "danger"}
       busy={isPending}

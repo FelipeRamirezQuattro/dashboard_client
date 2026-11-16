@@ -19,7 +19,6 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-  Spinner,
 } from "@odessa-separator/ui";
 import { IExternalApp, categoryLabels } from "../types/app.types";
 import { useLaunchApp } from "../hooks/useApps";
@@ -103,10 +102,7 @@ const AppCard: React.FC<AppCardProps> = ({ app }) => {
                 <Clock size={16} aria-hidden="true" />
               </>
             ) : isPending ? (
-              <>
-                <Spinner size="sm" label="Launching" />
-                Launching...
-              </>
+              "Launching..."
             ) : (
               <>
                 Launch
