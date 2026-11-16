@@ -8,32 +8,93 @@ import {
 import {
   CreateAppData,
   AppCategory,
+  IExternalApp,
+  RequiredRole,
   categoryLabels,
 } from "../../types/app.types";
-import { Shield, CheckCircle2, XCircle, Trash2, Lock } from "lucide-react";
+import {
+  Alert,
+  Badge,
+  Button,
+  Checkbox,
+  DataTable,
+  DataTableToolbar,
+  Field,
+  FormDialog,
+  Input,
+  Select,
+  Textarea,
+  useDataTable,
+  type ActiveFilter,
+  type DataTableColumn,
+} from "@odessa-separator/ui";
+import {
+  CheckCircle2,
+  Download,
+  LayoutGrid,
+  Lock,
+  Plus,
+  Shield,
+  Trash2,
+  XCircle,
+} from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { businessUnitService } from "../../services/businessUnit.service";
 import { departmentService } from "../../services/department.service";
 import { BusinessUnit } from "../../types/businessUnit.types";
 import { Department } from "../../types/department.types";
-import { TableRowSkeleton } from "../../components/SkeletonLoader";
 import ConfirmationModal from "../../components/ConfirmationModal";
 import { exportRowsToCsv } from "../../utils/csvExport";
+
+type CategoryFilter = "all" | AppCategory;
+type RoleFilter = "all" | RequiredRole;
+type StatusFilter = "all" | "active" | "inactive";
+
+const NO_APPS: IExternalApp[] = [];
+
+const emptyForm: CreateAppData = {
+  name: "",
+  description: "",
+  url: "",
+  chatbotApiUrl: "",
+  ssoEndpoint: "",
+  iconUrl: "",
+  category: "other",
+  requiredRole: "viewer",
+  businessUnitId: "",
+  departmentId: "",
+  isActive: true,
+  comingSoon: false,
+};
+
+const roleLabels: Record<RequiredRole, string> = {
+  viewer: "Viewer",
+  editor: "Editor",
+  admin: "Admin",
+  superadmin: "Superadmin",
+};
+
+const getBusinessUnitName = (app: IExternalApp) =>
+  typeof app.businessUnitId === "object" && app.businessUnitId !== null
+    ? app.businessUnitId.name
+    : "—";
+
+const getDepartmentName = (app: IExternalApp) =>
+  typeof app.departmentId === "object" && app.departmentId !== null
+    ? app.departmentId.name
+    : "—";
 
 const AppManagement: React.FC = () => {
   const { data: apps, isLoading, error } = useAllApps();
   const createApp = useCreateApp();
   const updateApp = useUpdateApp();
   const deleteApp = useDeleteApp();
-  const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<"all" | AppCategory>(
-    "all",
-  );
-  const [roleFilter, setRoleFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">(
-    "all",
-  );
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  // Kept after the dialog closes so the message never reads "undefined" while it animates out.
   const [deleteTarget, setDeleteTarget] = useState<{
     id: string;
     name: string;
@@ -50,20 +111,10 @@ const AppManagement: React.FC = () => {
   });
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [formData, setFormData] = useState<CreateAppData>({
-    name: "",
-    description: "",
-    url: "",
-    chatbotApiUrl: "",
-    ssoEndpoint: "",
-    iconUrl: "",
-    category: "other",
-    requiredRole: "viewer",
-    businessUnitId: "",
-    departmentId: "",
-    isActive: true,
-    comingSoon: false,
-  });
+  const [formData, setFormData] = useState<CreateAppData>(emptyForm);
+  // As before, a cancelled draft is kept for the next open; after a successful create the form is
+  // cleared when the dialog next opens, so the fields do not empty while it animates closed.
+  const [resetOnOpen, setResetOnOpen] = useState(false);
 
   // Filter departments based on selected business unit in the form
   const availableDepartments =
@@ -73,25 +124,20 @@ const AppManagement: React.FC = () => {
         : dept.businessUnitId === formData.businessUnitId,
     ) || [];
 
+  const openCreateModal = () => {
+    if (resetOnOpen) {
+      setFormData(emptyForm);
+      setResetOnOpen(false);
+    }
+    setIsCreateModalOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await createApp.mutateAsync(formData);
       setIsCreateModalOpen(false);
-      setFormData({
-        name: "",
-        description: "",
-        url: "",
-        chatbotApiUrl: "",
-        ssoEndpoint: "",
-        iconUrl: "",
-        category: "other",
-        requiredRole: "viewer",
-        businessUnitId: "",
-        departmentId: "",
-        isActive: true,
-        comingSoon: false,
-      });
+      setResetOnOpen(true);
     } catch (error) {
       console.error("Failed to create app:", error);
     }
@@ -101,7 +147,7 @@ const AppManagement: React.FC = () => {
     if (!deleteTarget) return;
     try {
       await deleteApp.mutateAsync(deleteTarget.id);
-      setDeleteTarget(null);
+      setDeleteOpen(false);
     } catch (error) {
       console.error("Failed to delete app:", error);
     }
@@ -118,33 +164,91 @@ const AppManagement: React.FC = () => {
     }
   };
 
-  const getBusinessUnitName = (app: NonNullable<typeof apps>[number]) =>
-    typeof app.businessUnitId === "object" && app.businessUnitId !== null
-      ? app.businessUnitId.name
-      : "—";
+  // One predicate for the table and the CSV export: search (name, description, business unit,
+  // department) + category, role and status filters.
+  const matches = (app: IExternalApp) => {
+    const query = searchTerm.toLowerCase();
+    const matchesSearch =
+      app.name.toLowerCase().includes(query) ||
+      app.description.toLowerCase().includes(query) ||
+      getBusinessUnitName(app).toLowerCase().includes(query) ||
+      getDepartmentName(app).toLowerCase().includes(query);
+    const matchesCategory =
+      categoryFilter === "all" || app.category === categoryFilter;
+    const matchesRole = roleFilter === "all" || app.requiredRole === roleFilter;
+    const matchesStatus =
+      statusFilter === "all" ||
+      (statusFilter === "active" && app.isActive) ||
+      (statusFilter === "inactive" && !app.isActive);
+    return matchesSearch && matchesCategory && matchesRole && matchesStatus;
+  };
 
-  const getDepartmentName = (app: NonNullable<typeof apps>[number]) =>
-    typeof app.departmentId === "object" && app.departmentId !== null
-      ? app.departmentId.name
-      : "—";
+  // The initial sort key has no sorter: the API order is kept until a column header is clicked.
+  const table = useDataTable<IExternalApp>(apps ?? NO_APPS, {
+    filter: matches,
+    sorters: {
+      name: (a, b) => a.name.localeCompare(b.name),
+      businessUnit: (a, b) =>
+        getBusinessUnitName(a).localeCompare(getBusinessUnitName(b)),
+      department: (a, b) =>
+        getDepartmentName(a).localeCompare(getDepartmentName(b)),
+      category: (a, b) =>
+        categoryLabels[a.category].localeCompare(categoryLabels[b.category]),
+      role: (a, b) => a.requiredRole.localeCompare(b.requiredRole),
+      sso: (a, b) => Number(Boolean(b.ssoEndpoint)) - Number(Boolean(a.ssoEndpoint)),
+      status: (a, b) => Number(b.isActive) - Number(a.isActive),
+    },
+    initialSort: { key: "default", direction: "ascending" },
+    pageSize: 10,
+  });
 
-  const filteredApps =
-    apps?.filter((app) => {
-      const query = searchTerm.toLowerCase();
-      const matchesSearch =
-        app.name.toLowerCase().includes(query) ||
-        app.description.toLowerCase().includes(query) ||
-        getBusinessUnitName(app).toLowerCase().includes(query) ||
-        getDepartmentName(app).toLowerCase().includes(query);
-      const matchesCategory =
-        categoryFilter === "all" || app.category === categoryFilter;
-      const matchesRole = roleFilter === "all" || app.requiredRole === roleFilter;
-      const matchesStatus =
-        statusFilter === "all" ||
-        (statusFilter === "active" && app.isActive) ||
-        (statusFilter === "inactive" && !app.isActive);
-      return matchesSearch && matchesCategory && matchesRole && matchesStatus;
-    }) || [];
+  const changeSearch = (value: string) => {
+    setSearchTerm(value);
+    table.resetPage();
+  };
+  const changeCategoryFilter = (value: CategoryFilter) => {
+    setCategoryFilter(value);
+    table.resetPage();
+  };
+  const changeRoleFilter = (value: RoleFilter) => {
+    setRoleFilter(value);
+    table.resetPage();
+  };
+  const changeStatusFilter = (value: StatusFilter) => {
+    setStatusFilter(value);
+    table.resetPage();
+  };
+  const clearFilters = () => {
+    setCategoryFilter("all");
+    setRoleFilter("all");
+    setStatusFilter("all");
+    table.resetPage();
+  };
+
+  const activeFilters: ActiveFilter[] = [];
+  if (categoryFilter !== "all") {
+    activeFilters.push({
+      key: "category",
+      label: `Category: ${categoryLabels[categoryFilter]}`,
+      onClear: () => changeCategoryFilter("all"),
+    });
+  }
+  if (roleFilter !== "all") {
+    activeFilters.push({
+      key: "role",
+      label: `Role: ${roleLabels[roleFilter]}`,
+      onClear: () => changeRoleFilter("all"),
+    });
+  }
+  if (statusFilter !== "all") {
+    activeFilters.push({
+      key: "status",
+      label: `Status: ${statusFilter === "active" ? "Active" : "Inactive"}`,
+      onClear: () => changeStatusFilter("all"),
+    });
+  }
+
+  const filteredApps = (apps ?? NO_APPS).filter(matches);
 
   const handleExport = () => {
     exportRowsToCsv(
@@ -174,576 +278,447 @@ const AppManagement: React.FC = () => {
     );
   };
 
-  return (
-    <div className="rounded-b-lg bg-gray-50 border border-gray-200">
-      {/* App Management Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200">
-        <div className="flex items-center gap-2">
-          <span
-            className="material-symbols-outlined text-amber-500 text-xl sm:text-2xl"
-            aria-hidden="true"
-          >
-            apps
+  const columns: DataTableColumn<IExternalApp>[] = [
+    {
+      key: "name",
+      header: "Name",
+      sortable: true,
+      cell: (app) => (
+        <span className="flex flex-col">
+          <span className="font-semibold text-text">{app.name}</span>
+          <span className="max-w-md truncate text-sm text-text-muted">
+            {app.description}
           </span>
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-            App Management
-          </h2>
-        </div>
-        <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto">
-          <button
-            onClick={() => setShowFilters((value) => !value)}
-            className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-gray-600 touch-manipulation whitespace-nowrap shrink-0"
+        </span>
+      ),
+    },
+    {
+      key: "businessUnit",
+      header: "Business Unit",
+      sortable: true,
+      cell: (app) => (
+        <span className="whitespace-nowrap text-text">
+          {getBusinessUnitName(app)}
+        </span>
+      ),
+    },
+    {
+      key: "department",
+      header: "Department",
+      sortable: true,
+      cell: (app) => (
+        <span className="whitespace-nowrap text-text">
+          {getDepartmentName(app)}
+        </span>
+      ),
+    },
+    {
+      key: "category",
+      header: "Category",
+      sortable: true,
+      cell: (app) => (
+        <span className="whitespace-nowrap text-text">
+          {categoryLabels[app.category]}
+        </span>
+      ),
+    },
+    {
+      key: "role",
+      header: "Required Role",
+      sortable: true,
+      cell: (app) => (
+        <span className="flex items-center gap-2 whitespace-nowrap font-medium capitalize text-text-muted">
+          <Shield className="size-4" aria-hidden="true" />
+          {app.requiredRole}
+        </span>
+      ),
+    },
+    {
+      key: "sso",
+      header: "SSO",
+      sortable: true,
+      cell: (app) =>
+        app.ssoEndpoint ? (
+          <Badge variant="warning">
+            <Lock className="size-3" aria-hidden="true" />
+            Enabled
+          </Badge>
+        ) : (
+          <span className="text-text-muted">—</span>
+        ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      sortable: true,
+      cell: (app) => (
+        <span className="flex items-center gap-2 whitespace-nowrap">
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-label={`${app.isActive ? "Active" : "Inactive"}, toggle status of ${app.name}`}
+            onClick={() => toggleActive(app._id, app.isActive)}
           >
-            <span className="material-symbols-outlined text-lg" aria-hidden="true">
-              tune
-            </span>
-            <span className="hidden sm:inline">Filter</span>
-          </button>
-          <button
-            onClick={handleExport}
-            className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-gray-600 touch-manipulation whitespace-nowrap shrink-0"
-          >
-            <span className="material-symbols-outlined text-lg" aria-hidden="true">
-              download
-            </span>
-            <span className="hidden sm:inline">Export</span>
-          </button>
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-osi-primary text-gray-900 rounded-lg hover:bg-osi-primary-dark transition-colors text-sm font-medium touch-manipulation active:scale-95 whitespace-nowrap shrink-0"
-          >
-            <span className="material-symbols-outlined text-lg" aria-hidden="true">
-              add
-            </span>
-            <span className="hidden sm:inline">Add Application</span>
-            <span className="sm:hidden">Add</span>
-          </button>
-        </div>
-      </div>
+            <Badge variant={app.isActive ? "success" : "neutral"}>
+              {app.isActive ? (
+                <CheckCircle2 className="size-3" aria-hidden="true" />
+              ) : (
+                <XCircle className="size-3" aria-hidden="true" />
+              )}
+              {app.isActive ? "Active" : "Inactive"}
+            </Badge>
+          </Button>
+          {app.comingSoon && <Badge variant="warning">Coming Soon</Badge>}
+        </span>
+      ),
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      cell: (app) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          aria-label={`Delete ${app.name}`}
+          onClick={() => {
+            setDeleteTarget({ id: app._id, name: app.name });
+            setDeleteOpen(true);
+          }}
+        >
+          <Trash2 className="size-4" aria-hidden="true" />
+          Delete
+        </Button>
+      ),
+    },
+  ];
 
-      {showFilters && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4 sm:px-6 py-4 border-b border-gray-200">
-          <input
-            type="search"
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-            className="input-field"
-            placeholder="Search applications..."
-          />
-          <select
-            value={categoryFilter}
-            onChange={(event) =>
-              setCategoryFilter(event.target.value as "all" | AppCategory)
-            }
-            className="input-field"
-          >
-            <option value="all">All Categories</option>
-            {Object.entries(categoryLabels).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-          <select
-            value={roleFilter}
-            onChange={(event) => setRoleFilter(event.target.value)}
-            className="input-field"
-          >
-            <option value="all">All Roles</option>
-            <option value="viewer">Viewer</option>
-            <option value="editor">Editor</option>
-            <option value="admin">Admin</option>
-            <option value="superadmin">Superadmin</option>
-          </select>
-          <select
-            value={statusFilter}
-            onChange={(event) =>
-              setStatusFilter(event.target.value as "all" | "active" | "inactive")
-            }
-            className="input-field"
-          >
-            <option value="all">All Statuses</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
-        </div>
-      )}
+  return (
+    <section aria-labelledby="apps-heading" className="flex flex-col gap-4 py-6">
+      <h2
+        id="apps-heading"
+        className="flex items-center gap-2 text-xl font-semibold text-text"
+      >
+        <LayoutGrid className="size-6 text-text-muted" aria-hidden="true" />
+        App Management
+      </h2>
 
-      {/* Apps Table */}
-      {isLoading ? (
-        <div className="overflow-x-auto -mx-4 sm:mx-0">
-            <table className="w-full min-w-max">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Business Unit
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Department
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Category
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Required Role
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    SSO
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-transparent divide-y divide-white/[0.08]">
-                {[...Array(6)].map((_, i) => (
-                  <TableRowSkeleton key={i} columns={8} />
-                ))}
-              </tbody>
-            </table>
-        </div>
-      ) : error ? (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center m-6">
-          <p className="text-red-600">Failed to load applications</p>
-        </div>
-      ) : (
-        <div className="overflow-x-auto -mx-4 sm:mx-0">
-            <table className="w-full min-w-max">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Business Unit
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Department
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Category
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Required Role
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    SSO
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-transparent divide-y divide-white/[0.08]">
-                {filteredApps.map((app) => (
-                  <tr key={app._id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">
-                        {app.name}
-                      </div>
-                      <div className="text-sm text-gray-400 truncate max-w-md">
-                        {app.description}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-900">
-                        {getBusinessUnitName(app)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-900">
-                        {getDepartmentName(app)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm capitalize">
-                        {categoryLabels[app.category]}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <Shield className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm font-medium text-gray-600 capitalize">
-                          {app.requiredRole}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {app.ssoEndpoint ? (
-                        <div className="flex items-center gap-1.5 text-amber-600">
-                          <Lock className="w-4 h-4" />
-                          <span className="text-sm font-medium">Enabled</span>
-                        </div>
-                      ) : (
-                        <span className="text-sm text-gray-400">—</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => toggleActive(app._id, app.isActive)}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                            app.isActive
-                              ? "text-emerald-700 bg-emerald-50 hover:bg-emerald-100"
-                              : "text-gray-500 bg-gray-50 hover:bg-gray-100"
-                          }`}
-                        >
-                          {app.isActive ? (
-                            <>
-                              <CheckCircle2 className="w-4 h-4" />
-                              <span>Active</span>
-                            </>
-                          ) : (
-                            <>
-                              <XCircle className="w-4 h-4" />
-                              <span>Inactive</span>
-                            </>
-                          )}
-                        </button>
-                        {app.comingSoon && (
-                          <span className="px-2 py-1 text-xs font-medium bg-amber-50 text-amber-700 rounded-md">
-                            Coming Soon
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <button
-                        onClick={() =>
-                          setDeleteTarget({ id: app._id, name: app.name })
-                        }
-                        className="text-red-600 hover:text-red-800 inline-flex items-center gap-1.5"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        <span>Delete</span>
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-        </div>
-      )}
-
-      {/* Create Modal */}
-      {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0"
-            style={{ background: "rgba(0,0,0,0.5)" }}
-            onClick={() => setIsCreateModalOpen(false)}
-          />
-
-          {/* Dialog */}
-          <div
-            className="relative w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden"
-            style={{ background: "white" }}
-          >
-            {/* Header */}
-            <div
-              className="flex items-center justify-between px-6 py-4"
-              style={{ borderBottom: "1px solid #e5e7eb" }}
-            >
-              <h3 className="text-lg font-bold text-gray-900">
-                Add New Application
-              </h3>
-              <button
-                type="button"
-                onClick={() => setIsCreateModalOpen(false)}
-                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors touch-manipulation"
-                aria-label="Close"
-              >
-                <span className="material-symbols-outlined text-lg text-gray-500">
-                  close
-                </span>
-              </button>
-            </div>
-
-            {/* Form */}
-            <form
-              onSubmit={handleSubmit}
-              className="p-6 space-y-4 max-h-[70vh] overflow-y-auto"
-            >
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                    Business Unit <span className="text-red-400">*</span>
-                  </label>
-                  <select
-                    required
-                    value={formData.businessUnitId}
-                    onChange={(e) => {
-                      setFormData({
-                        ...formData,
-                        businessUnitId: e.target.value,
-                        departmentId: "", // Reset department when BU changes
-                      });
-                    }}
-                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors bg-white"
-                  >
-                    <option value="">Select a business unit</option>
-                    {businessUnits?.map((bu: BusinessUnit) => (
-                      <option key={bu._id} value={bu._id}>
-                        {bu.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                    Department <span className="text-red-400">*</span>
-                  </label>
-                  <select
-                    required
-                    value={formData.departmentId}
-                    onChange={(e) =>
-                      setFormData({ ...formData, departmentId: e.target.value })
-                    }
-                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors bg-white disabled:bg-gray-50 disabled:text-gray-400"
-                    disabled={!formData.businessUnitId}
-                  >
-                    <option value="">
-                      {formData.businessUnitId
-                        ? "Select a department"
-                        : "Select a business unit first"}
+      <DataTableToolbar
+        searchLabel="Search applications"
+        searchPlaceholder="Search applications..."
+        search={searchTerm}
+        onSearchChange={changeSearch}
+        resultCount={table.total}
+        filters={
+          <div className="flex flex-col gap-4">
+            <Field label="Category">
+              {(control) => (
+                <Select
+                  {...control}
+                  value={categoryFilter}
+                  onChange={(event) =>
+                    changeCategoryFilter(event.target.value as CategoryFilter)
+                  }
+                >
+                  <option value="all">All Categories</option>
+                  {Object.entries(categoryLabels).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
                     </option>
-                    {availableDepartments.map((dept: Department) => (
-                      <option key={dept._id} value={dept._id}>
-                        {dept.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                    App Name <span className="text-red-400">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                    Description <span className="text-red-400">*</span>
-                  </label>
-                  <textarea
-                    required
-                    rows={3}
-                    value={formData.description}
-                    onChange={(e) =>
-                      setFormData({ ...formData, description: e.target.value })
-                    }
-                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors resize-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                    URL <span className="text-red-400">*</span>
-                  </label>
-                  <input
-                    type="url"
-                    required
-                    value={formData.url}
-                    onChange={(e) =>
-                      setFormData({ ...formData, url: e.target.value })
-                    }
-                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors"
-                    placeholder="https://app.example.com"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                    Chatbot API Base URL{" "}
-                    <span className="text-gray-400 font-normal normal-case">
-                      (optional)
-                    </span>
-                  </label>
-                  <input
-                    type="url"
-                    value={formData.chatbotApiUrl || ""}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        chatbotApiUrl: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors"
-                    placeholder="https://api.osidesigner.com/api-chemtracker"
-                  />
-                  <p className="mt-1 text-xs text-gray-400">
-                    Used by dashboard chatbot routing. If empty, app URL is
-                    used.
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                    SSO Endpoint{" "}
-                    <span className="text-gray-400 font-normal normal-case">
-                      (optional)
-                    </span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.ssoEndpoint}
-                    onChange={(e) =>
-                      setFormData({ ...formData, ssoEndpoint: e.target.value })
-                    }
-                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors"
-                    placeholder="api://app-id/.default"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                    Icon URL{" "}
-                    <span className="text-gray-400 font-normal normal-case">
-                      (optional)
-                    </span>
-                  </label>
-                  <input
-                    type="url"
-                    value={formData.iconUrl}
-                    onChange={(e) =>
-                      setFormData({ ...formData, iconUrl: e.target.value })
-                    }
-                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors"
-                    placeholder="https://example.com/icon.png"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                      Category <span className="text-red-400">*</span>
-                    </label>
-                    <select
-                      required
-                      value={formData.category}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          category: e.target.value as AppCategory,
-                        })
-                      }
-                      className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors bg-white"
-                    >
-                      <option value="gas">Gas Separation</option>
-                      <option value="chemical">Chemical Treatment</option>
-                      <option value="sand">Sand Control</option>
-                      <option value="pumps">Pumps Tracker</option>
-                      <option value="admin">Admin Tools</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                      Required Role <span className="text-red-400">*</span>
-                    </label>
-                    <select
-                      required
-                      value={formData.requiredRole}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          requiredRole: e.target.value as any,
-                        })
-                      }
-                      className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors bg-white"
-                    >
-                      <option value="viewer">Viewer</option>
-                      <option value="editor">Editor</option>
-                      <option value="admin">Admin</option>
-                      <option value="superadmin">Superadmin</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="isActive"
-                    checked={formData.isActive}
-                    onChange={(e) =>
-                      setFormData({ ...formData, isActive: e.target.checked })
-                    }
-                    className="rounded-sm border-gray-300 text-osi-primary focus:ring-osi-primary"
-                  />
-                  <label htmlFor="isActive" className="text-sm text-gray-600">
-                    Active
-                  </label>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="comingSoon"
-                    checked={formData.comingSoon}
-                    onChange={(e) =>
-                      setFormData({ ...formData, comingSoon: e.target.checked })
-                    }
-                    className="rounded-sm border-gray-300 text-osi-primary focus:ring-osi-primary"
-                  />
-                  <label htmlFor="comingSoon" className="text-sm text-gray-600">
-                    Coming Soon (Disables Launch Button)
-                  </label>
-                </div>
-
-                <div className="flex gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsCreateModalOpen(false)}
-                    className="flex-1 py-2.5 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors touch-manipulation"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-black transition-all active:scale-95 touch-manipulation disabled:opacity-60"
-                    style={{
-                      background:
-                        "linear-gradient(135deg, #fbad37 0%, #ffd280 100%)",
-                    }}
-                    disabled={createApp.isPending}
-                  >
-                    {createApp.isPending ? "Creating..." : "Create Application"}
-                  </button>
-                </div>
-              </form>
+                  ))}
+                </Select>
+              )}
+            </Field>
+            <Field label="Required Role">
+              {(control) => (
+                <Select
+                  {...control}
+                  value={roleFilter}
+                  onChange={(event) =>
+                    changeRoleFilter(event.target.value as RoleFilter)
+                  }
+                >
+                  <option value="all">All Roles</option>
+                  <option value="viewer">Viewer</option>
+                  <option value="editor">Editor</option>
+                  <option value="admin">Admin</option>
+                  <option value="superadmin">Superadmin</option>
+                </Select>
+              )}
+            </Field>
+            <Field label="Status">
+              {(control) => (
+                <Select
+                  {...control}
+                  value={statusFilter}
+                  onChange={(event) =>
+                    changeStatusFilter(event.target.value as StatusFilter)
+                  }
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </Select>
+              )}
+            </Field>
           </div>
-        </div>
+        }
+        activeFilters={activeFilters}
+        onClearFilters={clearFilters}
+        actions={
+          <>
+            <Button variant="outline" onClick={handleExport}>
+              <Download className="size-4" aria-hidden="true" />
+              Export
+            </Button>
+            <Button onClick={openCreateModal}>
+              <Plus className="size-4" aria-hidden="true" />
+              Add Application
+            </Button>
+          </>
+        }
+      />
+
+      {error ? (
+        <Alert variant="danger">Failed to load applications</Alert>
+      ) : (
+        <DataTable
+          caption="Applications"
+          columns={columns}
+          rows={table.rows}
+          getRowKey={(app) => app._id}
+          sort={table.sort}
+          onSortChange={table.toggleSort}
+          page={table.page}
+          pageCount={table.pageCount}
+          onPageChange={table.setPage}
+          loading={isLoading}
+          loadingLabel="Loading applications"
+          empty={{ title: "No applications found" }}
+        />
       )}
+
+      <FormDialog
+        open={isCreateModalOpen}
+        onOpenChange={(open) => {
+          if (!open) setIsCreateModalOpen(false);
+        }}
+        title="Add New Application"
+        description="Applications are launched from the dashboard by users of the selected department."
+        submitLabel={createApp.isPending ? "Creating..." : "Create Application"}
+        busy={createApp.isPending}
+        onSubmit={handleSubmit}
+      >
+        <Field label="Business Unit" required>
+          {(control) => (
+            <Select
+              {...control}
+              required
+              value={formData.businessUnitId}
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  businessUnitId: e.target.value,
+                  departmentId: "", // Reset department when BU changes
+                });
+              }}
+            >
+              <option value="">Select a business unit</option>
+              {businessUnits?.map((bu: BusinessUnit) => (
+                <option key={bu._id} value={bu._id}>
+                  {bu.name}
+                </option>
+              ))}
+            </Select>
+          )}
+        </Field>
+
+        <Field label="Department" required>
+          {(control) => (
+            <Select
+              {...control}
+              required
+              value={formData.departmentId}
+              onChange={(e) =>
+                setFormData({ ...formData, departmentId: e.target.value })
+              }
+              disabled={!formData.businessUnitId}
+            >
+              <option value="">
+                {formData.businessUnitId
+                  ? "Select a department"
+                  : "Select a business unit first"}
+              </option>
+              {availableDepartments.map((dept: Department) => (
+                <option key={dept._id} value={dept._id}>
+                  {dept.name}
+                </option>
+              ))}
+            </Select>
+          )}
+        </Field>
+
+        <Field label="App Name" required>
+          {(control) => (
+            <Input
+              {...control}
+              type="text"
+              required
+              value={formData.name}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+            />
+          )}
+        </Field>
+
+        <Field label="Description" required>
+          {(control) => (
+            <Textarea
+              {...control}
+              required
+              rows={3}
+              className="resize-none"
+              value={formData.description}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
+            />
+          )}
+        </Field>
+
+        <Field label="URL" required>
+          {(control) => (
+            <Input
+              {...control}
+              type="url"
+              required
+              value={formData.url}
+              onChange={(e) =>
+                setFormData({ ...formData, url: e.target.value })
+              }
+              placeholder="https://app.example.com"
+            />
+          )}
+        </Field>
+
+        <Field
+          label="Chatbot API Base URL (optional)"
+          hint="Used by dashboard chatbot routing. If empty, app URL is used."
+        >
+          {(control) => (
+            <Input
+              {...control}
+              type="url"
+              value={formData.chatbotApiUrl || ""}
+              onChange={(e) =>
+                setFormData({ ...formData, chatbotApiUrl: e.target.value })
+              }
+              placeholder="https://api.osidesigner.com/api-chemtracker"
+            />
+          )}
+        </Field>
+
+        <Field label="SSO Endpoint (optional)">
+          {(control) => (
+            <Input
+              {...control}
+              type="text"
+              value={formData.ssoEndpoint}
+              onChange={(e) =>
+                setFormData({ ...formData, ssoEndpoint: e.target.value })
+              }
+              placeholder="api://app-id/.default"
+            />
+          )}
+        </Field>
+
+        <Field label="Icon URL (optional)">
+          {(control) => (
+            <Input
+              {...control}
+              type="url"
+              value={formData.iconUrl}
+              onChange={(e) =>
+                setFormData({ ...formData, iconUrl: e.target.value })
+              }
+              placeholder="https://example.com/icon.png"
+            />
+          )}
+        </Field>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Category" required>
+            {(control) => (
+              <Select
+                {...control}
+                required
+                value={formData.category}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    category: e.target.value as AppCategory,
+                  })
+                }
+              >
+                <option value="gas">Gas Separation</option>
+                <option value="chemical">Chemical Treatment</option>
+                <option value="sand">Sand Control</option>
+                <option value="pumps">Pumps Tracker</option>
+                <option value="admin">Admin Tools</option>
+                <option value="other">Other</option>
+              </Select>
+            )}
+          </Field>
+
+          <Field label="Required Role" required>
+            {(control) => (
+              <Select
+                {...control}
+                required
+                value={formData.requiredRole}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    requiredRole: e.target.value as RequiredRole,
+                  })
+                }
+              >
+                <option value="viewer">Viewer</option>
+                <option value="editor">Editor</option>
+                <option value="admin">Admin</option>
+                <option value="superadmin">Superadmin</option>
+              </Select>
+            )}
+          </Field>
+        </div>
+
+        <Checkbox
+          label="Active"
+          checked={formData.isActive}
+          onChange={(e) =>
+            setFormData({ ...formData, isActive: e.target.checked })
+          }
+        />
+
+        <Checkbox
+          label="Coming Soon (Disables Launch Button)"
+          checked={formData.comingSoon}
+          onChange={(e) =>
+            setFormData({ ...formData, comingSoon: e.target.checked })
+          }
+        />
+      </FormDialog>
+
       <ConfirmationModal
-        isOpen={Boolean(deleteTarget)}
+        isOpen={deleteOpen}
         title="Delete Application"
-        message={`Delete "${deleteTarget?.name}"? This action cannot be undone.`}
+        message={`Delete "${deleteTarget?.name ?? ""}"? This action cannot be undone.`}
         confirmLabel="Delete"
         isPending={deleteApp.isPending}
-        onCancel={() => setDeleteTarget(null)}
+        onCancel={() => setDeleteOpen(false)}
         onConfirm={confirmDelete}
       />
-    </div>
+    </section>
   );
 };
 

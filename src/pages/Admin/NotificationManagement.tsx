@@ -1,6 +1,24 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
+  Alert,
+  Badge,
+  Button,
+  DataTable,
+  DataTableToolbar,
+  Field,
+  Fieldset,
+  FormDialog,
+  Input,
+  Radio,
+  Select,
+  Textarea,
+  useDataTable,
+  type ActiveFilter,
+  type DataTableColumn,
+} from "@odessa-separator/ui";
+import { Bell, BellOff, BellPlus, Download } from "lucide-react";
+import {
   useAdminNotifications,
   useCreateNotification,
   useDeleteNotification,
@@ -19,6 +37,15 @@ import {
 import ConfirmationModal from "../../components/ConfirmationModal";
 import { exportRowsToCsv } from "../../utils/csvExport";
 
+type SeverityFilter = "all" | NotificationSeverity;
+type ScopeFilter = "all" | NotificationScope;
+type StatusFilter = "all" | "active" | "inactive";
+
+// Stable defaults: a new array per render would change the query data identity every render.
+const NO_NOTIFICATIONS: INotification[] = [];
+const NO_BUSINESS_UNITS: BusinessUnit[] = [];
+const NO_DEPARTMENTS: Department[] = [];
+
 const typeOptions: { value: NotificationType; label: string }[] = [
   { value: "app_released", label: "App Released" },
   { value: "app_stopped", label: "App Stopped" },
@@ -28,22 +55,22 @@ const typeOptions: { value: NotificationType; label: string }[] = [
   { value: "custom", label: "Custom" },
 ];
 
-const severityOptions: {
-  value: NotificationSeverity;
-  label: string;
-  color: string;
-}[] = [
-  { value: "info", label: "Info", color: "text-blue-600" },
-  { value: "success", label: "Success", color: "text-emerald-600" },
-  { value: "warning", label: "Warning", color: "text-amber-600" },
-  { value: "error", label: "Error", color: "text-red-600" },
+const severityOptions: { value: NotificationSeverity; label: string }[] = [
+  { value: "info", label: "Info" },
+  { value: "success", label: "Success" },
+  { value: "warning", label: "Warning" },
+  { value: "error", label: "Error" },
 ];
 
-const severityBadge: Record<NotificationSeverity, string> = {
-  info: "bg-blue-50 text-blue-600",
-  success: "bg-emerald-50 text-emerald-600",
-  warning: "bg-amber-50 text-amber-600",
-  error: "bg-red-50 text-red-600",
+// Severity badge tone (was blue / emerald / amber / red).
+const severityBadge: Record<
+  NotificationSeverity,
+  "info" | "success" | "warning" | "danger"
+> = {
+  info: "info",
+  success: "success",
+  warning: "warning",
+  error: "danger",
 };
 
 const scopeLabels: Record<NotificationScope, string> = {
@@ -63,55 +90,74 @@ const defaultForm: CreateNotificationPayload = {
   expiresAt: "",
 };
 
+const getTypeLabel = (n: INotification) =>
+  typeOptions.find((t) => t.value === n.type)?.label ?? n.type;
+
+const getCreatedByName = (n: INotification) => {
+  if (!n.createdBy) return "—";
+  if (typeof n.createdBy === "object") {
+    return `${n.createdBy.firstName} ${n.createdBy.lastName}`;
+  }
+  return "—";
+};
+
+const getDepartmentBusinessUnitId = (dept: Department) =>
+  typeof dept.businessUnitId === "object" && dept.businessUnitId !== null
+    ? dept.businessUnitId._id
+    : dept.businessUnitId;
+
 const NotificationManagement: React.FC = () => {
-  const {
-    data: notifications = [],
-    isLoading,
-    error,
-  } = useAdminNotifications();
+  const { data: notifications = NO_NOTIFICATIONS, isLoading, error } =
+    useAdminNotifications();
   const createNotification = useCreateNotification();
   const deleteNotification = useDeleteNotification();
 
-  const { data: businessUnits = [] } = useQuery({
+  const { data: businessUnits = NO_BUSINESS_UNITS } = useQuery({
     queryKey: ["businessUnits", "active"],
     queryFn: businessUnitService.getActiveBusinessUnits,
   });
 
-  const { data: allDepartments = [] } = useQuery({
+  const { data: allDepartments = NO_DEPARTMENTS } = useQuery({
     queryKey: ["departments", "active"],
     queryFn: departmentService.getActiveDepartments,
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [severityFilter, setSeverityFilter] = useState<"all" | NotificationSeverity>(
-    "all",
-  );
-  const [scopeFilter, setScopeFilter] = useState<"all" | NotificationScope>(
-    "all",
-  );
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">(
-    "all",
-  );
+  const [severityFilter, setSeverityFilter] = useState<SeverityFilter>("all");
+  const [scopeFilter, setScopeFilter] = useState<ScopeFilter>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  // Kept after the dialog closes so the message never reads "undefined" while it animates out.
   const [deleteTarget, setDeleteTarget] = useState<{
     id: string;
     title: string;
   } | null>(null);
   const [formData, setFormData] =
     useState<CreateNotificationPayload>(defaultForm);
+  // Business unit used only to narrow the department list (department scope). It is not sent.
+  const [departmentFilterBuId, setDepartmentFilterBuId] = useState("");
+  // As before, a cancelled draft is kept for the next open; after a successful send the form is
+  // cleared when the dialog next opens, so the fields do not empty while it animates closed.
+  const [resetOnOpen, setResetOnOpen] = useState(false);
 
   const filteredDepartments = allDepartments.filter((dept: Department) => {
-    if (!formData.targetId) return false;
-    const buId =
-      typeof dept.businessUnitId === "object" && dept.businessUnitId !== null
-        ? dept.businessUnitId._id
-        : dept.businessUnitId;
-    return buId === formData.targetId;
+    if (!departmentFilterBuId) return false;
+    return getDepartmentBusinessUnitId(dept) === departmentFilterBuId;
   });
 
   const handleScopeChange = (scope: NotificationScope) => {
     setFormData((prev) => ({ ...prev, targetScope: scope, targetId: "" }));
+    setDepartmentFilterBuId("");
+  };
+
+  const openModal = () => {
+    if (resetOnOpen) {
+      setFormData(defaultForm);
+      setDepartmentFilterBuId("");
+      setResetOnOpen(false);
+    }
+    setIsModalOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -126,7 +172,7 @@ const NotificationManagement: React.FC = () => {
       };
       await createNotification.mutateAsync(payload);
       setIsModalOpen(false);
-      setFormData(defaultForm);
+      setResetOnOpen(true);
     } catch (err) {
       console.error("Failed to create notification:", err);
     }
@@ -136,21 +182,15 @@ const NotificationManagement: React.FC = () => {
     if (!deleteTarget) return;
     try {
       await deleteNotification.mutateAsync(deleteTarget.id);
-      setDeleteTarget(null);
+      setDeleteOpen(false);
     } catch (err) {
       console.error("Failed to deactivate notification:", err);
     }
   };
 
-  const getCreatedByName = (n: INotification) => {
-    if (!n.createdBy) return "—";
-    if (typeof n.createdBy === "object") {
-      return `${n.createdBy.firstName} ${n.createdBy.lastName}`;
-    }
-    return "—";
-  };
-
-  const filteredNotifications = notifications.filter((notification) => {
+  // One predicate for the table and the CSV export: search (title, message, type label) +
+  // severity, scope and status filters.
+  const matches = (notification: INotification) => {
     const query = searchTerm.toLowerCase();
     const matchesSearch =
       notification.title.toLowerCase().includes(query) ||
@@ -167,7 +207,74 @@ const NotificationManagement: React.FC = () => {
       (statusFilter === "active" && notification.isActive) ||
       (statusFilter === "inactive" && !notification.isActive);
     return matchesSearch && matchesSeverity && matchesScope && matchesStatus;
+  };
+
+  // The initial sort key has no sorter: the API order is kept until a column header is clicked.
+  const table = useDataTable<INotification>(notifications, {
+    filter: matches,
+    sorters: {
+      title: (a, b) => a.title.localeCompare(b.title),
+      type: (a, b) => getTypeLabel(a).localeCompare(getTypeLabel(b)),
+      severity: (a, b) => a.severity.localeCompare(b.severity),
+      scope: (a, b) =>
+        scopeLabels[a.targetScope].localeCompare(scopeLabels[b.targetScope]),
+      status: (a, b) => Number(b.isActive) - Number(a.isActive),
+      createdBy: (a, b) =>
+        getCreatedByName(a).localeCompare(getCreatedByName(b)),
+      date: (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    },
+    initialSort: { key: "default", direction: "ascending" },
+    pageSize: 10,
   });
+
+  const changeSearch = (value: string) => {
+    setSearchTerm(value);
+    table.resetPage();
+  };
+  const changeSeverityFilter = (value: SeverityFilter) => {
+    setSeverityFilter(value);
+    table.resetPage();
+  };
+  const changeScopeFilter = (value: ScopeFilter) => {
+    setScopeFilter(value);
+    table.resetPage();
+  };
+  const changeStatusFilter = (value: StatusFilter) => {
+    setStatusFilter(value);
+    table.resetPage();
+  };
+  const clearFilters = () => {
+    setSeverityFilter("all");
+    setScopeFilter("all");
+    setStatusFilter("all");
+    table.resetPage();
+  };
+
+  const activeFilters: ActiveFilter[] = [];
+  if (severityFilter !== "all") {
+    activeFilters.push({
+      key: "severity",
+      label: `Severity: ${severityOptions.find((s) => s.value === severityFilter)?.label ?? severityFilter}`,
+      onClear: () => changeSeverityFilter("all"),
+    });
+  }
+  if (scopeFilter !== "all") {
+    activeFilters.push({
+      key: "scope",
+      label: `Scope: ${scopeLabels[scopeFilter]}`,
+      onClear: () => changeScopeFilter("all"),
+    });
+  }
+  if (statusFilter !== "all") {
+    activeFilters.push({
+      key: "status",
+      label: `Status: ${statusFilter === "active" ? "Active" : "Inactive"}`,
+      onClear: () => changeStatusFilter("all"),
+    });
+  }
+
+  const filteredNotifications = notifications.filter(matches);
 
   const handleExport = () => {
     exportRowsToCsv(
@@ -187,522 +294,416 @@ const NotificationManagement: React.FC = () => {
     );
   };
 
-  return (
-    <div className="rounded-b-lg bg-gray-50 border border-gray-200">
-      {/* Notification Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200">
-        <div className="flex items-center gap-2">
-          <span
-            className="material-symbols-outlined text-amber-500 text-xl sm:text-2xl"
-            aria-hidden="true"
-          >
-            notifications
-          </span>
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-            Notification Management
-          </h2>
-        </div>
-        <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto">
-          <button
-            onClick={() => setShowFilters((value) => !value)}
-            className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-gray-600 touch-manipulation whitespace-nowrap shrink-0"
-          >
-            <span className="material-symbols-outlined text-lg" aria-hidden="true">
-              tune
-            </span>
-            <span className="hidden sm:inline">Filter</span>
-          </button>
-          <button
-            onClick={handleExport}
-            className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-gray-600 touch-manipulation whitespace-nowrap shrink-0"
-          >
-            <span className="material-symbols-outlined text-lg" aria-hidden="true">
-              download
-            </span>
-            <span className="hidden sm:inline">Export</span>
-          </button>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-osi-primary text-gray-900 rounded-lg hover:bg-osi-primary-dark transition-colors text-sm font-medium touch-manipulation active:scale-95 whitespace-nowrap shrink-0"
-          >
-            <span className="material-symbols-outlined text-lg" aria-hidden="true">
-              add_alert
-            </span>
-            <span className="hidden sm:inline">Create Notification</span>
-            <span className="sm:hidden">Add</span>
-          </button>
-        </div>
-      </div>
-
-      {showFilters && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4 sm:px-6 py-4 border-b border-gray-200">
-          <input
-            type="search"
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-            className="input-field"
-            placeholder="Search notifications..."
-          />
-          <select
-            value={severityFilter}
-            onChange={(event) =>
-              setSeverityFilter(event.target.value as "all" | NotificationSeverity)
-            }
-            className="input-field"
-          >
-            <option value="all">All Severities</option>
-            {severityOptions.map((severity) => (
-              <option key={severity.value} value={severity.value}>
-                {severity.label}
-              </option>
-            ))}
-          </select>
-          <select
-            value={scopeFilter}
-            onChange={(event) =>
-              setScopeFilter(event.target.value as "all" | NotificationScope)
-            }
-            className="input-field"
-          >
-            <option value="all">All Scopes</option>
-            {Object.entries(scopeLabels).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-          <select
-            value={statusFilter}
-            onChange={(event) =>
-              setStatusFilter(event.target.value as "all" | "active" | "inactive")
-            }
-            className="input-field"
-          >
-            <option value="all">All Statuses</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
-        </div>
-      )}
-
-      {/* Table */}
-      {isLoading ? (
-        <div className="p-8 text-center">
-          <div
-            className="w-8 h-8 rounded-full animate-spin mx-auto"
-            style={{
-              border: "2px solid rgba(251,173,55,0.2)",
-              borderTopColor: "#fbad37",
+  const columns: DataTableColumn<INotification>[] = [
+    {
+      key: "title",
+      header: "Title",
+      sortable: true,
+      className: "max-w-xs",
+      cell: (n) => (
+        <span className="flex max-w-xs flex-col">
+          <span className="truncate font-semibold text-text">{n.title}</span>
+          <span className="truncate text-xs text-text-muted">{n.message}</span>
+        </span>
+      ),
+    },
+    {
+      key: "type",
+      header: "Type",
+      sortable: true,
+      cell: (n) => (
+        <span className="whitespace-nowrap text-text-muted">
+          {getTypeLabel(n)}
+        </span>
+      ),
+    },
+    {
+      key: "severity",
+      header: "Severity",
+      sortable: true,
+      cell: (n) => <Badge variant={severityBadge[n.severity]}>{n.severity}</Badge>,
+    },
+    {
+      key: "scope",
+      header: "Scope",
+      sortable: true,
+      cell: (n) => (
+        <span className="whitespace-nowrap text-text-muted">
+          {scopeLabels[n.targetScope]}
+        </span>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      sortable: true,
+      cell: (n) => (
+        <Badge variant={n.isActive ? "success" : "neutral"}>
+          {n.isActive ? "Active" : "Inactive"}
+        </Badge>
+      ),
+    },
+    {
+      key: "createdBy",
+      header: "Created By",
+      sortable: true,
+      cell: (n) => (
+        <span className="whitespace-nowrap text-text-muted">
+          {getCreatedByName(n)}
+        </span>
+      ),
+    },
+    {
+      key: "date",
+      header: "Date",
+      sortable: true,
+      cell: (n) => (
+        <span className="whitespace-nowrap text-text-muted">
+          {new Date(n.createdAt).toLocaleDateString()}
+        </span>
+      ),
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      cell: (n) =>
+        n.isActive ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-label={`Deactivate ${n.title}`}
+            disabled={deleteNotification.isPending}
+            onClick={() => {
+              setDeleteTarget({ id: n._id, title: n.title });
+              setDeleteOpen(true);
             }}
-          />
-        </div>
-      ) : error ? (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center m-6">
-          <p className="text-red-600">Failed to load notifications</p>
-        </div>
-      ) : filteredNotifications.length === 0 ? (
-        <div
-          className="p-12 text-center"
-          style={{ background: "#f9fafb" }}
-        >
-          <span
-            className="material-symbols-outlined text-5xl text-gray-300 mb-3"
-            aria-hidden="true"
           >
-            notifications_none
-          </span>
-          <p className="text-gray-400">No notifications created yet</p>
-        </div>
-      ) : (
-        <div className="overflow-x-auto -mx-4 sm:mx-0">
-            <table className="w-full min-w-max">
-              <thead
-                style={{
-                  background: "#f9fafb",
-                  borderBottom: "1px solid #e5e7eb",
-                }}
-              >
-                <tr>
-                  {[
-                    "Title",
-                    "Type",
-                    "Severity",
-                    "Scope",
-                    "Status",
-                    "Created By",
-                    "Date",
-                    "Actions",
-                  ].map((h) => (
-                    <th
-                      key={h}
-                      className="px-5 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider"
-                    >
-                      {h}
-                    </th>
+            Deactivate
+          </Button>
+        ) : null,
+    },
+  ];
+
+  const hasNotifications = notifications.length > 0;
+
+  return (
+    <section
+      aria-labelledby="notifications-heading"
+      className="flex flex-col gap-4 py-6"
+    >
+      <h2
+        id="notifications-heading"
+        className="flex items-center gap-2 text-xl font-semibold text-text"
+      >
+        <Bell className="size-6 text-text-muted" aria-hidden="true" />
+        Notification Management
+      </h2>
+
+      <DataTableToolbar
+        searchLabel="Search notifications"
+        searchPlaceholder="Search notifications..."
+        search={searchTerm}
+        onSearchChange={changeSearch}
+        resultCount={table.total}
+        filters={
+          <div className="flex flex-col gap-4">
+            <Field label="Severity">
+              {(control) => (
+                <Select
+                  {...control}
+                  value={severityFilter}
+                  onChange={(event) =>
+                    changeSeverityFilter(event.target.value as SeverityFilter)
+                  }
+                >
+                  <option value="all">All Severities</option>
+                  {severityOptions.map((severity) => (
+                    <option key={severity.value} value={severity.value}>
+                      {severity.label}
+                    </option>
                   ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 bg-white">
-                {filteredNotifications.map((n) => (
-                  <tr
-                    key={n._id}
-                    className="hover:bg-gray-50 transition-colors"
-                  >
-                    <td className="px-5 py-4 max-w-xs">
-                      <p className="text-sm font-semibold text-gray-900 truncate">
-                        {n.title}
-                      </p>
-                      <p className="text-xs text-gray-400 truncate">
-                        {n.message}
-                      </p>
-                    </td>
-                    <td className="px-5 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-600">
-                        {typeOptions.find((t) => t.value === n.type)?.label ??
-                          n.type}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${severityBadge[n.severity]}`}
-                      >
-                        {n.severity}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-600">
-                        {scopeLabels[n.targetScope]}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4 whitespace-nowrap">
-                      {n.isActive ? (
-                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
-                          <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-                          Active
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-400">
-                          <div className="w-1.5 h-1.5 bg-gray-300 rounded-full" />
-                          Inactive
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {getCreatedByName(n)}
-                    </td>
-                    <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-400">
-                      {new Date(n.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-5 py-4 whitespace-nowrap">
-                      {n.isActive && (
-                        <button
-                          onClick={() =>
-                            setDeleteTarget({ id: n._id, title: n.title })
-                          }
-                          disabled={deleteNotification.isPending}
-                          className="text-xs text-red-400 hover:text-red-600 transition-colors font-medium touch-manipulation"
-                        >
-                          Deactivate
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-        </div>
+                </Select>
+              )}
+            </Field>
+            <Field label="Scope">
+              {(control) => (
+                <Select
+                  {...control}
+                  value={scopeFilter}
+                  onChange={(event) =>
+                    changeScopeFilter(event.target.value as ScopeFilter)
+                  }
+                >
+                  <option value="all">All Scopes</option>
+                  {Object.entries(scopeLabels).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </Field>
+            <Field label="Status">
+              {(control) => (
+                <Select
+                  {...control}
+                  value={statusFilter}
+                  onChange={(event) =>
+                    changeStatusFilter(event.target.value as StatusFilter)
+                  }
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </Select>
+              )}
+            </Field>
+          </div>
+        }
+        activeFilters={activeFilters}
+        onClearFilters={clearFilters}
+        actions={
+          <>
+            <Button variant="outline" onClick={handleExport}>
+              <Download className="size-4" aria-hidden="true" />
+              Export
+            </Button>
+            <Button onClick={openModal}>
+              <BellPlus className="size-4" aria-hidden="true" />
+              Create Notification
+            </Button>
+          </>
+        }
+      />
+
+      {error ? (
+        <Alert variant="danger">Failed to load notifications</Alert>
+      ) : (
+        <DataTable
+          caption="Notifications"
+          columns={columns}
+          rows={table.rows}
+          getRowKey={(n) => n._id}
+          sort={table.sort}
+          onSortChange={table.toggleSort}
+          page={table.page}
+          pageCount={table.pageCount}
+          onPageChange={table.setPage}
+          loading={isLoading}
+          loadingLabel="Loading notifications"
+          empty={{
+            title: hasNotifications
+              ? "No notifications match your search or filters"
+              : "No notifications created yet",
+            icon: <BellOff className="size-10" aria-hidden="true" />,
+          }}
+        />
       )}
 
-      {/* Create Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0"
-            style={{ background: "rgba(0,0,0,0.5)" }}
-            onClick={() => setIsModalOpen(false)}
-          />
+      <FormDialog
+        open={isModalOpen}
+        onOpenChange={(open) => {
+          if (!open) setIsModalOpen(false);
+        }}
+        title="Create Notification"
+        description="Send a notification to all users, a business unit or a department."
+        submitLabel={createNotification.isPending ? "Sending…" : "Send Notification"}
+        busy={createNotification.isPending}
+        onSubmit={handleSubmit}
+      >
+        <Field label="Title" required>
+          {(control) => (
+            <Input
+              {...control}
+              type="text"
+              required
+              maxLength={200}
+              value={formData.title}
+              onChange={(e) =>
+                setFormData((p) => ({ ...p, title: e.target.value }))
+              }
+              placeholder="e.g. ChemTracker v2.4 is now live"
+            />
+          )}
+        </Field>
 
-          {/* Dialog */}
-          <div
-            className="relative w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden"
-            style={{ background: "white" }}
-          >
-            {/* Header */}
-            <div
-              className="flex items-center justify-between px-6 py-4"
-              style={{ borderBottom: "1px solid #e5e7eb" }}
-            >
-              <h3 className="text-lg font-bold text-gray-900">
-                Create Notification
-              </h3>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors touch-manipulation"
-                aria-label="Close"
+        <Field label="Message" required>
+          {(control) => (
+            <Textarea
+              {...control}
+              required
+              maxLength={1000}
+              rows={3}
+              className="resize-none"
+              value={formData.message}
+              onChange={(e) =>
+                setFormData((p) => ({ ...p, message: e.target.value }))
+              }
+              placeholder="Describe the notification detail…"
+            />
+          )}
+        </Field>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Type">
+            {(control) => (
+              <Select
+                {...control}
+                value={formData.type}
+                onChange={(e) =>
+                  setFormData((p) => ({
+                    ...p,
+                    type: e.target.value as NotificationType,
+                  }))
+                }
               >
-                <span className="material-symbols-outlined text-lg text-gray-500">
-                  close
-                </span>
-              </button>
-            </div>
+                {typeOptions.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+          <Field label="Severity">
+            {(control) => (
+              <Select
+                {...control}
+                value={formData.severity}
+                onChange={(e) =>
+                  setFormData((p) => ({
+                    ...p,
+                    severity: e.target.value as NotificationSeverity,
+                  }))
+                }
+              >
+                {severityOptions.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+        </div>
 
-            {/* Form */}
-            <form
-              onSubmit={handleSubmit}
-              className="p-6 space-y-4 max-h-[70vh] overflow-y-auto"
-            >
-              {/* Title */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                  Title <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  maxLength={200}
-                  value={formData.title}
-                  onChange={(e) =>
-                    setFormData((p) => ({ ...p, title: e.target.value }))
-                  }
-                  placeholder="e.g. ChemTracker v2.4 is now live"
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors"
+        <Fieldset legend="Target Audience">
+          <div className="flex flex-wrap gap-4">
+            {(["all", "businessUnit", "department"] as NotificationScope[]).map(
+              (scope) => (
+                <Radio
+                  key={scope}
+                  name="notification-target-scope"
+                  value={scope}
+                  label={scopeLabels[scope]}
+                  checked={formData.targetScope === scope}
+                  onChange={() => handleScopeChange(scope)}
                 />
-              </div>
+              ),
+            )}
+          </div>
+        </Fieldset>
 
-              {/* Message */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                  Message <span className="text-red-400">*</span>
-                </label>
-                <textarea
-                  required
-                  maxLength={1000}
-                  rows={3}
-                  value={formData.message}
-                  onChange={(e) =>
-                    setFormData((p) => ({ ...p, message: e.target.value }))
-                  }
-                  placeholder="Describe the notification detail…"
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors resize-none"
-                />
-              </div>
+        {formData.targetScope === "businessUnit" && (
+          <Field label="Business Unit" required>
+            {(control) => (
+              <Select
+                {...control}
+                required
+                value={formData.targetId}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, targetId: e.target.value }))
+                }
+              >
+                <option value="">Select business unit…</option>
+                {businessUnits.map((bu: BusinessUnit) => (
+                  <option key={bu._id} value={bu._id}>
+                    {bu.name}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+        )}
 
-              {/* Type + Severity */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                    Type
-                  </label>
-                  <select
-                    value={formData.type}
-                    onChange={(e) =>
-                      setFormData((p) => ({
-                        ...p,
-                        type: e.target.value as NotificationType,
-                      }))
-                    }
-                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors bg-white"
-                  >
-                    {typeOptions.map((t) => (
-                      <option key={t.value} value={t.value}>
-                        {t.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                    Severity
-                  </label>
-                  <select
-                    value={formData.severity}
-                    onChange={(e) =>
-                      setFormData((p) => ({
-                        ...p,
-                        severity: e.target.value as NotificationSeverity,
-                      }))
-                    }
-                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors bg-white"
-                  >
-                    {severityOptions.map((s) => (
-                      <option key={s.value} value={s.value}>
-                        {s.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Target Scope */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                  Target Audience
-                </label>
-                <div className="flex gap-2">
-                  {(
-                    ["all", "businessUnit", "department"] as NotificationScope[]
-                  ).map((scope) => (
-                    <button
-                      key={scope}
-                      type="button"
-                      onClick={() => handleScopeChange(scope)}
-                      className="flex-1 py-2 px-3 rounded-lg border text-xs font-semibold transition-all touch-manipulation"
-                      style={
-                        formData.targetScope === scope
-                          ? {
-                              background: "rgba(251,173,55,0.12)",
-                              borderColor: "#fbad37",
-                              color: "#92650a",
-                            }
-                          : {
-                              background: "white",
-                              borderColor: "#e5e7eb",
-                              color: "#6b7280",
-                            }
-                      }
-                    >
-                      {scopeLabels[scope]}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Business Unit selector */}
-              {formData.targetScope === "businessUnit" && (
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                    Business Unit <span className="text-red-400">*</span>
-                  </label>
-                  <select
-                    required
-                    value={formData.targetId}
-                    onChange={(e) =>
-                      setFormData((p) => ({ ...p, targetId: e.target.value }))
-                    }
-                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors bg-white"
-                  >
-                    <option value="">Select business unit…</option>
-                    {businessUnits.map((bu: BusinessUnit) => (
-                      <option key={bu._id} value={bu._id}>
-                        {bu.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {/* Department selector */}
-              {formData.targetScope === "department" && (
-                <>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                      Filter by Business Unit
-                    </label>
-                    <select
-                      value={formData.targetId ? "" : ""}
-                      onChange={(e) =>
-                        setFormData((p) => ({ ...p, targetId: e.target.value }))
-                      }
-                      className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors bg-white"
-                    >
-                      <option value="">Select business unit to filter…</option>
-                      {businessUnits.map((bu: BusinessUnit) => (
-                        <option key={bu._id} value={bu._id}>
-                          {bu.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  {formData.targetId && filteredDepartments.length > 0 && (
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                        Department <span className="text-red-400">*</span>
-                      </label>
-                      <select
-                        required
-                        value={
-                          filteredDepartments.some(
-                            (d: Department) => d._id === formData.targetId,
-                          )
-                            ? formData.targetId
-                            : ""
-                        }
-                        onChange={(e) =>
-                          setFormData((p) => ({
-                            ...p,
-                            targetId: e.target.value,
-                          }))
-                        }
-                        className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors bg-white"
-                      >
-                        <option value="">Select department…</option>
-                        {filteredDepartments.map((dept: Department) => (
-                          <option key={dept._id} value={dept._id}>
-                            {dept.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {/* Expires At */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                  Expires At{" "}
-                  <span className="text-gray-400 font-normal normal-case">
-                    (optional)
-                  </span>
-                </label>
-                <input
-                  type="datetime-local"
-                  value={formData.expiresAt}
-                  onChange={(e) =>
-                    setFormData((p) => ({ ...p, expiresAt: e.target.value }))
-                  }
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors"
-                />
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="flex-1 py-2.5 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors touch-manipulation"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={createNotification.isPending}
-                  className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-black transition-all active:scale-95 touch-manipulation disabled:opacity-60"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, #fbad37 0%, #ffd280 100%)",
+        {formData.targetScope === "department" && (
+          <>
+            <Field label="Filter by Business Unit">
+              {(control) => (
+                <Select
+                  {...control}
+                  value={departmentFilterBuId}
+                  onChange={(e) => {
+                    setDepartmentFilterBuId(e.target.value);
+                    setFormData((p) => ({ ...p, targetId: "" }));
                   }}
                 >
-                  {createNotification.isPending
-                    ? "Sending…"
-                    : "Send Notification"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+                  <option value="">Select business unit to filter…</option>
+                  {businessUnits.map((bu: BusinessUnit) => (
+                    <option key={bu._id} value={bu._id}>
+                      {bu.name}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </Field>
+            {departmentFilterBuId && filteredDepartments.length > 0 && (
+              <Field label="Department" required>
+                {(control) => (
+                  <Select
+                    {...control}
+                    required
+                    value={
+                      filteredDepartments.some(
+                        (d: Department) => d._id === formData.targetId,
+                      )
+                        ? formData.targetId
+                        : ""
+                    }
+                    onChange={(e) =>
+                      setFormData((p) => ({
+                        ...p,
+                        targetId: e.target.value,
+                      }))
+                    }
+                  >
+                    <option value="">Select department…</option>
+                    {filteredDepartments.map((dept: Department) => (
+                      <option key={dept._id} value={dept._id}>
+                        {dept.name}
+                      </option>
+                    ))}
+                  </Select>
+                )}
+              </Field>
+            )}
+          </>
+        )}
+
+        <Field label="Expires At (optional)">
+          {(control) => (
+            <Input
+              {...control}
+              type="datetime-local"
+              value={formData.expiresAt}
+              onChange={(e) =>
+                setFormData((p) => ({ ...p, expiresAt: e.target.value }))
+              }
+            />
+          )}
+        </Field>
+      </FormDialog>
+
       <ConfirmationModal
-        isOpen={Boolean(deleteTarget)}
+        isOpen={deleteOpen}
         title="Deactivate Notification"
-        message={`Deactivate "${deleteTarget?.title}"? It will no longer appear as an active notification.`}
+        message={`Deactivate "${deleteTarget?.title ?? ""}"? It will no longer appear as an active notification.`}
         confirmLabel="Deactivate"
         isPending={deleteNotification.isPending}
-        onCancel={() => setDeleteTarget(null)}
+        onCancel={() => setDeleteOpen(false)}
         onConfirm={confirmDelete}
       />
-    </div>
+    </section>
   );
 };
 
