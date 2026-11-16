@@ -184,9 +184,6 @@ importers:
       axios:
         specifier: ^1.6.2
         version: 1.21.1(debug@4.4.3(supports-color@7.2.0))(supports-color@7.2.0)
-      clsx:
-        specifier: ^2.0.0
-        version: 2.1.1
       lucide-react:
         specifier: ^0.575.0
         version: 0.575.0(react@19.3.1)
@@ -234,7 +231,7 @@ importers:
         specifier: ^0.4.5
         version: 0.4.26(eslint@8.57.1(supports-color@7.2.0))
       tailwindcss:
-        specifier: ^4.0.0
+        specifier: ^4.3.5
         version: 4.3.5
       typescript:
         specifier: ^5.3.3
