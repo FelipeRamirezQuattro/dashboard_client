@@ -14,17 +14,19 @@ export const useNotificationSSE = () => {
   const esRef = useRef<EventSource | null>(null);
   const retriesRef = useRef(0);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const mountedRef = useRef(true);
 
   useEffect(() => {
-    mountedRef.current = true;
+    // Per-effect flag: under React StrictMode the first effect run is cleaned up and a second one
+    // starts before the first token request resolves. A shared ref would be reset to true by the
+    // second run, letting the first run open a second (leaked) EventSource.
+    let cancelled = false;
 
     const connect = async () => {
-      if (!mountedRef.current) return;
+      if (cancelled) return;
 
       try {
         const token = await requestSseToken();
-        if (!mountedRef.current) return;
+        if (cancelled) return;
 
         const url = `${SSE_BASE_URL}/notifications/sse?token=${encodeURIComponent(token)}`;
         const es = new EventSource(url);
@@ -43,14 +45,14 @@ export const useNotificationSSE = () => {
           es.close();
           esRef.current = null;
 
-          if (!mountedRef.current) return;
+          if (cancelled) return;
           if (retriesRef.current >= MAX_RETRIES) return;
 
           const delay = BASE_DELAY_MS * Math.pow(2, retriesRef.current);
           retriesRef.current += 1;
 
           retryTimerRef.current = setTimeout(() => {
-            if (mountedRef.current) connect();
+            if (!cancelled) connect();
           }, delay);
         };
       } catch {
@@ -61,7 +63,7 @@ export const useNotificationSSE = () => {
     connect();
 
     return () => {
-      mountedRef.current = false;
+      cancelled = true;
       if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
       if (esRef.current) {
         esRef.current.close();

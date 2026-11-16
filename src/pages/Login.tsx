@@ -1,6 +1,27 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import {
+  Alert,
+  AlertDescription,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Checkbox,
+  Field,
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  Link,
+  Logo,
+  Separator,
+  Spinner,
+  cn,
+} from "@odessa-separator/ui";
+import { ArrowRight, LayoutGrid, Lock, Mail } from "lucide-react";
 import { initiateMicrosoftSSO } from "../utils/sso.utils";
 
 const SLIDES = [
@@ -95,9 +116,12 @@ const Login: React.FC = () => {
     try {
       await login({ email, password });
       navigate("/dashboard");
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const responseError = (
+        err as { response?: { data?: { error?: string } } }
+      ).response?.data?.error;
       setError(
-        err.response?.data?.error ||
+        responseError ||
           "Login failed. Please check your credentials.",
       );
     } finally {
@@ -110,293 +134,166 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex" style={{ background: "#f8fafc" }}>
-      {/* Left — image slider (desktop only) */}
-      <div className="hidden lg:block lg:w-1/2 xl:w-3/5 relative overflow-hidden">
+    <div className="flex min-h-screen bg-bg text-text">
+      {/* Left: image slider (desktop only) */}
+      <div className="relative hidden overflow-hidden lg:block lg:w-1/2 xl:w-3/5">
         {SLIDES.map((slide, i) => (
           <img
             key={slide.src}
             src={slide.src}
-            alt={slide.alt}
-            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000"
+            alt={i === slideIndex ? slide.alt : ""}
+            className="absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 motion-reduce:transition-none"
             style={{ opacity: i === slideIndex ? 1 : 0 }}
           />
         ))}
-        {/* Dark gradient overlay at bottom */}
-        <div
-          className="absolute inset-x-0 bottom-0 h-32 pointer-events-none"
-          style={{
-            background:
-              "linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 100%)",
-          }}
-        />
-        {/* Dot indicators */}
-        <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-2">
+        <div className="absolute inset-x-0 bottom-6 flex justify-center gap-1">
           {SLIDES.map((_, i) => (
-            <button
+            <Button
               key={i}
+              variant="ghost"
+              size="icon"
               onClick={() => goToSlide(i)}
               aria-label={`Go to slide ${i + 1}`}
-              className="w-2 h-2 rounded-full transition-all focus:outline-hidden"
-              style={{
-                background:
-                  i === slideIndex ? "#fbad37" : "rgba(255,255,255,0.5)",
-                transform: i === slideIndex ? "scale(1.3)" : "scale(1)",
-              }}
-            />
+              aria-current={i === slideIndex ? "true" : undefined}
+              className="size-6 bg-transparent hover:bg-transparent"
+            >
+              <span
+                aria-hidden="true"
+                className={cn("size-2.5", i === slideIndex ? "bg-accent" : "bg-surface/70")}
+              />
+            </Button>
           ))}
         </div>
       </div>
 
-      {/* Right — login panel */}
-      <div className="w-full lg:w-1/2 xl:w-2/5 flex flex-col items-center justify-center p-8 relative overflow-hidden">
-        {/* Ambient glow orbs */}
-        <div
-          className="absolute top-[-20%] right-[-10%] w-[400px] h-[400px] rounded-full pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(251,173,55,0.07) 0%, transparent 70%)",
-          }}
-        />
-        <div
-          className="absolute bottom-[-20%] left-[-10%] w-[350px] h-[350px] rounded-full pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(251,173,55,0.05) 0%, transparent 70%)",
-          }}
-        />
-
-        <div className="w-full max-w-md relative z-10">
-          {/* Logo */}
-          <div className="flex justify-center mb-4">
-            <img
-              src="/logo.png"
-              alt="Odessa Separator Inc."
-              className="w-36 h-36 object-contain"
-            />
+      {/* Right: login panel */}
+      <div className="flex w-full flex-col items-center justify-center p-8 lg:w-1/2 xl:w-2/5">
+        <div className="w-full max-w-md">
+          <div className="mb-6 flex justify-center">
+            <Logo className="h-24 w-auto" />
           </div>
 
-          {/* Login Card */}
-          <div
-            className="rounded-2xl p-6 sm:p-8"
-            style={{
-              background: "#f9fafb",
-              border: "1px solid #e5e7eb",
-              backdropFilter: "blur(12px)",
-            }}
-          >
-            <div className="mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Sign In</h2>
-              <p className="text-gray-400 text-sm mt-1">
-                Access your separator monitoring dashboard
-              </p>
-            </div>
+          <Card>
+            <CardHeader>
+              <CardTitle as="h2">Sign In</CardTitle>
+              <CardDescription>Access your separator monitoring dashboard</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              {error && (
+                <Alert variant="danger">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
 
-            {error && (
-              <div
-                className="mb-4 p-3 rounded-lg text-red-300 text-sm"
-                style={{
-                  background: "rgba(239,68,68,0.1)",
-                  border: "1px solid rgba(239,68,68,0.25)",
-                }}
-              >
-                {error}
-              </div>
-            )}
+              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                <Field label="Email Address" required>
+                  {(control) => (
+                    <InputGroup>
+                      <InputGroupAddon>
+                        <Mail size={18} aria-hidden="true" />
+                      </InputGroupAddon>
+                      <InputGroupInput
+                        {...control}
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="name@company.com"
+                        required
+                        disabled={isLoading}
+                        autoComplete="email"
+                      />
+                    </InputGroup>
+                  )}
+                </Field>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-gray-600 mb-2"
-                >
-                  Email Address
-                </label>
-                <div className="relative">
-                  <span
-                    className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 text-xl"
-                    aria-hidden="true"
-                  >
-                    mail
-                  </span>
-                  <input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 rounded-lg text-gray-900 placeholder-gray-400 text-base focus:outline-hidden focus:ring-2 focus:ring-osi-primary/60 transition-all"
-                    style={{
-                      background: "#f3f4f6",
-                      border: "1px solid #d1d5db",
-                    }}
-                    placeholder="name@company.com"
-                    required
-                    disabled={isLoading}
-                    autoComplete="email"
+                <Field label="Password" required>
+                  {(control) => (
+                    <InputGroup>
+                      <InputGroupAddon>
+                        <Lock size={18} aria-hidden="true" />
+                      </InputGroupAddon>
+                      <InputGroupInput
+                        {...control}
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        required
+                        disabled={isLoading}
+                        autoComplete="current-password"
+                      />
+                    </InputGroup>
+                  )}
+                </Field>
+
+                <div className="flex items-center justify-between gap-2">
+                  <Checkbox
+                    label="Remember this device"
+                    checked={rememberDevice}
+                    onChange={(e) => setRememberDevice(e.target.checked)}
                   />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label
-                    htmlFor="password"
-                    className="block text-sm font-medium text-gray-600"
-                  >
-                    Password
-                  </label>
-                  <a
-                    href="#"
-                    className="text-xs text-osi-primary/80 hover:text-osi-primary font-medium transition-colors touch-manipulation"
-                  >
+                  <Link href="#" className="text-sm">
                     Forgot password?
-                  </a>
+                  </Link>
                 </div>
-                <div className="relative">
-                  <span
-                    className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 text-xl"
-                    aria-hidden="true"
-                  >
-                    lock
-                  </span>
-                  <input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 rounded-lg text-gray-900 placeholder-gray-400 text-base focus:outline-hidden focus:ring-2 focus:ring-osi-primary/60 transition-all"
-                    style={{
-                      background: "#f3f4f6",
-                      border: "1px solid #d1d5db",
-                    }}
-                    placeholder="••••••••"
-                    required
-                    disabled={isLoading}
-                    autoComplete="current-password"
-                  />
-                </div>
-              </div>
 
-              <div className="flex items-center">
-                <input
-                  id="remember"
-                  type="checkbox"
-                  checked={rememberDevice}
-                  onChange={(e) => setRememberDevice(e.target.checked)}
-                  className="w-4 h-4 rounded-sm border-gray-300 bg-gray-100 text-osi-primary focus:ring-osi-primary/50 touch-manipulation"
-                />
-                <label
-                  htmlFor="remember"
-                  className="ml-2 text-sm text-gray-500"
-                >
-                  Remember this device
-                </label>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full font-bold py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 touch-manipulation text-black"
-                style={{
-                  background: isLoading
-                    ? "rgba(251,173,55,0.5)"
-                    : "linear-gradient(135deg, #fbad37 0%, #ffd280 100%)",
-                  boxShadow: isLoading
-                    ? "none"
-                    : "0 0 20px rgba(251,173,55,0.35)",
-                }}
-              >
-                {isLoading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-osi-bg/30 border-t-osi-bg rounded-full animate-spin" />
-                    <span>Signing in…</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Sign In</span>
-                    <span
-                      className="material-symbols-outlined text-lg"
-                      aria-hidden="true"
-                    >
-                      arrow_forward
-                    </span>
-                  </>
-                )}
-              </button>
-            </form>
-
-            {/* Divider */}
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div
+                <Button
+                  type="submit"
+                  variant="accent"
+                  size="lg"
+                  disabled={isLoading}
                   className="w-full"
-                  style={{ borderTop: "1px solid #e5e7eb" }}
-                ></div>
-              </div>
-              <div className="relative flex justify-center text-xs">
-                <span
-                  className="px-3 text-gray-400 font-medium uppercase tracking-wider"
-                  style={{ background: "#f0f0f0" }}
                 >
+                  {isLoading ? (
+                    <>
+                      <Spinner size="sm" label="Signing in" />
+                      <span>Signing in…</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Sign In</span>
+                      <ArrowRight size={18} aria-hidden="true" />
+                    </>
+                  )}
+                </Button>
+              </form>
+
+              <div className="flex items-center gap-3">
+                <Separator className="flex-1" />
+                <span className="text-xs font-medium tracking-wider text-text-muted uppercase">
                   or continue with
                 </span>
+                <Separator className="flex-1" />
               </div>
-            </div>
 
-            {/* Microsoft SSO Button */}
-            <button
-              type="button"
-              onClick={handleMicrosoftSSO}
-              disabled={isLoading}
-              className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation text-gray-700 hover:text-gray-900"
-              style={{
-                background: "#f3f4f6",
-                border: "1px solid #d1d5db",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background =
-                  "#ebebed";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background =
-                  "#f3f4f6";
-              }}
-            >
-              <svg
-                className="w-5 h-5 flex-shrink-0"
-                viewBox="0 0 23 23"
-                aria-hidden="true"
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                onClick={handleMicrosoftSSO}
+                disabled={isLoading}
+                className="w-full"
               >
-                <path fill="#f35325" d="M1 1h10v10H1z" />
-                <path fill="#81bc06" d="M12 1h10v10H12z" />
-                <path fill="#05a6f0" d="M1 12h10v10H1z" />
-                <path fill="#ffba08" d="M12 12h10v10H12z" />
-              </svg>
-              <span className="font-medium text-sm sm:text-base">
+                <LayoutGrid size={18} aria-hidden="true" />
                 Sign in with Microsoft
-              </span>
-            </button>
-          </div>
+              </Button>
+            </CardContent>
+          </Card>
 
-          {/* Footer */}
-          <div className="text-center mt-6">
-            <p className="text-xs text-gray-500">
+          <div className="mt-6 text-center">
+            <p className="text-xs text-text-muted">
               © 2026 Odessa Separator Inc. All rights reserved.
             </p>
-            <div className="flex items-center justify-center gap-3 mt-2 text-xs flex-wrap">
-              <a
-                href="#"
-                className="text-gray-400 hover:text-osi-primary transition-colors touch-manipulation"
-              >
+            <div className="mt-2 flex flex-wrap items-center justify-center gap-3 text-xs">
+              <Link href="#" variant="subtle">
                 Security Policy
-              </a>
-              <span className="text-gray-400">|</span>
-              <a
-                href="#"
-                className="text-gray-400 hover:text-osi-primary transition-colors"
-              >
+              </Link>
+              <span aria-hidden="true" className="text-text-muted">
+                |
+              </span>
+              <Link href="#" variant="subtle">
                 Help Desk
-              </a>
+              </Link>
             </div>
           </div>
         </div>

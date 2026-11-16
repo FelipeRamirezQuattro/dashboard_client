@@ -2,7 +2,21 @@ import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { businessUnitService } from "../../services/businessUnit.service";
 import { departmentService } from "../../services/department.service";
-import { Building2, FolderTree, ChevronRight, ChevronDown } from "lucide-react";
+import {
+  Badge,
+  Sidebar,
+  SidebarItem,
+  SidebarItemLabel,
+  SidebarNav,
+  SidebarSectionLabel,
+} from "@odessa-separator/ui";
+import {
+  AppWindow,
+  Building2,
+  FolderTree,
+  ChevronRight,
+  ChevronDown,
+} from "lucide-react";
 import { IExternalApp } from "../../types/app.types";
 
 interface HierarchicalSidebarProps {
@@ -77,112 +91,108 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
     };
   });
 
+  // The library has no tree item: each row is a flat SidebarItem, indented by level, that
+  // toggles its children (see docs/superpowers/library-gaps.md).
+  const toggleProps = (expanded: boolean, onToggle: () => void) => ({
+    href: "#",
+    role: "button" as const,
+    "aria-expanded": expanded,
+    onClick: (e: React.MouseEvent) => {
+      e.preventDefault();
+      onToggle();
+    },
+  });
+
   return (
-    <aside className="w-80 border-r border-osi-primary/10 bg-white hidden lg:flex flex-col p-4 gap-4 min-h-[calc(100vh-73px)] overflow-y-auto">
-      <div>
-        <h2 className="text-xs font-bold uppercase tracking-wider text-osi-secondary mb-4 px-3">
-          Applications
-        </h2>
-
-        <nav className="space-y-1">
-          {hierarchy?.map(({ businessUnit, departments }) => (
-            <div key={businessUnit._id} className="mb-2">
-              {/* Business Unit */}
-              <button
-                onClick={() => toggleBU(businessUnit._id)}
-                className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-colors hover:bg-slate-50 text-osi-dark font-semibold"
+    <Sidebar className="hidden min-h-[calc(100vh-56px)] w-80 overflow-y-auto lg:flex">
+      <SidebarNav aria-label="Applications by business unit" className="flex-1">
+        <SidebarSectionLabel>Applications</SidebarSectionLabel>
+        {hierarchy?.map(({ businessUnit, departments }) => {
+          const buOpen = expandedBUs.has(businessUnit._id);
+          return (
+            <React.Fragment key={businessUnit._id}>
+              <SidebarItem
+                {...toggleProps(buOpen, () => toggleBU(businessUnit._id))}
+                className="font-semibold"
               >
-                {expandedBUs.has(businessUnit._id) ? (
-                  <ChevronDown className="w-4 h-4 text-osi-primary" />
+                {buOpen ? (
+                  <ChevronDown size={16} aria-hidden="true" />
                 ) : (
-                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                  <ChevronRight size={16} aria-hidden="true" />
                 )}
-                <Building2 className="w-5 h-5 text-osi-primary" />
-                <span className="text-sm flex-1">{businessUnit.name}</span>
-              </button>
+                <Building2 size={18} aria-hidden="true" />
+                <SidebarItemLabel className="flex-1 text-sm">
+                  {businessUnit.name}
+                </SidebarItemLabel>
+              </SidebarItem>
 
-              {/* Departments */}
-              {expandedBUs.has(businessUnit._id) && (
-                <div className="ml-6 mt-1 space-y-1">
-                  {departments.map(({ department, apps: deptApps }) => (
-                    <div key={department._id}>
-                      <button
-                        onClick={() => toggleDept(department._id)}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-colors hover:bg-slate-50 text-osi-secondary"
+              {buOpen &&
+                departments.map(({ department, apps: deptApps }) => {
+                  const deptOpen = expandedDepts.has(department._id);
+                  return (
+                    <React.Fragment key={department._id}>
+                      <SidebarItem
+                        {...toggleProps(deptOpen, () => toggleDept(department._id))}
+                        className="ml-6"
                       >
-                        {expandedDepts.has(department._id) ? (
-                          <ChevronDown className="w-4 h-4 text-osi-secondary" />
+                        {deptOpen ? (
+                          <ChevronDown size={16} aria-hidden="true" />
                         ) : (
-                          <ChevronRight className="w-4 h-4 text-gray-400" />
+                          <ChevronRight size={16} aria-hidden="true" />
                         )}
-                        <FolderTree className="w-4 h-4 text-osi-secondary" />
-                        <span className="text-sm flex-1">
+                        <FolderTree size={16} aria-hidden="true" />
+                        <SidebarItemLabel className="flex-1 text-sm">
                           {department.name}
-                        </span>
-                        <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                          {deptApps.length}
-                        </span>
-                      </button>
+                        </SidebarItemLabel>
+                        <Badge variant="neutral">{deptApps.length}</Badge>
+                      </SidebarItem>
 
-                      {/* Applications */}
-                      {expandedDepts.has(department._id) && (
-                        <div className="ml-6 mt-1 space-y-1">
+                      {deptOpen && (
+                        <>
                           {deptApps.map((app) => (
-                            <button
+                            <SidebarItem
                               key={app._id}
-                              onClick={() => onAppClick(app)}
-                              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-colors hover:bg-osi-primary/10 text-slate-700 hover:text-osi-primary"
+                              href="#"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                onAppClick(app);
+                              }}
+                              className="ml-12"
                             >
                               {app.iconUrl ? (
-                                <img
-                                  src={app.iconUrl}
-                                  alt=""
-                                  className="w-4 h-4 rounded-sm"
-                                />
+                                <img src={app.iconUrl} alt="" className="size-4" />
                               ) : (
-                                <span className="material-symbols-outlined text-base">
-                                  apps
-                                </span>
+                                <AppWindow size={16} aria-hidden="true" />
                               )}
-                              <span className="text-sm truncate">
+                              <SidebarItemLabel className="flex-1 truncate text-sm">
                                 {app.name}
-                              </span>
-                              {app.comingSoon && (
-                                <span className="text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-sm">
-                                  Soon
-                                </span>
-                              )}
-                            </button>
+                              </SidebarItemLabel>
+                              {app.comingSoon && <Badge variant="warning">Soon</Badge>}
+                            </SidebarItem>
                           ))}
                           {deptApps.length === 0 && (
-                            <div className="px-3 py-2 text-xs text-gray-400 italic">
+                            <li className="ml-12 px-3 py-2 text-xs italic opacity-70">
                               No applications
-                            </div>
+                            </li>
                           )}
-                        </div>
+                        </>
                       )}
-                    </div>
-                  ))}
-                  {departments.length === 0 && (
-                    <div className="px-3 py-2 text-xs text-gray-400 italic">
-                      No departments
-                    </div>
-                  )}
-                </div>
+                    </React.Fragment>
+                  );
+                })}
+              {buOpen && departments.length === 0 && (
+                <li className="ml-6 px-3 py-2 text-xs italic opacity-70">No departments</li>
               )}
-            </div>
-          ))}
-        </nav>
-      </div>
+            </React.Fragment>
+          );
+        })}
+      </SidebarNav>
 
-      <div className="mt-auto p-4 bg-slate-50 rounded-xl">
-        <p className="text-xs text-osi-secondary font-medium">Server Status</p>
-        <div className="flex items-center gap-2 mt-2">
-          <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
-          <span className="text-xs font-semibold">Operational</span>
-        </div>
+      <div className="mt-auto flex items-center gap-2 border-t border-on-nav/20 px-3 pt-3">
+        <span className="text-xs font-medium">Server Status</span>
+        <Badge variant="success">Operational</Badge>
       </div>
-    </aside>
+    </Sidebar>
   );
 };
 

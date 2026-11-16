@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
 import TopBar from "./TopBar";
 import Sidebar from "./Sidebar";
+import { cn } from "@odessa-separator/ui";
 import ChatbotWidget from "../../features/chatbot/ChatbotWidget";
 
 const STORAGE_KEY = "osi_sidebar_collapsed";
@@ -55,20 +56,20 @@ const Layout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: "#f4f5f7" }}>
+    <div className="min-h-screen bg-bg text-text">
       {/* Sidebar always visible on desktop */}
       <Sidebar collapsed={collapsed} onToggle={handleToggle} />
 
       {/* Main content area offset by sidebar */}
       <div
-        className="transition-all duration-[250ms] ease-in-out"
-        style={{
-          marginLeft: desktopViewport ? (collapsed ? 64 : 240) : 0,
-          marginRight: chatOpen && desktopViewport ? 560 : 0,
-        }}
+        className={cn(
+          "transition-[margin] duration-200 ease-in-out motion-reduce:transition-none",
+          collapsed ? "lg:ml-16" : "lg:ml-64",
+          chatOpen && desktopViewport && "mr-[560px]",
+        )}
       >
-        <TopBar sidebarCollapsed={collapsed} sidebarWidth={collapsed ? 64 : 240} />
-        <main className="pt-[60px] pb-28 sm:pb-32">
+        <TopBar sidebarCollapsed={collapsed} />
+        <main className="pt-14 pb-28 sm:pb-32">
           <Outlet />
         </main>
       </div>
