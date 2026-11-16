@@ -16,7 +16,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   animation = "pulse",
 }) => {
   const variantClasses = {
-    text: "rounded h-4",
+    text: "rounded-sm h-4",
     circular: "rounded-full",
     rectangular: "rounded-lg",
   };

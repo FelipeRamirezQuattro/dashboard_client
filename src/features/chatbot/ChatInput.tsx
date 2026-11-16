@@ -167,7 +167,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
           autoCorrect="off"
           autoCapitalize="sentences"
           rows={2}
-          className="flex-1 min-h-[44px] max-h-28 px-3 sm:px-4 py-2.5 sm:py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-osi-primary focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-sm sm:text-base resize-none"
+          className="flex-1 min-h-[44px] max-h-28 px-3 sm:px-4 py-2.5 sm:py-2.5 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-osi-primary focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-sm sm:text-base resize-none"
         />
 
         {/* Send button */}

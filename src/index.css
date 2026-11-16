@@ -1,8 +1,18 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../tailwind.config.ts";
+
+/* Tailwind 4 compat: v3 default border color (gray-200) so bare `border`/`divide` look unchanged */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+}
 
 @layer base {
   body {
@@ -20,7 +30,7 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-osi-primary hover:bg-osi-primary-dark text-black font-bold py-3 px-4 rounded-lg transition-all duration-150 active:scale-[0.97] shadow-sm hover:shadow-md;
+    @apply bg-osi-primary hover:bg-osi-primary-dark text-black font-bold py-3 px-4 rounded-lg transition-all duration-150 active:scale-[0.97] shadow-xs hover:shadow-md;
   }
 
   .btn-secondary {
@@ -32,11 +42,11 @@
   }
 
   .input-field {
-    @apply w-full px-4 py-3 border border-gray-300 bg-white text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-osi-primary/50 focus:border-osi-primary/50 placeholder:text-gray-400 transition-all;
+    @apply w-full px-4 py-3 border border-gray-300 bg-white text-gray-900 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-osi-primary/50 focus:border-osi-primary/50 placeholder:text-gray-400 transition-all;
   }
 
   .card {
-    @apply bg-white rounded-xl border border-gray-200 p-6 shadow-sm;
+    @apply bg-white rounded-xl border border-gray-200 p-6 shadow-xs;
   }
 
   .glass-card {

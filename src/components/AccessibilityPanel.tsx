@@ -81,7 +81,7 @@ export const AccessibilityPanel: React.FC = () => {
         </div>
         <button
           onClick={() => setIsOpen(false)}
-          className="hover:bg-purple-700 p-1 rounded transition-colors"
+          className="hover:bg-purple-700 p-1 rounded-sm transition-colors"
           aria-label="Close panel"
         >
           <svg

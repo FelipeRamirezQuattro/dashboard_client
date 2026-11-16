@@ -108,7 +108,7 @@ const VoiceSettings: React.FC<VoiceSettingsProps> = ({
                     enabled: e.target.checked,
                   })
                 }
-                className="w-5 h-5 text-osi-primary rounded focus:ring-2 focus:ring-osi-primary"
+                className="w-5 h-5 text-osi-primary rounded-sm focus:ring-2 focus:ring-osi-primary"
               />
             </label>
             <p className="text-xs text-gray-500">
@@ -136,7 +136,7 @@ const VoiceSettings: React.FC<VoiceSettingsProps> = ({
                     autoSpeak: e.target.checked,
                   })
                 }
-                className="w-5 h-5 text-osi-primary rounded focus:ring-2 focus:ring-osi-primary"
+                className="w-5 h-5 text-osi-primary rounded-sm focus:ring-2 focus:ring-osi-primary"
               />
             </label>
             <p className="text-xs text-gray-500">

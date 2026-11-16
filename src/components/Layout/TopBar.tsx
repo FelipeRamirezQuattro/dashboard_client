@@ -433,7 +433,7 @@ const TopBar: React.FC<TopBarProps> = ({ sidebarWidth = 240 }) => {
               autoCorrect="off"
               autoCapitalize="off"
               spellCheck={false}
-              className="h-10 w-full rounded-full border border-gray-200 bg-gray-50 pl-9 pr-8 text-sm text-gray-900 outline-none transition focus:border-gray-400 focus:bg-white focus:ring-2 focus:ring-gray-200"
+              className="h-10 w-full rounded-full border border-gray-200 bg-gray-50 pl-9 pr-8 text-sm text-gray-900 outline-hidden transition focus:border-gray-400 focus:bg-white focus:ring-2 focus:ring-gray-200"
             />
 
             {isSearchFocused && searchQuery.trim() && (

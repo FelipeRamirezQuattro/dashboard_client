@@ -466,7 +466,7 @@ const NotificationManagement: React.FC = () => {
                     setFormData((p) => ({ ...p, title: e.target.value }))
                   }
                   placeholder="e.g. ChemTracker v2.4 is now live"
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:border-osi-primary transition-colors"
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors"
                 />
               </div>
 
@@ -484,7 +484,7 @@ const NotificationManagement: React.FC = () => {
                     setFormData((p) => ({ ...p, message: e.target.value }))
                   }
                   placeholder="Describe the notification detail…"
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:border-osi-primary transition-colors resize-none"
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors resize-none"
                 />
               </div>
 
@@ -502,7 +502,7 @@ const NotificationManagement: React.FC = () => {
                         type: e.target.value as NotificationType,
                       }))
                     }
-                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:border-osi-primary transition-colors bg-white"
+                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors bg-white"
                   >
                     {typeOptions.map((t) => (
                       <option key={t.value} value={t.value}>
@@ -523,7 +523,7 @@ const NotificationManagement: React.FC = () => {
                         severity: e.target.value as NotificationSeverity,
                       }))
                     }
-                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:border-osi-primary transition-colors bg-white"
+                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors bg-white"
                   >
                     {severityOptions.map((s) => (
                       <option key={s.value} value={s.value}>
@@ -580,7 +580,7 @@ const NotificationManagement: React.FC = () => {
                     onChange={(e) =>
                       setFormData((p) => ({ ...p, targetId: e.target.value }))
                     }
-                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:border-osi-primary transition-colors bg-white"
+                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors bg-white"
                   >
                     <option value="">Select business unit…</option>
                     {businessUnits.map((bu: BusinessUnit) => (
@@ -604,7 +604,7 @@ const NotificationManagement: React.FC = () => {
                       onChange={(e) =>
                         setFormData((p) => ({ ...p, targetId: e.target.value }))
                       }
-                      className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:border-osi-primary transition-colors bg-white"
+                      className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors bg-white"
                     >
                       <option value="">Select business unit to filter…</option>
                       {businessUnits.map((bu: BusinessUnit) => (
@@ -634,7 +634,7 @@ const NotificationManagement: React.FC = () => {
                             targetId: e.target.value,
                           }))
                         }
-                        className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:border-osi-primary transition-colors bg-white"
+                        className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors bg-white"
                       >
                         <option value="">Select department…</option>
                         {filteredDepartments.map((dept: Department) => (
@@ -662,7 +662,7 @@ const NotificationManagement: React.FC = () => {
                   onChange={(e) =>
                     setFormData((p) => ({ ...p, expiresAt: e.target.value }))
                   }
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:border-osi-primary transition-colors"
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors"
                 />
               </div>
 

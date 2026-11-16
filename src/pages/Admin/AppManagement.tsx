@@ -488,7 +488,7 @@ const AppManagement: React.FC = () => {
                         departmentId: "", // Reset department when BU changes
                       });
                     }}
-                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:border-osi-primary transition-colors bg-white"
+                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors bg-white"
                   >
                     <option value="">Select a business unit</option>
                     {businessUnits?.map((bu: BusinessUnit) => (
@@ -509,7 +509,7 @@ const AppManagement: React.FC = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, departmentId: e.target.value })
                     }
-                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:border-osi-primary transition-colors bg-white disabled:bg-gray-50 disabled:text-gray-400"
+                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors bg-white disabled:bg-gray-50 disabled:text-gray-400"
                     disabled={!formData.businessUnitId}
                   >
                     <option value="">
@@ -536,7 +536,7 @@ const AppManagement: React.FC = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
                     }
-                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:border-osi-primary transition-colors"
+                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors"
                   />
                 </div>
 
@@ -551,7 +551,7 @@ const AppManagement: React.FC = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, description: e.target.value })
                     }
-                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:border-osi-primary transition-colors resize-none"
+                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors resize-none"
                   />
                 </div>
 
@@ -566,7 +566,7 @@ const AppManagement: React.FC = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, url: e.target.value })
                     }
-                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:border-osi-primary transition-colors"
+                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors"
                     placeholder="https://app.example.com"
                   />
                 </div>
@@ -587,7 +587,7 @@ const AppManagement: React.FC = () => {
                         chatbotApiUrl: e.target.value,
                       })
                     }
-                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:border-osi-primary transition-colors"
+                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors"
                     placeholder="https://api.osidesigner.com/api-chemtracker"
                   />
                   <p className="mt-1 text-xs text-gray-400">
@@ -609,7 +609,7 @@ const AppManagement: React.FC = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, ssoEndpoint: e.target.value })
                     }
-                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:border-osi-primary transition-colors"
+                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors"
                     placeholder="api://app-id/.default"
                   />
                 </div>
@@ -627,7 +627,7 @@ const AppManagement: React.FC = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, iconUrl: e.target.value })
                     }
-                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:border-osi-primary transition-colors"
+                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors"
                     placeholder="https://example.com/icon.png"
                   />
                 </div>
@@ -646,7 +646,7 @@ const AppManagement: React.FC = () => {
                           category: e.target.value as AppCategory,
                         })
                       }
-                      className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:border-osi-primary transition-colors bg-white"
+                      className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors bg-white"
                     >
                       <option value="gas">Gas Separation</option>
                       <option value="chemical">Chemical Treatment</option>
@@ -670,7 +670,7 @@ const AppManagement: React.FC = () => {
                           requiredRole: e.target.value as any,
                         })
                       }
-                      className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:border-osi-primary transition-colors bg-white"
+                      className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors bg-white"
                     >
                       <option value="viewer">Viewer</option>
                       <option value="editor">Editor</option>
@@ -688,7 +688,7 @@ const AppManagement: React.FC = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, isActive: e.target.checked })
                     }
-                    className="rounded border-gray-300 text-osi-primary focus:ring-osi-primary"
+                    className="rounded-sm border-gray-300 text-osi-primary focus:ring-osi-primary"
                   />
                   <label htmlFor="isActive" className="text-sm text-gray-600">
                     Active
@@ -703,7 +703,7 @@ const AppManagement: React.FC = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, comingSoon: e.target.checked })
                     }
-                    className="rounded border-gray-300 text-osi-primary focus:ring-osi-primary"
+                    className="rounded-sm border-gray-300 text-osi-primary focus:ring-osi-primary"
                   />
                   <label htmlFor="comingSoon" className="text-sm text-gray-600">
                     Coming Soon (Disables Launch Button)

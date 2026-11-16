@@ -147,7 +147,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
               <div className="group relative flex-shrink-0">
                 <button
                   onClick={() => onSaveToBrain(message.id, message.message)}
-                  className="p-1.5 rounded-lg transition-colors bg-amber-50 text-amber-700 hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-300"
+                  className="p-1.5 rounded-lg transition-colors bg-amber-50 text-amber-700 hover:bg-amber-100 focus:outline-hidden focus:ring-2 focus:ring-amber-300"
                   aria-label="Save response to Workflow Brain memory"
                   title="Save this response to the selected Workflow Brain category memory"
                 >

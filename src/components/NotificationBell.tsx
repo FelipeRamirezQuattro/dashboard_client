@@ -204,7 +204,7 @@ const NotificationBell: React.FC = () => {
                         </p>
                         <div className="flex items-center gap-2 mt-1.5">
                           <span
-                            className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium text-gray-500"
+                            className="inline-flex items-center px-1.5 py-0.5 rounded-sm text-[10px] font-medium text-gray-500"
                             style={{ background: "#f3f4f6" }}
                           >
                             {typeLabels[notification.type]}

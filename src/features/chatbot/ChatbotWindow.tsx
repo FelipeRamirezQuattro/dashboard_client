@@ -427,7 +427,7 @@ const ChatbotWindow: React.FC<ChatbotWindowProps> = ({ onClose }) => {
             <select
               value={workflowCategoryId}
               onChange={(event) => setWorkflowCategoryId(event.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-osi-primary"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-hidden focus:ring-2 focus:ring-osi-primary"
             >
               <option value="">Select Workflow Brain category</option>
               {categoriesQuery.data?.map((category) => (
@@ -455,7 +455,7 @@ const ChatbotWindow: React.FC<ChatbotWindowProps> = ({ onClose }) => {
           <select
             value={selectedAppName}
             onChange={(event) => setSelectedAppName(event.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-osi-primary"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-hidden focus:ring-2 focus:ring-osi-primary"
           >
             <option value="">Select external application</option>
             {appsQuery.data

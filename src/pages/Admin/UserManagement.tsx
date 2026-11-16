@@ -702,7 +702,7 @@ const UserManagement: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
-                        className={`px-3 py-1 rounded text-xs ${getRoleBadgeStyle(user.role)}`}
+                        className={`px-3 py-1 rounded-sm text-xs ${getRoleBadgeStyle(user.role)}`}
                       >
                         {user.role.toUpperCase()}
                       </span>
@@ -819,7 +819,7 @@ const UserManagement: React.FC = () => {
 
       {/* Create/Edit Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="rounded-xl bg-white border border-gray-200 max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
             {/* Modal Header */}
             <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 bg-white flex-shrink-0">
@@ -858,7 +858,7 @@ const UserManagement: React.FC = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, firstName: e.target.value })
                       }
-                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-osi-primary ${
+                      className={`w-full px-3 py-2 border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-osi-primary ${
                         errors.firstName ? "border-red-500" : "border-gray-300"
                       }`}
                       placeholder="Enter first name"
@@ -880,7 +880,7 @@ const UserManagement: React.FC = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, lastName: e.target.value })
                       }
-                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-osi-primary ${
+                      className={`w-full px-3 py-2 border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-osi-primary ${
                         errors.lastName ? "border-red-500" : "border-gray-300"
                       }`}
                       placeholder="Enter last name"
@@ -902,7 +902,7 @@ const UserManagement: React.FC = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, email: e.target.value })
                       }
-                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-osi-primary ${
+                      className={`w-full px-3 py-2 border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-osi-primary ${
                         errors.email ? "border-red-500" : "border-gray-300"
                       }`}
                       placeholder="user@example.com"
@@ -931,7 +931,7 @@ const UserManagement: React.FC = () => {
                         onChange={(e) =>
                           setFormData({ ...formData, password: e.target.value })
                         }
-                        className={`w-full px-3 py-2 pr-11 border rounded-lg focus:outline-none focus:ring-2 focus:ring-osi-primary ${
+                        className={`w-full px-3 py-2 pr-11 border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-osi-primary ${
                           errors.password ? "border-red-500" : "border-gray-300"
                         }`}
                         placeholder={
@@ -977,7 +977,7 @@ const UserManagement: React.FC = () => {
                               confirmPassword: e.target.value,
                             })
                           }
-                          className={`w-full px-3 py-2 pr-11 border rounded-lg focus:outline-none focus:ring-2 focus:ring-osi-primary ${
+                          className={`w-full px-3 py-2 pr-11 border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-osi-primary ${
                             errors.confirmPassword
                               ? "border-red-500"
                               : "border-gray-300"
@@ -1026,7 +1026,7 @@ const UserManagement: React.FC = () => {
                           role: e.target.value as UserRole,
                         })
                       }
-                      className="w-full px-3 py-2 bg-gray-100 text-gray-900 placeholder-gray-400 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-osi-primary"
+                      className="w-full px-3 py-2 bg-gray-100 text-gray-900 placeholder-gray-400 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-osi-primary"
                     >
                       <option value="viewer">Viewer</option>
                       <option value="editor">Editor</option>
@@ -1050,7 +1050,7 @@ const UserManagement: React.FC = () => {
                               isActive: e.target.checked,
                             })
                           }
-                          className="w-4 h-4 text-osi-primary border-gray-300 rounded focus:ring-osi-primary"
+                          className="w-4 h-4 text-osi-primary border-gray-300 rounded-sm focus:ring-osi-primary"
                         />
                         <span className="ml-2 text-sm text-gray-600">
                           Active
@@ -1094,13 +1094,13 @@ const UserManagement: React.FC = () => {
                       {businessUnits.map((bu: BusinessUnit) => (
                         <label
                           key={bu._id}
-                          className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded"
+                          className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded-sm"
                         >
                           <input
                             type="checkbox"
                             checked={formData.businessUnitIds.includes(bu._id)}
                             onChange={() => handleBusinessUnitToggle(bu._id)}
-                            className="w-4 h-4 text-osi-primary border-gray-300 rounded focus:ring-osi-primary"
+                            className="w-4 h-4 text-osi-primary border-gray-300 rounded-sm focus:ring-osi-primary"
                           />
                           <span className="ml-2 text-sm text-gray-600">
                             {bu.name}
@@ -1141,7 +1141,7 @@ const UserManagement: React.FC = () => {
                         onChange={(e) =>
                           setSelectedBusinessUnitForDepts(e.target.value)
                         }
-                        className="text-xs px-2 py-1 bg-gray-100 text-gray-900 placeholder-gray-400 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-osi-primary"
+                        className="text-xs px-2 py-1 bg-gray-100 text-gray-900 placeholder-gray-400 border border-gray-300 rounded-sm focus:outline-hidden focus:ring-1 focus:ring-osi-primary"
                       >
                         <option value="">All Departments</option>
                         {businessUnits.map((bu: BusinessUnit) => (
@@ -1172,7 +1172,7 @@ const UserManagement: React.FC = () => {
                         return (
                           <label
                             key={dept._id}
-                            className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded"
+                            className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded-sm"
                           >
                             <input
                               type="checkbox"
@@ -1180,7 +1180,7 @@ const UserManagement: React.FC = () => {
                                 dept._id,
                               )}
                               onChange={() => handleDepartmentToggle(dept._id)}
-                              className="w-4 h-4 text-osi-primary border-gray-300 rounded focus:ring-osi-primary"
+                              className="w-4 h-4 text-osi-primary border-gray-300 rounded-sm focus:ring-osi-primary"
                             />
                             <div className="ml-2 flex-1">
                               <span className="text-sm text-gray-600">

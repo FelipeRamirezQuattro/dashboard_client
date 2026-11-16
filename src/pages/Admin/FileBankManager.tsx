@@ -239,7 +239,7 @@ const FileBankManager: React.FC = () => {
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Describe what this file contains so the chatbot can match it to user questions..."
                   rows={4}
-                  className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 resize-none"
+                  className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-hidden focus:ring-2 resize-none"
                   style={{ borderColor: "#d1d5db" }}
                 />
               </div>
@@ -259,7 +259,7 @@ const FileBankManager: React.FC = () => {
                     value={tags}
                     onChange={(e) => setTags(e.target.value)}
                     placeholder="invoice, sales order, pump report"
-                    className="w-full pl-9 pr-3 py-2 text-sm border rounded-lg focus:outline-none"
+                    className="w-full pl-9 pr-3 py-2 text-sm border rounded-lg focus:outline-hidden"
                     style={{ borderColor: "#d1d5db" }}
                   />
                 </div>
@@ -387,7 +387,7 @@ const FileBankManager: React.FC = () => {
                         {file.originalName}
                       </span>
                       {file.source === "onedrive" && (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700">
+                        <span className="px-1.5 py-0.5 rounded-sm text-[10px] font-semibold bg-blue-50 text-blue-700">
                           OneDrive
                         </span>
                       )}

@@ -462,7 +462,7 @@ const DepartmentManagement: React.FC = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, businessUnitId: e.target.value })
                   }
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:border-osi-primary transition-colors bg-white"
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors bg-white"
                 >
                   <option value="">Select a business unit</option>
                   {businessUnits?.map((bu) => (
@@ -484,7 +484,7 @@ const DepartmentManagement: React.FC = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
                   }
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:border-osi-primary transition-colors"
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors"
                   placeholder="Sales, Engineering, Manufacturing, etc."
                 />
               </div>
@@ -500,7 +500,7 @@ const DepartmentManagement: React.FC = () => {
                     setFormData({ ...formData, description: e.target.value })
                   }
                   rows={3}
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:border-osi-primary transition-colors resize-none"
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors resize-none"
                   placeholder="Description of this department"
                 />
               </div>
@@ -513,7 +513,7 @@ const DepartmentManagement: React.FC = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, isActive: e.target.checked })
                   }
-                  className="rounded border-gray-300 text-osi-primary focus:ring-osi-primary"
+                  className="rounded-sm border-gray-300 text-osi-primary focus:ring-osi-primary"
                 />
                 <label
                   htmlFor="department-active"

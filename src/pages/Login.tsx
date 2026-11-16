@@ -137,7 +137,7 @@ const Login: React.FC = () => {
               key={i}
               onClick={() => goToSlide(i)}
               aria-label={`Go to slide ${i + 1}`}
-              className="w-2 h-2 rounded-full transition-all focus:outline-none"
+              className="w-2 h-2 rounded-full transition-all focus:outline-hidden"
               style={{
                 background:
                   i === slideIndex ? "#fbad37" : "rgba(255,255,255,0.5)",
@@ -224,7 +224,7 @@ const Login: React.FC = () => {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 rounded-lg text-gray-900 placeholder-gray-400 text-base focus:outline-none focus:ring-2 focus:ring-osi-primary/60 transition-all"
+                    className="w-full pl-11 pr-4 py-3 rounded-lg text-gray-900 placeholder-gray-400 text-base focus:outline-hidden focus:ring-2 focus:ring-osi-primary/60 transition-all"
                     style={{
                       background: "#f3f4f6",
                       border: "1px solid #d1d5db",
@@ -264,7 +264,7 @@ const Login: React.FC = () => {
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 rounded-lg text-gray-900 placeholder-gray-400 text-base focus:outline-none focus:ring-2 focus:ring-osi-primary/60 transition-all"
+                    className="w-full pl-11 pr-4 py-3 rounded-lg text-gray-900 placeholder-gray-400 text-base focus:outline-hidden focus:ring-2 focus:ring-osi-primary/60 transition-all"
                     style={{
                       background: "#f3f4f6",
                       border: "1px solid #d1d5db",
@@ -283,7 +283,7 @@ const Login: React.FC = () => {
                   type="checkbox"
                   checked={rememberDevice}
                   onChange={(e) => setRememberDevice(e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-300 bg-gray-100 text-osi-primary focus:ring-osi-primary/50 touch-manipulation"
+                  className="w-4 h-4 rounded-sm border-gray-300 bg-gray-100 text-osi-primary focus:ring-osi-primary/50 touch-manipulation"
                 />
                 <label
                   htmlFor="remember"

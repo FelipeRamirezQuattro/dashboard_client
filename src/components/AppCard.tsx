@@ -69,7 +69,7 @@ const AppCard: React.FC<AppCardProps> = ({ app }) => {
 
   return (
     <>
-    <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 sm:p-6 flex flex-col hover:shadow-xl transition-all hover:-translate-y-1 touch-manipulation">
+    <div className="bg-white rounded-xl shadow-xs border border-slate-100 p-4 sm:p-6 flex flex-col hover:shadow-xl transition-all hover:-translate-y-1 touch-manipulation">
       <div className="flex justify-between items-start mb-3 sm:mb-4">
         <div
           className={`h-12 w-12 sm:h-14 sm:w-14 rounded-xl ${categoryStyle.bgColor} flex items-center justify-center ${categoryStyle.iconColor} flex-shrink-0`}

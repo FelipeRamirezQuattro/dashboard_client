@@ -420,7 +420,7 @@ const BusinessUnitManagement: React.FC = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
                   }
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:border-osi-primary transition-colors"
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors"
                   placeholder="OSI Rod Pump Division"
                 />
               </div>
@@ -436,7 +436,7 @@ const BusinessUnitManagement: React.FC = () => {
                     setFormData({ ...formData, description: e.target.value })
                   }
                   rows={3}
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:border-osi-primary transition-colors resize-none"
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors resize-none"
                   placeholder="Description of this business unit"
                 />
               </div>
@@ -451,7 +451,7 @@ const BusinessUnitManagement: React.FC = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, logoUrl: e.target.value })
                   }
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:border-osi-primary transition-colors"
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-hidden focus:border-osi-primary transition-colors"
                   placeholder="https://example.com/logo.png"
                 />
                 <p className="mt-1 text-xs text-gray-400">
@@ -467,7 +467,7 @@ const BusinessUnitManagement: React.FC = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, isActive: e.target.checked })
                   }
-                  className="rounded border-gray-300 text-osi-primary focus:ring-osi-primary"
+                  className="rounded-sm border-gray-300 text-osi-primary focus:ring-osi-primary"
                 />
                 <label
                   htmlFor="business-unit-active"

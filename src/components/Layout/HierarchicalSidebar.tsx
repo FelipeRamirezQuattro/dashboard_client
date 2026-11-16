@@ -137,7 +137,7 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
                                 <img
                                   src={app.iconUrl}
                                   alt=""
-                                  className="w-4 h-4 rounded"
+                                  className="w-4 h-4 rounded-sm"
                                 />
                               ) : (
                                 <span className="material-symbols-outlined text-base">
@@ -148,7 +148,7 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
                                 {app.name}
                               </span>
                               {app.comingSoon && (
-                                <span className="text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">
+                                <span className="text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-sm">
                                   Soon
                                 </span>
                               )}

@@ -243,7 +243,7 @@ const MobileSearch: React.FC<MobileSearchProps> = ({ isOpen, onClose }) => {
               placeholder="Search apps, business units, departments…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 rounded-lg text-base text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-osi-primary/60 transition-all"
+              className="w-full pl-11 pr-4 py-3 rounded-lg text-base text-gray-900 placeholder-gray-400 focus:outline-hidden focus:ring-2 focus:ring-osi-primary/60 transition-all"
               style={{
                 background: "#f3f4f6",
                 border: "1px solid #d1d5db",
@@ -354,7 +354,7 @@ const MobileSearch: React.FC<MobileSearchProps> = ({ isOpen, onClose }) => {
                       {result.name}
                     </p>
                     <span
-                      className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium flex-shrink-0 text-gray-500"
+                      className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium flex-shrink-0 text-gray-500"
                       style={{ background: "#f0f1f3" }}
                     >
                       {getResultTypeLabel(result.type)}

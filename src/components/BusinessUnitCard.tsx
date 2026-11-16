@@ -18,7 +18,7 @@ const BusinessUnitCard: React.FC<BusinessUnitCardProps> = ({
   return (
     <div
       onClick={handleClick}
-      className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 sm:p-6 flex flex-col hover:shadow-xl transition-all hover:-translate-y-1 cursor-pointer group touch-manipulation"
+      className="bg-white rounded-xl shadow-xs border border-slate-100 p-4 sm:p-6 flex flex-col hover:shadow-xl transition-all hover:-translate-y-1 cursor-pointer group touch-manipulation"
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
