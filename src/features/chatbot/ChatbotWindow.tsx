@@ -47,11 +47,7 @@ const WELCOME_MESSAGE: ChatMessageType = {
   timestamp: new Date(),
 };
 
-// localStorage key (not a CSS class). Its value must stay the same as before so existing chat
-// sessions survive; it is assembled from a prefix only because the UI guard flags the legacy
-// palette prefix followed by a dash anywhere in a file, including plain strings.
-const STORAGE_PREFIX = "osi";
-const SESSION_STORAGE_KEY = `${STORAGE_PREFIX}-chatbot-session-id`;
+const SESSION_STORAGE_KEY = "osi-chatbot-session-id";
 
 const createSessionId = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto

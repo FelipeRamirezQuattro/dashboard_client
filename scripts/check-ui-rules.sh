@@ -2,18 +2,32 @@
 # UI rules guard: prints "file:line: rule" for each styling-rule violation and exits non-zero if any.
 # Usage: scripts/check-ui-rules.sh [path ...]   (default: src)
 # Scans only .ts, .tsx and .css files.
+# Exit codes: 0 clean, 1 violations found, 2 a path argument does not exist.
+# KNOWN LIMIT: the scan is line-based, so a class or style that spans several lines (multi-line
+# className strings, multi-line style={{ }} objects) is not caught. Review those by hand.
 set -u
 
 if [ "$#" -eq 0 ]; then set -- src; fi
 
+for p in "$@"; do
+  if [ ! -e "$p" ]; then
+    echo "check-ui-rules: path not found: $p" >&2
+    exit 2
+  fi
+done
+
 PAL='(gray|slate|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|black|white)'
 Q="[\"'\`]"
+# Class contexts: className/class attributes, cn()/clsx()/twMerge() calls and Tailwind @apply.
+CTX="(class(Name)?[=:]|cn\\(|clsx\\(|twMerge\\(|@apply)"
 
 # Each rule is "name|regex". Names never contain '|'.
 RULE_NAMES=(
   "palette class"
   "rounded- not tag/control/card"
   "shadow-"
+  "bare rounded"
+  "bare shadow"
   "osi-"
   "material-symbols"
   "legacy class"
@@ -24,7 +38,9 @@ RULE_RES=(
   "(^|[^A-Za-z0-9_])(bg|text|border|ring|from|to|via|divide|fill|stroke)-${PAL}(-[0-9]+)?([^A-Za-z0-9_-]|$)"
   "rounded-($|[^tc]|t([^a]|$)|c([^oa]|$)|ta([^g]|$)|co([^n]|$)|ca([^r]|$))|rounded-(tag|control|card)[A-Za-z0-9_-]"
   "shadow-"
-  "osi-"
+  "${CTX}.*[ \"'\`:{]rounded([ \"'\`}]|\$)"
+  "${CTX}.*[ \"'\`:{]shadow([ \"'\`}]|\$)"
+  "(^|[^A-Za-z0-9_-])[a-z]+-osi-[A-Za-z]|\\.osi-[A-Za-z]|${CTX}.*[ \"'\`:{]osi-[A-Za-z]"
   "material-symbols"
   "(btn-primary|btn-secondary|btn-outline|input-field|glass-card)"
   "(class(Name)?[=:]|cn\(|clsx\(|twMerge\().*(^|[ \"'\`{])card([ \"'\`}]|$)|\.card([^A-Za-z0-9_-]|$)"
