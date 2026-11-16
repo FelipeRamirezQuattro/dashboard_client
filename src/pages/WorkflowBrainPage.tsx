@@ -5,11 +5,31 @@ import {
   FileText,
   GitBranch,
   Workflow,
-  Search,
   Plus,
   Send,
   ShieldCheck,
 } from "lucide-react";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  EmptyState,
+  Field,
+  Input,
+  SectionHeader,
+  Select,
+  Spinner,
+  StatCard,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  Textarea,
+} from "@odessa-separator/ui";
 import { useAuth } from "../hooks/useAuth";
 import StatusBanner, { StatusBannerVariant } from "../components/StatusBanner";
 import {
@@ -19,14 +39,6 @@ import {
   WorkflowBrainState,
   workflowBrainService,
 } from "../services/workflowBrain.service";
-
-const ACCENT = "#FBAB35";
-const SECONDARY = "#596376";
-const BG = "#F9F9F9";
-const DARK = "#1A1A2E";
-const BORDER = "#E4E7EC";
-const SURFACE = "#FFFFFF";
-const MUTED = "#667085";
 
 const domains: Array<{ value: WorkflowBrainDomain; label: string }> = [
   { value: "gas_separation", label: "Gas Separation" },
@@ -54,132 +66,22 @@ const tabs: Array<{ key: TabKey; label: string }> = [
   { key: "designs", label: "Design Outputs" },
 ];
 
-const cardStyle: React.CSSProperties = {
-  background: SURFACE,
-  border: `1px solid ${BORDER}`,
-  borderRadius: 8,
-  boxShadow: "0 1px 2px rgba(16,24,40,.04)",
+const designExamples = [
+  "Create an intake checklist for separator design requests.",
+  "Create a QA review workflow for chemical treatment proposals.",
+  "What information is missing before engineering can evaluate this request?",
+];
+
+type BadgeVariant = "neutral" | "accent" | "success" | "info" | "warning" | "danger";
+
+const severityVariant = (severity: string): BadgeVariant => {
+  if (severity === "high") return "danger";
+  if (severity === "medium") return "warning";
+  return "success";
 };
 
-const severityColor = (severity: string) => {
-  if (severity === "high") return "#D92D20";
-  if (severity === "medium") return "#B54708";
-  return "#027A48";
-};
-
-const Pill: React.FC<{ children: React.ReactNode; tone?: string }> = ({
-  children,
-  tone = SECONDARY,
-}) => (
-  <span
-    style={{
-      display: "inline-flex",
-      alignItems: "center",
-      borderRadius: 999,
-      padding: "3px 8px",
-      fontSize: 11,
-      fontWeight: 700,
-      color: tone,
-      background: `${tone}14`,
-      textTransform: "capitalize",
-    }}
-  >
-    {children}
-  </span>
-);
-
-const ActionButton: React.FC<{
-  children: React.ReactNode;
-  onClick?: () => void;
-  disabled?: boolean;
-  type?: "button" | "submit";
-  variant?: "primary" | "secondary";
-}> = ({ children, onClick, disabled, type = "button", variant = "primary" }) => (
-  <button
-    type={type}
-    onClick={onClick}
-    disabled={disabled}
-    style={{
-      display: "inline-flex",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 8,
-      minHeight: 38,
-      borderRadius: 6,
-      border: variant === "primary" ? "none" : `1px solid ${BORDER}`,
-      padding: "8px 12px",
-      background: variant === "primary" ? ACCENT : SURFACE,
-      color: variant === "primary" ? DARK : SECONDARY,
-      fontSize: 13,
-      fontWeight: 700,
-      cursor: disabled ? "not-allowed" : "pointer",
-      opacity: disabled ? 0.55 : 1,
-    }}
-  >
-    {children}
-  </button>
-);
-
-const TextArea: React.FC<{
-  value: string;
-  onChange: (value: string) => void;
-  placeholder: string;
-  minHeight?: number;
-  disabled?: boolean;
-}> = ({ value, onChange, placeholder, minHeight = 92, disabled }) => (
-  <textarea
-    value={value}
-    onChange={(event) => onChange(event.target.value)}
-    placeholder={placeholder}
-    disabled={disabled}
-    style={{
-      width: "100%",
-      minHeight,
-      resize: "vertical",
-      border: `1px solid ${BORDER}`,
-      borderRadius: 6,
-      padding: 12,
-      fontSize: 13,
-      lineHeight: 1.5,
-      color: DARK,
-      outlineColor: ACCENT,
-      background: disabled ? "#F2F4F7" : SURFACE,
-    }}
-  />
-);
-
-const Metric: React.FC<{
-  icon: React.ReactNode;
-  label: string;
-  value: number;
-}> = ({ icon, label, value }) => (
-  <div style={{ ...cardStyle, padding: "14px 12px", minWidth: 0 }}>
-    <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-      <div
-        style={{
-          width: 32,
-          height: 32,
-          borderRadius: 6,
-          display: "grid",
-          placeItems: "center",
-          background: "rgba(251,171,53,.13)",
-          color: ACCENT,
-          flexShrink: 0,
-        }}
-      >
-        {icon}
-      </div>
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 21, fontWeight: 800, color: DARK, lineHeight: 1 }}>
-          {value}
-        </div>
-        <div style={{ fontSize: 11.5, color: MUTED, lineHeight: 1.25 }}>
-          {label}
-        </div>
-      </div>
-    </div>
-  </div>
-);
+const isTabKey = (value: string): value is TabKey =>
+  tabs.some((tab) => tab.key === value);
 
 const WorkflowBrainPage: React.FC = () => {
   const { user } = useAuth();
@@ -392,632 +294,563 @@ const WorkflowBrainPage: React.FC = () => {
     setEditMemoryText(memory.content);
   };
 
-  return (
-    <div style={{ minHeight: "100%", background: BG }}>
-      <div className="osi-page-shell" style={{ maxWidth: 1400, margin: "0 auto", padding: "24px" }}>
-        <div
-          className="osi-page-header"
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
-            gap: 20,
-            marginBottom: 20,
-          }}
-        >
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-              <div
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: 8,
-                  background: ACCENT,
-                  color: DARK,
-                  display: "grid",
-                  placeItems: "center",
-                }}
-              >
-                <Workflow size={21} />
-              </div>
-              <div>
-                <h1 style={{ margin: 0, color: DARK, fontSize: 26, fontWeight: 800 }}>
-                  OSI Workflow Brain
-                </h1>
-                <p style={{ margin: "3px 0 0", color: MUTED, fontSize: 14 }}>
-                  Build category-specific operational memory for OSI. Capture process knowledge. Generate better decisions.
-                </p>
-              </div>
-            </div>
-          </div>
-          <div
-            className="osi-workflow-scope-card"
-            style={{
-              ...cardStyle,
-              padding: "10px 12px",
-              minWidth: 210,
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              color: SECONDARY,
-              fontSize: 12,
-              fontWeight: 700,
-            }}
-          >
-            <ShieldCheck size={17} color={ACCENT} />
-            Category-scoped OSI context
-          </div>
-        </div>
+  const cancelMemoryEdit = () => {
+    setEditingMemory(null);
+    setEditMemoryText("");
+  };
 
-        {banner && (
-          <div style={{ marginBottom: 16 }}>
-            <StatusBanner
-              variant={banner.variant}
-              title={banner.title}
-              message={banner.message}
-              onDismiss={() => setBanner(null)}
+  return (
+    <div className="min-h-full bg-bg">
+      <div className="mx-auto w-full max-w-[1400px] space-y-4 p-4 sm:p-5 lg:p-6">
+        <header className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between lg:gap-5">
+          <div className="flex min-w-0 items-start gap-3">
+            <span
+              className="grid size-10 shrink-0 place-items-center rounded-control bg-accent text-on-accent"
+              aria-hidden="true"
+            >
+              <Workflow size={21} />
+            </span>
+            <SectionHeader
+              as="h1"
+              title="OSI Workflow Brain"
+              description="Build category-specific operational memory for OSI. Capture process knowledge. Generate better decisions."
+              className="min-w-0"
             />
           </div>
+          <Card className="flex w-full min-w-0 items-center gap-2 px-3 py-2.5 text-xs font-bold text-text-muted lg:w-auto lg:min-w-52">
+            <ShieldCheck size={17} className="shrink-0 text-accent" aria-hidden="true" />
+            Category-scoped OSI context
+          </Card>
+        </header>
+
+        {banner && (
+          <StatusBanner
+            variant={banner.variant}
+            title={banner.title}
+            message={banner.message}
+            onDismiss={() => setBanner(null)}
+          />
         )}
 
         {!banner && (categoriesQuery.error || stateQuery.error) && (
-          <div style={{ marginBottom: 16 }}>
-            <StatusBanner
-              variant="error"
-              title="Workflow Brain data did not load"
-              message={getErrorMessage(
-                categoriesQuery.error || stateQuery.error,
-                "Failed to load Workflow Brain data. Please try again.",
-              )}
-            />
-          </div>
+          <StatusBanner
+            variant="error"
+            title="Workflow Brain data did not load"
+            message={getErrorMessage(
+              categoriesQuery.error || stateQuery.error,
+              "Failed to load Workflow Brain data. Please try again.",
+            )}
+          />
         )}
 
         {categories.length > 0 && (
-          <div className="osi-workflow-mobile-picker" style={{ ...cardStyle, padding: 14, marginBottom: 16 }}>
-            <label
-              htmlFor="workflow-brain-mobile-category"
-              style={{ display: "block", fontSize: 12, fontWeight: 800, color: DARK, marginBottom: 8 }}
-            >
-              Category
-            </label>
-            <select
-              id="workflow-brain-mobile-category"
-              value={selectedCategoryId}
-              onChange={(event) => setSelectedCategoryId(event.target.value)}
-              style={{
-                width: "100%",
-                border: `1px solid ${BORDER}`,
-                borderRadius: 6,
-                padding: "11px 10px",
-                fontSize: 14,
-                background: SURFACE,
-                color: DARK,
-              }}
-            >
-              {categories.map((category: WorkflowBrainCategory) => (
-                <option key={category._id} value={category._id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <Card className="p-4 lg:hidden">
+            <Field label="Category">
+              {(control) => (
+                <Select
+                  {...control}
+                  value={selectedCategoryId}
+                  onChange={(event) => setSelectedCategoryId(event.target.value)}
+                >
+                  {categories.map((category: WorkflowBrainCategory) => (
+                    <option key={category._id} value={category._id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </Field>
+          </Card>
         )}
 
-        <div
-          className="osi-workflow-layout"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "300px minmax(0, 1fr)",
-            gap: 18,
-            alignItems: "start",
-          }}
-        >
-          <aside className="osi-workflow-sidebar" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <div className="osi-workflow-categories-card" style={{ ...cardStyle, padding: 14 }}>
-              <div style={{ fontSize: 12, fontWeight: 800, color: DARK, marginBottom: 10 }}>
-                Categories
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {categories.map((category: WorkflowBrainCategory) => (
-                  <button
-                    key={category._id}
-                    onClick={() => setSelectedCategoryId(category._id)}
-                    style={{
-                      textAlign: "left",
-                      border: `1px solid ${
-                        category._id === selectedCategoryId ? ACCENT : BORDER
-                      }`,
-                      borderRadius: 6,
-                      padding: 10,
-                      background:
-                        category._id === selectedCategoryId ? "rgba(251,171,53,.12)" : SURFACE,
-                      cursor: "pointer",
-                    }}
-                  >
-                    <div style={{ fontSize: 13, fontWeight: 800, color: DARK }}>
-                      {category.name}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 11.5,
-                        color: MUTED,
-                        marginTop: 3,
-                        lineHeight: 1.35,
-                      }}
-                    >
-                      {category.description || "Category memory for OSI operations."}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-5">
+          <aside
+            aria-label="Workflow Brain categories"
+            className="order-2 flex min-w-0 flex-col gap-4 lg:order-none"
+          >
+            <Card className="hidden lg:block">
+              <CardHeader>
+                <CardTitle as="h2" className="text-base">
+                  Categories
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="flex flex-col gap-1.5">
+                  {categories.map((category: WorkflowBrainCategory) => {
+                    const isSelected = category._id === selectedCategoryId;
+                    return (
+                      <li key={category._id}>
+                        <Button
+                          variant={isSelected ? "accent" : "outline"}
+                          aria-pressed={isSelected}
+                          onClick={() => setSelectedCategoryId(category._id)}
+                          className="h-auto w-full flex-col items-start gap-1 px-3 py-2.5 text-left whitespace-normal"
+                        >
+                          <span className="text-sm font-bold">{category.name}</span>
+                          <span className="text-xs leading-snug font-normal">
+                            {category.description || "Category memory for OSI operations."}
+                          </span>
+                        </Button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </CardContent>
+            </Card>
 
-            <form onSubmit={submitCategory} style={{ ...cardStyle, padding: 14 }}>
-              <div style={{ fontSize: 12, fontWeight: 800, color: DARK, marginBottom: 10 }}>
-                Create Category
-              </div>
-              <input
-                value={newCategory.name}
-                onChange={(event) =>
-                  setNewCategory((current) => ({ ...current, name: event.target.value }))
-                }
-                disabled={!canEdit}
-                placeholder="Category name"
-                style={{
-                  width: "100%",
-                  border: `1px solid ${BORDER}`,
-                  borderRadius: 6,
-                  padding: "9px 10px",
-                  fontSize: 13,
-                  marginBottom: 8,
-                }}
-              />
-              <select
-                value={newCategory.domain}
-                onChange={(event) =>
-                  setNewCategory((current) => ({
-                    ...current,
-                    domain: event.target.value as WorkflowBrainDomain,
-                  }))
-                }
-                disabled={!canEdit}
-                style={{
-                  width: "100%",
-                  border: `1px solid ${BORDER}`,
-                  borderRadius: 6,
-                  padding: "9px 10px",
-                  fontSize: 13,
-                  marginBottom: 8,
-                  background: SURFACE,
-                }}
-              >
-                {domains.map((domain) => (
-                  <option key={domain.value} value={domain.value}>
-                    {domain.label}
-                  </option>
-                ))}
-              </select>
-              <TextArea
-                value={newCategory.description}
-                onChange={(value) =>
-                  setNewCategory((current) => ({ ...current, description: value }))
-                }
-                placeholder="What should this category remember?"
-                minHeight={76}
-                disabled={!canEdit}
-              />
-              <div style={{ marginTop: 10 }}>
-                <ActionButton
-                  type="submit"
-                  disabled={!canEdit || createCategory.isPending || !newCategory.name.trim()}
-                >
-                  <Plus size={15} /> Create
-                </ActionButton>
-              </div>
-              {!canEdit && (
-                <p style={{ color: MUTED, fontSize: 12, margin: "10px 0 0" }}>
-                  View-only role can read category memory and outputs.
-                </p>
-              )}
-              {canDeleteCategory && (
-                <p style={{ color: MUTED, fontSize: 11.5, margin: "10px 0 0" }}>
-                  Admins can deactivate categories through the API.
-                </p>
-              )}
-            </form>
+            <Card>
+              <CardHeader>
+                <CardTitle as="h2" className="text-base">
+                  Create Category
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={submitCategory} className="flex flex-col gap-3">
+                  <Field label="Category name">
+                    {(control) => (
+                      <Input
+                        {...control}
+                        value={newCategory.name}
+                        onChange={(event) =>
+                          setNewCategory((current) => ({ ...current, name: event.target.value }))
+                        }
+                        disabled={!canEdit}
+                        placeholder="Category name"
+                      />
+                    )}
+                  </Field>
+                  <Field label="Domain">
+                    {(control) => (
+                      <Select
+                        {...control}
+                        value={newCategory.domain}
+                        onChange={(event) =>
+                          setNewCategory((current) => ({
+                            ...current,
+                            domain: event.target.value as WorkflowBrainDomain,
+                          }))
+                        }
+                        disabled={!canEdit}
+                      >
+                        {domains.map((domain) => (
+                          <option key={domain.value} value={domain.value}>
+                            {domain.label}
+                          </option>
+                        ))}
+                      </Select>
+                    )}
+                  </Field>
+                  <Field label="Description">
+                    {(control) => (
+                      <Textarea
+                        {...control}
+                        value={newCategory.description}
+                        onChange={(event) =>
+                          setNewCategory((current) => ({
+                            ...current,
+                            description: event.target.value,
+                          }))
+                        }
+                        placeholder="What should this category remember?"
+                        rows={3}
+                        className="resize-y"
+                        disabled={!canEdit}
+                      />
+                    )}
+                  </Field>
+                  <div>
+                    <Button
+                      type="submit"
+                      variant="accent"
+                      size="sm"
+                      disabled={!canEdit || createCategory.isPending || !newCategory.name.trim()}
+                    >
+                      <Plus size={15} aria-hidden="true" /> Create
+                    </Button>
+                  </div>
+                  {!canEdit && (
+                    <p className="text-xs text-text-muted">
+                      View-only role can read category memory and outputs.
+                    </p>
+                  )}
+                  {canDeleteCategory && (
+                    <p className="text-xs text-text-muted">
+                      Admins can deactivate categories through the API.
+                    </p>
+                  )}
+                </form>
+              </CardContent>
+            </Card>
           </aside>
 
-          <main className="osi-workflow-main" style={{ minWidth: 0 }}>
+          <section aria-label="Category workspace" className="order-1 min-w-0 lg:order-none">
             {stateQuery.isLoading || categoriesQuery.isLoading ? (
-              <div style={{ ...cardStyle, padding: 32, color: MUTED }}>Loading workflow brain...</div>
+              <Card className="flex items-center gap-3 p-8 text-text-muted">
+                <Spinner size="sm" label="Loading workflow brain..." />
+                <span aria-hidden="true">Loading workflow brain...</span>
+              </Card>
             ) : !selectedCategory || !state ? (
-              <div style={{ ...cardStyle, padding: 32, color: MUTED }}>
-                Select or create a category to begin.
-              </div>
+              <EmptyState
+                icon={<Workflow size={40} />}
+                title="Select or create a category to begin."
+                titleAs="h2"
+                className="bg-surface"
+              />
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <section style={{ ...cardStyle, padding: 18 }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      justifyContent: "space-between",
-                      gap: 14,
-                      marginBottom: 14,
-                    }}
-                  >
-                    <div>
-                      <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: DARK }}>
-                        {selectedCategory.name}
-                      </h2>
-                      <p style={{ margin: "5px 0 0", color: MUTED, fontSize: 13 }}>
-                        {selectedCategory.description}
-                      </p>
+              <div className="flex flex-col gap-4">
+                <Card>
+                  <CardHeader className="flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0 space-y-1">
+                      <CardTitle as="h2">{selectedCategory.name}</CardTitle>
+                      {selectedCategory.description && (
+                        <CardDescription>{selectedCategory.description}</CardDescription>
+                      )}
                     </div>
-                    <Pill tone={ACCENT}>
+                    <Badge variant="accent" className="shrink-0 self-start">
                       {domains.find((domain) => domain.value === selectedCategory.domain)?.label ||
                         selectedCategory.domain}
-                    </Pill>
-                  </div>
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(auto-fit, minmax(132px, 1fr))",
-                      gap: 10,
-                    }}
-                  >
-                    <Metric icon={<FileText size={18} />} label="Memory items" value={state.memories.length} />
-                    <Metric icon={<GitBranch size={18} />} label="Workflow steps" value={state.workflowSteps.length} />
-                    <Metric icon={<Search size={18} />} label="Unknown areas" value={openUnknowns.length} />
-                  </div>
-                </section>
-
-                <section
-                  className="osi-workflow-form-grid"
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
-                    gap: 14,
-                  }}
-                >
-                  <form onSubmit={submitMemory} style={{ ...cardStyle, padding: 16 }}>
-                    <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
-                      <FileText size={17} color={ACCENT} />
-                      <h3 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: DARK }}>
-                        Add Memory Fact
-                      </h3>
-                    </div>
-                    <TextArea
-                      value={memoryText}
-                      onChange={setMemoryText}
-                      disabled={!canEdit}
-                      placeholder="Add category knowledge. This saves memory only and does not run analysis."
-                    />
-                    <div style={{ marginTop: 10 }}>
-                      <ActionButton
-                        type="submit"
-                        disabled={!canEdit || addMemory.isPending || !memoryText.trim()}
-                      >
-                        <Plus size={15} /> Save Memory
-                      </ActionButton>
-                    </div>
-                  </form>
-
-                  <form onSubmit={submitNote} style={{ ...cardStyle, padding: 16 }}>
-                    <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
-                      <GitBranch size={17} color={ACCENT} />
-                      <h3 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: DARK }}>
-                        Add Workflow Note
-                      </h3>
-                    </div>
-                    <TextArea
-                      value={noteText}
-                      onChange={setNoteText}
-                      disabled={!canEdit}
-                      placeholder="Describe a process issue, handoff, approval step, or operational note for this category."
-                    />
-                    <div style={{ marginTop: 10 }}>
-                      <ActionButton
-                        type="submit"
-                        disabled={!canEdit || analyzeNote.isPending || !noteText.trim()}
-                      >
-                        <Send size={15} /> Analyze Note
-                      </ActionButton>
-                    </div>
-                  </form>
-                </section>
-
-                <form onSubmit={submitDesign} style={{ ...cardStyle, padding: 16 }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      gap: 12,
-                      alignItems: "flex-start",
-                      marginBottom: 10,
-                    }}
-                  >
-                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                      <ClipboardCheck size={18} color={ACCENT} />
-                      <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: DARK }}>
-                        Ask for Design or Process Output
-                      </h3>
-                    </div>
-                    <Pill>Engineering review required for final specs</Pill>
-                  </div>
-                  <TextArea
-                    value={designText}
-                    onChange={setDesignText}
-                    disabled={!canEdit}
-                    minHeight={104}
-                    placeholder="Ask this category brain to create a checklist, workflow, process, or design-support output..."
-                  />
-                  <div
-                    style={{
-                      display: "flex",
-                      flexWrap: "wrap",
-                      gap: 8,
-                      marginTop: 10,
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                      {[
-                        "Create an intake checklist for separator design requests.",
-                        "Create a QA review workflow for chemical treatment proposals.",
-                        "What information is missing before engineering can evaluate this request?",
-                      ].map((example) => (
-                        <button
-                          key={example}
-                          type="button"
-                          disabled={!canEdit}
-                          onClick={() => setDesignText(example)}
-                          style={{
-                            border: `1px solid ${BORDER}`,
-                            background: "#F8FAFC",
-                            color: SECONDARY,
-                            fontSize: 11.5,
-                            borderRadius: 999,
-                            padding: "5px 9px",
-                            cursor: canEdit ? "pointer" : "not-allowed",
-                          }}
-                        >
-                          {example}
-                        </button>
-                      ))}
-                    </div>
-                    <ActionButton
-                      type="submit"
-                      disabled={!canEdit || createDesign.isPending || !designText.trim()}
+                    </Badge>
+                  </CardHeader>
+                  <CardContent>
+                    <div
+                      role="group"
+                      aria-label="Category summary"
+                      className="grid grid-cols-[repeat(auto-fit,minmax(132px,1fr))] gap-2.5"
                     >
-                      <Send size={15} /> Generate
-                    </ActionButton>
-                  </div>
-                </form>
+                      <StatCard label="Memory items" value={state.memories.length} />
+                      <StatCard label="Workflow steps" value={state.workflowSteps.length} />
+                      <StatCard label="Unknown areas" value={openUnknowns.length} />
+                    </div>
+                  </CardContent>
+                </Card>
 
-                <section style={cardStyle}>
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 4,
-                      overflowX: "auto",
-                      borderBottom: `1px solid ${BORDER}`,
-                      padding: "8px 10px 0",
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  <Card>
+                    <form onSubmit={submitMemory}>
+                      <CardHeader className="flex-row items-center gap-2">
+                        <FileText size={17} className="shrink-0 text-accent" aria-hidden="true" />
+                        <CardTitle className="text-base">
+                          <label htmlFor="workflow-brain-memory">Add Memory Fact</label>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="flex flex-col items-start gap-3">
+                        <Textarea
+                          id="workflow-brain-memory"
+                          value={memoryText}
+                          onChange={(event) => setMemoryText(event.target.value)}
+                          disabled={!canEdit}
+                          rows={4}
+                          className="resize-y"
+                          placeholder="Add category knowledge. This saves memory only and does not run analysis."
+                        />
+                        <Button
+                          type="submit"
+                          variant="accent"
+                          size="sm"
+                          disabled={!canEdit || addMemory.isPending || !memoryText.trim()}
+                        >
+                          <Plus size={15} aria-hidden="true" /> Save Memory
+                        </Button>
+                      </CardContent>
+                    </form>
+                  </Card>
+
+                  <Card>
+                    <form onSubmit={submitNote}>
+                      <CardHeader className="flex-row items-center gap-2">
+                        <GitBranch size={17} className="shrink-0 text-accent" aria-hidden="true" />
+                        <CardTitle className="text-base">
+                          <label htmlFor="workflow-brain-note">Add Workflow Note</label>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="flex flex-col items-start gap-3">
+                        <Textarea
+                          id="workflow-brain-note"
+                          value={noteText}
+                          onChange={(event) => setNoteText(event.target.value)}
+                          disabled={!canEdit}
+                          rows={4}
+                          className="resize-y"
+                          placeholder="Describe a process issue, handoff, approval step, or operational note for this category."
+                        />
+                        <Button
+                          type="submit"
+                          variant="accent"
+                          size="sm"
+                          disabled={!canEdit || analyzeNote.isPending || !noteText.trim()}
+                        >
+                          <Send size={15} aria-hidden="true" />
+                          Analyze Note
+                        </Button>
+                      </CardContent>
+                    </form>
+                  </Card>
+                </div>
+
+                <Card>
+                  <form onSubmit={submitDesign}>
+                    <CardHeader className="flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <ClipboardCheck size={18} className="shrink-0 text-accent" aria-hidden="true" />
+                        <CardTitle className="text-base">
+                          <label htmlFor="workflow-brain-design">
+                            Ask for Design or Process Output
+                          </label>
+                        </CardTitle>
+                      </div>
+                      <Badge variant="neutral" className="self-start whitespace-normal">
+                        Engineering review required for final specs
+                      </Badge>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-3">
+                      <Textarea
+                        id="workflow-brain-design"
+                        value={designText}
+                        onChange={(event) => setDesignText(event.target.value)}
+                        disabled={!canEdit}
+                        rows={4}
+                        className="resize-y"
+                        placeholder="Ask this category brain to create a checklist, workflow, process, or design-support output..."
+                      />
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div
+                          role="group"
+                          aria-label="Example requests"
+                          className="flex min-w-0 flex-wrap gap-1.5"
+                        >
+                          {designExamples.map((example) => (
+                            <Button
+                              key={example}
+                              variant="outline"
+                              size="sm"
+                              disabled={!canEdit}
+                              onClick={() => setDesignText(example)}
+                              className="h-auto min-h-8 max-w-full py-1 text-left text-xs font-normal whitespace-normal text-text-muted"
+                            >
+                              {example}
+                            </Button>
+                          ))}
+                        </div>
+                        <Button
+                          type="submit"
+                          variant="accent"
+                          size="sm"
+                          disabled={!canEdit || createDesign.isPending || !designText.trim()}
+                        >
+                          <Send size={15} aria-hidden="true" />
+                          Generate
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </form>
+                </Card>
+
+                <Card className="min-w-0">
+                  <Tabs
+                    value={activeTab}
+                    onValueChange={(value) => {
+                      if (isTabKey(value)) setActiveTab(value);
                     }}
                   >
+                    <TabsList aria-label="Workflow Brain views" className="max-w-full px-2.5 pt-2">
+                      {tabs.map((tab) => (
+                        <TabsTrigger key={tab.key} value={tab.key}>
+                          {tab.label}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
                     {tabs.map((tab) => (
-                      <button
-                        key={tab.key}
-                        onClick={() => setActiveTab(tab.key)}
-                        style={{
-                          border: "none",
-                          borderBottom:
-                            activeTab === tab.key ? `2px solid ${ACCENT}` : "2px solid transparent",
-                          background: "transparent",
-                          color: activeTab === tab.key ? DARK : MUTED,
-                          fontWeight: 800,
-                          fontSize: 12.5,
-                          padding: "10px 11px",
-                          cursor: "pointer",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {tab.label}
-                      </button>
+                      <TabsContent key={tab.key} value={tab.key} className="p-4">
+                        {renderTab(tab.key)}
+                      </TabsContent>
                     ))}
-                  </div>
-                  <div style={{ padding: 16 }}>{renderTab()}</div>
-                </section>
+                  </Tabs>
+                </Card>
               </div>
             )}
-          </main>
+          </section>
         </div>
       </div>
     </div>
   );
 
-  function renderTab() {
+  function renderTab(tab: TabKey) {
     if (!state) return null;
 
-    if (activeTab === "workflow") {
+    if (tab === "workflow") {
       return state.workflowSteps.length ? (
-        <div style={{ display: "grid", gap: 10 }}>
+        <ol className="grid gap-2.5" aria-label="Workflow steps">
           {state.workflowSteps.map((step, index) => (
-            <div key={step._id} style={{ ...cardStyle, padding: 14 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                <div>
-                  <div style={{ color: DARK, fontSize: 14, fontWeight: 800 }}>
+            <li key={step._id}>
+              <Card className="flex flex-col gap-2 p-3.5 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+                <div className="min-w-0">
+                  <h3 className="text-sm font-bold text-text">
                     {index + 1}. {step.name}
-                  </div>
-                  <p style={{ color: MUTED, fontSize: 13, margin: "5px 0 0", lineHeight: 1.5 }}>
+                  </h3>
+                  <p className="mt-1 text-sm leading-normal text-text-muted">
                     {step.description || "No description captured yet."}
                   </p>
                 </div>
-                <Pill tone={step.status === "risky" ? "#D92D20" : ACCENT}>{step.status}</Pill>
-              </div>
-            </div>
+                <Badge
+                  variant={step.status === "risky" ? "danger" : "accent"}
+                  className="shrink-0 self-start capitalize"
+                >
+                  {step.status}
+                </Badge>
+              </Card>
+            </li>
           ))}
-        </div>
+        </ol>
       ) : (
-        <EmptyState text="No workflow steps have been identified for this category yet." />
+        <EmptyState
+          title="No workflow steps have been identified for this category yet."
+          titleAs="h3"
+        />
       );
     }
 
-    if (activeTab === "memory") {
+    if (tab === "memory") {
       return state.memories.length ? (
-        <div style={{ display: "grid", gap: 10 }}>
+        <ul className="grid gap-2.5" aria-label="Memory items">
           {state.memories.map((memory) => (
-            <div key={memory._id} style={{ ...cardStyle, padding: 14 }}>
-              {editingMemory?._id === memory._id ? (
-                <>
-                  <TextArea
-                    value={editMemoryText}
-                    onChange={setEditMemoryText}
-                    placeholder="Update memory content"
-                  />
-                  <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                    <ActionButton
-                      disabled={!editMemoryText.trim() || updateMemory.isPending}
-                      onClick={() => updateMemory.mutate()}
-                    >
-                      Save
-                    </ActionButton>
-                    <ActionButton
-                      variant="secondary"
-                      onClick={() => {
-                        setEditingMemory(null);
-                        setEditMemoryText("");
-                      }}
-                    >
-                      Cancel
-                    </ActionButton>
+            <li key={memory._id}>
+              <Card className="p-3.5">
+                {editingMemory?._id === memory._id ? (
+                  <div className="flex flex-col gap-2.5">
+                    <Textarea
+                      aria-label="Update memory content"
+                      value={editMemoryText}
+                      onChange={(event) => setEditMemoryText(event.target.value)}
+                      placeholder="Update memory content"
+                      rows={4}
+                      className="resize-y"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        variant="accent"
+                        size="sm"
+                        disabled={!editMemoryText.trim() || updateMemory.isPending}
+                        onClick={() => updateMemory.mutate()}
+                      >
+                        Save
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={cancelMemoryEdit}>
+                        Cancel
+                      </Button>
+                    </div>
                   </div>
-                </>
-              ) : (
-                <>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                    <Pill tone={memory.source === "memory" ? ACCENT : SECONDARY}>
-                      {memory.type.replace(/_/g, " ")}
-                    </Pill>
-                    {canEdit && (
-                      <div style={{ display: "flex", gap: 6 }}>
-                        <button
-                          onClick={() => startMemoryEdit(memory)}
-                          style={plainLinkButton}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => deleteMemory.mutate(memory._id)}
-                          style={{ ...plainLinkButton, color: "#D92D20" }}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  <p style={{ margin: "10px 0 0", color: DARK, fontSize: 13, lineHeight: 1.55 }}>
-                    {memory.content}
-                  </p>
-                </>
-              )}
-            </div>
+                ) : (
+                  <>
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <Badge
+                        variant={memory.source === "memory" ? "accent" : "neutral"}
+                        className="capitalize"
+                      >
+                        {memory.type.replace(/_/g, " ")}
+                      </Badge>
+                      {canEdit && (
+                        <div className="flex gap-1.5">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-xs"
+                            onClick={() => startMemoryEdit(memory)}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-xs text-danger-text"
+                            onClick={() => deleteMemory.mutate(memory._id)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                    <p className="mt-2.5 text-sm leading-relaxed break-words text-text">
+                      {memory.content}
+                    </p>
+                  </>
+                )}
+              </Card>
+            </li>
           ))}
-        </div>
+        </ul>
       ) : (
-        <EmptyState text="No memory has been captured for this category yet." />
+        <EmptyState
+          title="No memory has been captured for this category yet."
+          titleAs="h3"
+        />
       );
     }
 
-    if (activeTab === "unknowns") {
+    if (tab === "unknowns") {
       return state.unknownAreas.length ? (
-        <div style={{ display: "grid", gap: 10 }}>
+        <ul className="grid gap-2.5" aria-label="Unknown areas">
           {state.unknownAreas.map((unknown) => (
-            <div key={unknown._id} style={{ ...cardStyle, padding: 14 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                <div>
-                  <div style={{ color: DARK, fontSize: 14, fontWeight: 800 }}>
-                    {unknown.title}
-                  </div>
-                  <p style={{ color: MUTED, fontSize: 13, lineHeight: 1.5 }}>
+            <li key={unknown._id}>
+              <Card className="flex flex-col gap-2 p-3.5 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+                <div className="min-w-0">
+                  <h3 className="text-sm font-bold text-text">{unknown.title}</h3>
+                  <p className="mt-1 text-sm leading-normal text-text-muted">
                     {unknown.description}
                   </p>
-                  <div
-                    style={{
-                      marginTop: 8,
-                      padding: 10,
-                      borderRadius: 6,
-                      background: "#FFFAEB",
-                      color: "#7A4B00",
-                      fontSize: 12.5,
-                      fontWeight: 700,
-                    }}
-                  >
+                  <p className="mt-2 rounded-control bg-warning-bg p-2.5 text-sm font-semibold text-warning-text">
                     {unknown.suggestedQuestion}
-                  </div>
+                  </p>
                 </div>
-                <Pill tone={severityColor(unknown.severity)}>{unknown.severity}</Pill>
-              </div>
-            </div>
+                <Badge
+                  variant={severityVariant(unknown.severity)}
+                  className="shrink-0 self-start capitalize"
+                >
+                  {unknown.severity}
+                </Badge>
+              </Card>
+            </li>
           ))}
-        </div>
+        </ul>
       ) : (
-        <EmptyState text="No unknown areas have been identified for this category yet." />
+        <EmptyState
+          title="No unknown areas have been identified for this category yet."
+          titleAs="h3"
+        />
       );
     }
 
     return state.designOutputs.length ? (
-      <div style={{ display: "grid", gap: 12 }}>
+      <ul className="grid gap-3" aria-label="Design outputs">
         {state.designOutputs.map((design) => (
-          <div key={design._id} style={{ ...cardStyle, padding: 16 }}>
-            <div style={{ color: DARK, fontSize: 15, fontWeight: 800 }}>{design.title}</div>
-            <p style={{ color: MUTED, fontSize: 12.5, margin: "5px 0 10px" }}>
-              Request: {design.request}
-            </p>
-            <pre
-              style={{
-                whiteSpace: "pre-wrap",
-                fontFamily: "inherit",
-                color: DARK,
-                fontSize: 13,
-                lineHeight: 1.55,
-                margin: 0,
-              }}
-            >
-              {design.answer}
-            </pre>
-            <OutputList title="Required Inputs" items={design.requiredInputs} />
-            <OutputList title="Risks" items={design.risks} />
-            <OutputList title="Recommended Next Steps" items={design.recommendedNextSteps} />
-          </div>
+          <li key={design._id}>
+            <Card className="p-4">
+              <h3 className="text-base font-bold text-text">{design.title}</h3>
+              <p className="mt-1 mb-2.5 text-sm text-text-muted">Request: {design.request}</p>
+              <p className="text-sm leading-relaxed break-words whitespace-pre-wrap text-text">
+                {design.answer}
+              </p>
+              <OutputList title="Required Inputs" items={design.requiredInputs} />
+              <OutputList title="Risks" items={design.risks} />
+              <OutputList title="Recommended Next Steps" items={design.recommendedNextSteps} />
+            </Card>
+          </li>
         ))}
-      </div>
+      </ul>
     ) : (
-      <EmptyState text="No design or process outputs have been generated for this category yet." />
+      <EmptyState
+        title="No design or process outputs have been generated for this category yet."
+        titleAs="h3"
+      />
     );
   }
-};
-
-const plainLinkButton: React.CSSProperties = {
-  border: "none",
-  background: "transparent",
-  color: SECONDARY,
-  fontSize: 12,
-  fontWeight: 800,
-  cursor: "pointer",
-  padding: 0,
 };
 
 const OutputList: React.FC<{ title: string; items: string[] }> = ({ title, items }) => {
   if (!items.length) return null;
   return (
-    <div style={{ marginTop: 12 }}>
-      <div style={{ fontSize: 12, fontWeight: 800, color: SECONDARY, marginBottom: 5 }}>
-        {title}
-      </div>
-      <ul style={{ margin: 0, paddingLeft: 18, color: MUTED, fontSize: 12.5, lineHeight: 1.5 }}>
+    <div className="mt-3">
+      <h4 className="mb-1 text-xs font-bold text-text">{title}</h4>
+      <ul className="list-disc space-y-0.5 pl-5 text-sm leading-normal text-text-muted">
         {items.map((item) => (
           <li key={item}>{item}</li>
         ))}
@@ -1025,23 +858,5 @@ const OutputList: React.FC<{ title: string; items: string[] }> = ({ title, items
     </div>
   );
 };
-
-const EmptyState: React.FC<{ text: string }> = ({ text }) => (
-  <div
-    style={{
-      minHeight: 120,
-      display: "grid",
-      placeItems: "center",
-      border: `1px dashed ${BORDER}`,
-      borderRadius: 8,
-      color: MUTED,
-      fontSize: 13,
-      textAlign: "center",
-      padding: 20,
-    }}
-  >
-    {text}
-  </div>
-);
 
 export default WorkflowBrainPage;
