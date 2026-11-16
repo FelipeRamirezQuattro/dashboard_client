@@ -7,6 +7,7 @@ import {
   useNavigate,
   useSearchParams,
 } from "react-router-dom";
+import { Spinner } from "@odessa-separator/ui";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider, useAuthContext } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -81,19 +82,10 @@ const SSOCallback: React.FC = () => {
   }, [searchParams, navigate, loginWithToken]);
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center"
-      style={{ background: "#f8fafc" }}
-    >
-      <div className="text-center">
-        <div
-          className="w-12 h-12 rounded-full animate-spin mx-auto mb-4"
-          style={{
-            border: "3px solid rgba(251,173,55,0.2)",
-            borderTopColor: "#fbad37",
-          }}
-        ></div>
-        <p className="text-gray-400 text-sm">Completing sign in...</p>
+    <div className="flex min-h-screen items-center justify-center bg-bg text-text">
+      <div className="flex flex-col items-center gap-4 text-center">
+        <Spinner size="lg" label="Completing sign in" />
+        <p className="text-sm text-text-muted">Completing sign in...</p>
       </div>
     </div>
   );

@@ -1,5 +1,15 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { Building2 } from "lucide-react";
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@odessa-separator/ui";
 import { BusinessUnit } from "../types/businessUnit.types";
 
 interface BusinessUnitCardProps {
@@ -10,82 +20,52 @@ const BusinessUnitCard: React.FC<BusinessUnitCardProps> = ({
   businessUnit,
 }) => {
   const navigate = useNavigate();
+  const [logoFailed, setLogoFailed] = React.useState(false);
 
   const handleClick = () => {
     navigate(`/business-unit/${businessUnit._id}`);
   };
 
+  const showLogo = Boolean(businessUnit.logoUrl) && !logoFailed;
+
   return (
-    <div
+    // Pointer convenience only: the "View Details" button is the keyboard and
+    // screen-reader target, and its click bubbles up to this handler.
+    <Card
       onClick={handleClick}
-      className="bg-white rounded-xl shadow-xs border border-slate-100 p-4 sm:p-6 flex flex-col hover:shadow-xl transition-all hover:-translate-y-1 cursor-pointer group touch-manipulation"
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          handleClick();
-        }
-      }}
+      className="flex h-full cursor-pointer flex-col"
     >
-      {/* Logo Section */}
-      <div className="flex justify-center mb-3 sm:mb-4">
-        {businessUnit.logoUrl ? (
-          <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-xl overflow-hidden bg-slate-50 flex items-center justify-center group-hover:scale-105 transition-transform">
+      <CardHeader className="items-center">
+        <div className="flex size-20 items-center justify-center overflow-hidden rounded-control bg-surface-muted text-text sm:size-24">
+          {showLogo ? (
             <img
               src={businessUnit.logoUrl}
               alt={`${businessUnit.name} logo`}
-              className="h-full w-full object-contain p-2"
+              className="size-full object-contain p-2"
               width="96"
               height="96"
               loading="lazy"
-              onError={(e) => {
-                // Fallback if image fails to load
-                const target = e.target as HTMLImageElement;
-                target.style.display = "none";
-                target.parentElement!.innerHTML = `
-                  <span class="material-symbols-outlined text-5xl text-slate-400" aria-hidden="true">
-                    business
-                  </span>
-                `;
-              }}
+              onError={() => setLogoFailed(true)}
             />
-          </div>
-        ) : (
-          <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-xl bg-osi-primary/10 flex items-center justify-center text-osi-primary group-hover:scale-105 transition-transform">
-            <span
-              className="material-symbols-outlined text-4xl sm:text-5xl"
-              aria-hidden="true"
-            >
-              business
-            </span>
-          </div>
-        )}
-      </div>
+          ) : (
+            <Building2 size={44} aria-hidden="true" />
+          )}
+        </div>
+      </CardHeader>
 
-      {/* Business Unit Name */}
-      <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-2 text-center line-clamp-2">
-        {businessUnit.name}
-      </h3>
+      <CardContent className="flex flex-1 flex-col gap-2 text-center">
+        <CardTitle className="line-clamp-2">{businessUnit.name}</CardTitle>
+        <CardDescription className="line-clamp-3">
+          {businessUnit.description}
+        </CardDescription>
+      </CardContent>
 
-      {/* Description */}
-      <p className="text-sm text-slate-500 line-clamp-3 mb-4 sm:mb-6 text-center flex-grow">
-        {businessUnit.description}
-      </p>
-
-      {/* View Button */}
-      <div className="mt-auto">
-        <button className="w-full bg-osi-primary hover:bg-osi-primary/90 text-white font-bold py-2.5 sm:py-3 rounded-lg flex items-center justify-center gap-2 transition-colors touch-manipulation">
-          <span>View Details</span>
-          <span
-            className="material-symbols-outlined text-sm"
-            aria-hidden="true"
-          >
-            arrow_forward
-          </span>
-        </button>
-      </div>
-    </div>
+      <CardFooter>
+        <Button className="w-full" arrow>
+          View Details
+        </Button>
+      </CardFooter>
+    </Card>
   );
 };
 
