@@ -1,4 +1,18 @@
 import React, { useState, useEffect } from "react";
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Field,
+  Select,
+  Slider,
+  Switch,
+} from "@odessa-separator/ui";
+import { AudioLines, Play } from "lucide-react";
 import { VoiceSettings as VoiceSettingsType } from "../../types/chatbot.types";
 import { SUPPORTED_LANGUAGES } from "../../utils/voice.utils";
 
@@ -67,272 +81,225 @@ const VoiceSettings: React.FC<VoiceSettingsProps> = ({
   );
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col">
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent
+        closeLabel="Close settings"
+        className="flex max-h-[90dvh] max-w-md flex-col overflow-hidden p-0"
+      >
         {/* Header */}
-        <div className="bg-gradient-to-r from-osi-primary to-osi-primary/90 text-white px-6 py-4 flex items-center justify-between">
+        <DialogHeader className="shrink-0 border-b border-border px-6 py-4 pr-14">
           <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-2xl">
-              settings_voice
-            </span>
-            <h2 className="text-lg font-semibold">Voice Settings</h2>
+            <AudioLines className="size-6 shrink-0" aria-hidden="true" />
+            <DialogTitle className="text-lg">Voice Settings</DialogTitle>
           </div>
-          <button
-            onClick={onClose}
-            className="text-white hover:bg-white/20 rounded-lg p-1.5 transition-colors"
-            aria-label="Close settings"
-          >
-            <span className="material-symbols-outlined text-xl">close</span>
-          </button>
-        </div>
+          <DialogDescription>
+            Voice input and how responses are read aloud.
+          </DialogDescription>
+        </DialogHeader>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 space-y-6 overflow-y-auto p-6">
           {/* Voice Input Toggle */}
-          <div className="space-y-2">
-            <label
-              htmlFor="voice-enabled"
-              className="flex items-center justify-between cursor-pointer"
-            >
-              <span className="text-sm font-medium text-gray-700">
-                Enable Voice Input
-              </span>
-              <input
-                type="checkbox"
-                id="voice-enabled"
-                name="voice-enabled"
-                checked={localSettings.enabled}
-                onChange={(e) =>
-                  setLocalSettings({
-                    ...localSettings,
-                    enabled: e.target.checked,
-                  })
-                }
-                className="w-5 h-5 text-osi-primary rounded-sm focus:ring-2 focus:ring-osi-primary"
-              />
-            </label>
-            <p className="text-xs text-gray-500">
-              Allow speaking to the chatbot using your microphone
-            </p>
-          </div>
+          <Switch
+            id="voice-enabled"
+            name="voice-enabled"
+            label="Enable Voice Input"
+            hint="Allow speaking to the chatbot using your microphone"
+            checked={localSettings.enabled}
+            onChange={(e) =>
+              setLocalSettings({
+                ...localSettings,
+                enabled: e.target.checked,
+              })
+            }
+          />
 
           {/* Auto-speak Toggle */}
-          <div className="space-y-2">
-            <label
-              htmlFor="voice-auto-speak"
-              className="flex items-center justify-between cursor-pointer"
-            >
-              <span className="text-sm font-medium text-gray-700">
-                Auto-speak Responses
-              </span>
-              <input
-                type="checkbox"
-                id="voice-auto-speak"
-                name="voice-auto-speak"
-                checked={localSettings.autoSpeak}
+          <Switch
+            id="voice-auto-speak"
+            name="voice-auto-speak"
+            label="Auto-speak Responses"
+            hint="Automatically read bot responses aloud"
+            checked={localSettings.autoSpeak}
+            onChange={(e) =>
+              setLocalSettings({
+                ...localSettings,
+                autoSpeak: e.target.checked,
+              })
+            }
+          />
+
+          {/* Language Selection */}
+          <Field label="Language">
+            {(control) => (
+              <Select
+                {...control}
+                name="voice-language"
+                value={localSettings.language}
                 onChange={(e) =>
                   setLocalSettings({
                     ...localSettings,
-                    autoSpeak: e.target.checked,
+                    language: e.target.value,
+                    voiceIndex: null, // Reset voice when language changes
                   })
                 }
-                className="w-5 h-5 text-osi-primary rounded-sm focus:ring-2 focus:ring-osi-primary"
-              />
-            </label>
-            <p className="text-xs text-gray-500">
-              Automatically read bot responses aloud
-            </p>
-          </div>
-
-          {/* Language Selection */}
-          <div className="space-y-2">
-            <label
-              htmlFor="voice-language"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Language
-            </label>
-            <select
-              id="voice-language"
-              name="voice-language"
-              value={localSettings.language}
-              onChange={(e) =>
-                setLocalSettings({
-                  ...localSettings,
-                  language: e.target.value,
-                  voiceIndex: null, // Reset voice when language changes
-                })
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-osi-primary focus:border-transparent text-sm"
-            >
-              {SUPPORTED_LANGUAGES.map((lang) => (
-                <option key={lang.code} value={lang.code}>
-                  {lang.name}
-                </option>
-              ))}
-            </select>
-          </div>
+              >
+                {SUPPORTED_LANGUAGES.map((lang) => (
+                  <option key={lang.code} value={lang.code}>
+                    {lang.name}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
 
           {/* Voice Selection */}
           {filteredVoices.length > 0 && (
-            <div className="space-y-2">
-              <label
-                htmlFor="voice-selection"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Voice
-              </label>
-              <select
-                id="voice-selection"
-                name="voice-selection"
-                value={localSettings.voiceIndex ?? ""}
-                onChange={(e) =>
-                  setLocalSettings({
-                    ...localSettings,
-                    voiceIndex: e.target.value
-                      ? parseInt(e.target.value)
-                      : null,
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-osi-primary focus:border-transparent text-sm"
-              >
-                <option value="">Default Voice</option>
-                {filteredVoices.map((voice) => {
-                  const globalIndex = availableVoices.indexOf(voice);
-                  return (
-                    <option key={globalIndex} value={globalIndex}>
-                      {voice.name} {voice.localService ? "🔸" : "🌐"}
-                    </option>
-                  );
-                })}
-              </select>
-              <p className="text-xs text-gray-500">
-                🔸 = Local voice, 🌐 = Network voice
-              </p>
-            </div>
+            <Field label="Voice" hint="🔸 = Local voice, 🌐 = Network voice">
+              {(control) => (
+                <Select
+                  {...control}
+                  name="voice-selection"
+                  value={localSettings.voiceIndex ?? ""}
+                  onChange={(e) =>
+                    setLocalSettings({
+                      ...localSettings,
+                      voiceIndex: e.target.value
+                        ? parseInt(e.target.value)
+                        : null,
+                    })
+                  }
+                >
+                  <option value="">Default Voice</option>
+                  {filteredVoices.map((voice) => {
+                    const globalIndex = availableVoices.indexOf(voice);
+                    return (
+                      <option key={globalIndex} value={globalIndex}>
+                        {voice.name} {voice.localService ? "🔸" : "🌐"}
+                      </option>
+                    );
+                  })}
+                </Select>
+              )}
+            </Field>
           )}
 
           {/* Speech Rate */}
-          <div className="space-y-2">
-            <label
-              htmlFor="voice-rate"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Speech Rate: {localSettings.rate.toFixed(1)}x
-            </label>
-            <input
-              type="range"
-              id="voice-rate"
-              name="voice-rate"
-              min="0.5"
-              max="2.0"
-              step="0.1"
-              value={localSettings.rate}
-              onChange={(e) =>
-                setLocalSettings({
-                  ...localSettings,
-                  rate: parseFloat(e.target.value),
-                })
-              }
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-osi-primary"
-            />
-            <div className="flex justify-between text-xs text-gray-500">
-              <span>Slower</span>
-              <span>Normal</span>
-              <span>Faster</span>
-            </div>
-          </div>
+          <RangeSetting
+            label="Speech Rate"
+            name="voice-rate"
+            min={0.5}
+            max={2.0}
+            step={0.1}
+            value={localSettings.rate}
+            valueText={`${localSettings.rate.toFixed(1)}x`}
+            scale={["Slower", "Normal", "Faster"]}
+            onChange={(rate) => setLocalSettings({ ...localSettings, rate })}
+          />
 
           {/* Pitch */}
-          <div className="space-y-2">
-            <label
-              htmlFor="voice-pitch"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Pitch: {localSettings.pitch.toFixed(1)}
-            </label>
-            <input
-              type="range"
-              id="voice-pitch"
-              name="voice-pitch"
-              min="0.5"
-              max="2.0"
-              step="0.1"
-              value={localSettings.pitch}
-              onChange={(e) =>
-                setLocalSettings({
-                  ...localSettings,
-                  pitch: parseFloat(e.target.value),
-                })
-              }
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-osi-primary"
-            />
-            <div className="flex justify-between text-xs text-gray-500">
-              <span>Lower</span>
-              <span>Normal</span>
-              <span>Higher</span>
-            </div>
-          </div>
+          <RangeSetting
+            label="Pitch"
+            name="voice-pitch"
+            min={0.5}
+            max={2.0}
+            step={0.1}
+            value={localSettings.pitch}
+            valueText={localSettings.pitch.toFixed(1)}
+            scale={["Lower", "Normal", "Higher"]}
+            onChange={(pitch) => setLocalSettings({ ...localSettings, pitch })}
+          />
 
           {/* Volume */}
-          <div className="space-y-2">
-            <label
-              htmlFor="voice-volume"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Volume: {Math.round(localSettings.volume * 100)}%
-            </label>
-            <input
-              type="range"
-              id="voice-volume"
-              name="voice-volume"
-              min="0"
-              max="1"
-              step="0.1"
-              value={localSettings.volume}
-              onChange={(e) =>
-                setLocalSettings({
-                  ...localSettings,
-                  volume: parseFloat(e.target.value),
-                })
-              }
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-osi-primary"
-            />
-            <div className="flex justify-between text-xs text-gray-500">
-              <span>Quiet</span>
-              <span>Medium</span>
-              <span>Loud</span>
-            </div>
-          </div>
+          <RangeSetting
+            label="Volume"
+            name="voice-volume"
+            min={0}
+            max={1}
+            step={0.1}
+            value={localSettings.volume}
+            valueText={`${Math.round(localSettings.volume * 100)}%`}
+            scale={["Quiet", "Medium", "Loud"]}
+            onChange={(volume) => setLocalSettings({ ...localSettings, volume })}
+          />
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 px-6 py-4 flex gap-3">
-          <button
-            onClick={handleReset}
-            className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
-          >
+        <DialogFooter className="mt-0 shrink-0 border-t border-border px-6 py-4">
+          <Button variant="outline" onClick={handleReset} className="sm:flex-1">
             Reset to Default
-          </button>
-          <button
-            onClick={handleTest}
-            className="px-4 py-2.5 bg-osi-secondary text-white rounded-lg hover:bg-osi-secondary/90 transition-colors text-sm font-medium flex items-center gap-2"
-          >
-            <span className="material-symbols-outlined text-lg">
-              play_arrow
-            </span>
+          </Button>
+          <Button variant="accent" onClick={handleTest}>
+            <Play className="size-4" aria-hidden="true" />
             Test
-          </button>
-          <button
-            onClick={handleSave}
-            className="flex-1 px-4 py-2.5 bg-osi-primary text-white rounded-lg hover:bg-osi-primary/90 transition-colors text-sm font-medium"
-          >
+          </Button>
+          <Button onClick={handleSave} className="sm:flex-1">
             Save Settings
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
+
+interface RangeSettingProps {
+  label: string;
+  name: string;
+  min: number;
+  max: number;
+  step: number;
+  value: number;
+  /** Current value as shown to the user, e.g. "1.0x" or "80%". */
+  valueText: string;
+  /** Three scale labels shown under the slider (low, middle, high). */
+  scale: [string, string, string];
+  onChange: (value: number) => void;
+}
+
+/** Slider with its current value shown next to the label, as the old settings did. */
+const RangeSetting: React.FC<RangeSettingProps> = ({
+  label,
+  name,
+  min,
+  max,
+  step,
+  value,
+  valueText,
+  scale,
+  onChange,
+}) => (
+  <Field label={label}>
+    {(control) => (
+      <div className="space-y-1">
+        <div className="flex items-center gap-3">
+          <Slider
+            {...control}
+            name={name}
+            min={min}
+            max={max}
+            step={step}
+            value={value}
+            aria-valuetext={valueText}
+            onChange={(e) => onChange(parseFloat(e.target.value))}
+            className="flex-1"
+          />
+          <output htmlFor={control.id} className="w-12 shrink-0 text-right text-sm font-medium text-text">
+            {valueText}
+          </output>
+        </div>
+        <div className="flex justify-between text-xs text-text-muted" aria-hidden="true">
+          <span>{scale[0]}</span>
+          <span>{scale[1]}</span>
+          <span>{scale[2]}</span>
+        </div>
+      </div>
+    )}
+  </Field>
+);
 
 export default VoiceSettings;

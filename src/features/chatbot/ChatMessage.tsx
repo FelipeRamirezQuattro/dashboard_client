@@ -1,4 +1,14 @@
 import React from "react";
+import {
+  Button,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+  cn,
+  linkVariants,
+} from "@odessa-separator/ui";
+import { BookmarkPlus, Bot, Mic, User, Volume2 } from "lucide-react";
 import { ChatMessage as ChatMessageType } from "../../types/chatbot.types";
 import {
   downloadFileBankDocument,
@@ -23,7 +33,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   canSaveToBrain = false,
 }) => {
   const isBot = message.sender === "bot";
-  const time = new Date(message.timestamp).toLocaleTimeString("en-US", {
+  const sentAt = new Date(message.timestamp);
+  const isValidTime = !Number.isNaN(sentAt.getTime());
+  const time = sentAt.toLocaleTimeString("en-US", {
     hour: "numeric",
     minute: "2-digit",
   });
@@ -62,11 +74,12 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                   }
                 : undefined
             }
-            className={`underline font-semibold ${
+            className={cn(
+              "font-semibold",
               isBot
-                ? "text-osi-primary hover:text-osi-primary/80"
-                : "text-white hover:text-white/90"
-            }`}
+                ? linkVariants()
+                : "rounded-tag text-on-action underline hover:no-underline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus",
+            )}
           >
             {match[1]}
           </a>,
@@ -92,93 +105,99 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   };
 
   return (
-    <div className={`flex ${isBot ? "justify-start" : "justify-end"} mb-4`}>
+    <div className={cn("mb-4 flex", isBot ? "justify-start" : "justify-end")}>
       <div
-        className={`flex gap-2 max-w-[92%] ${isBot ? "flex-row" : "flex-row-reverse"}`}
+        className={cn("flex max-w-[92%] gap-2", isBot ? "flex-row" : "flex-row-reverse")}
       >
         {/* Avatar */}
-        <div
-          className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center ${
-            isBot ? "bg-osi-primary text-white" : "bg-osi-secondary text-white"
-          }`}
+        <span
+          className={cn(
+            "grid size-8 shrink-0 place-items-center rounded-control",
+            isBot ? "bg-action text-on-action" : "bg-accent text-on-accent",
+          )}
+          aria-hidden="true"
         >
-          <span className="material-symbols-outlined text-base">
-            {isBot ? "smart_toy" : "person"}
-          </span>
-        </div>
+          {isBot ? <Bot className="size-4" /> : <User className="size-4" />}
+        </span>
 
         {/* Message Content */}
-        <div className="flex flex-col">
+        <div className="flex min-w-0 flex-col">
           <div className="flex items-start gap-2">
             <div
-              className={`rounded-2xl px-4 py-2.5 ${
+              className={cn(
+                "min-w-0 px-4 py-2.5",
                 isBot
-                  ? "bg-gray-100 text-gray-800"
-                  : "bg-osi-primary text-white"
-              }`}
+                  ? "border border-border bg-surface text-text"
+                  : "bg-action text-on-action",
+              )}
             >
-              <div className="text-sm leading-relaxed whitespace-pre-line">
+              <span className="sr-only">
+                {isBot ? "OSI Assistant said:" : "You said:"}
+              </span>
+              <div className="text-sm leading-relaxed break-words whitespace-pre-line">
                 {renderMessage(message.message)}
               </div>
             </div>
             {/* Speaker button for bot messages */}
             {isBot && onSpeak && isTTSSupported && (
-              <button
-                onClick={() => onSpeak(message.id, message.message)}
-                className={`flex-shrink-0 p-1.5 rounded-lg transition-colors ${
-                  isSpeaking
-                    ? "bg-osi-primary text-white"
-                    : "bg-gray-200 text-gray-600 hover:bg-gray-300"
-                }`}
-                aria-label={isSpeaking ? "Stop speaking" : "Speak message"}
-                title={isSpeaking ? "Stop speaking" : "Speak this message"}
-              >
-                <span
-                  className={`material-symbols-outlined text-sm ${
-                    isSpeaking ? "animate-pulse" : ""
-                  }`}
-                  aria-hidden="true"
-                >
-                  {isSpeaking ? "volume_up" : "volume_up"}
-                </span>
-              </button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={isSpeaking ? "primary" : "outline"}
+                      size="icon"
+                      onClick={() => onSpeak(message.id, message.message)}
+                      aria-pressed={isSpeaking}
+                      aria-label="Speak message"
+                      className="size-8 shrink-0"
+                    >
+                      <Volume2
+                        className={cn("size-4", isSpeaking && "motion-safe:animate-pulse")}
+                        aria-hidden="true"
+                      />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {isSpeaking ? "Stop speaking" : "Speak this message"}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
             {isBot && canSaveToBrain && onSaveToBrain && (
-              <div className="group relative flex-shrink-0">
-                <button
-                  onClick={() => onSaveToBrain(message.id, message.message)}
-                  className="p-1.5 rounded-lg transition-colors bg-amber-50 text-amber-700 hover:bg-amber-100 focus:outline-hidden focus:ring-2 focus:ring-amber-300"
-                  aria-label="Save response to Workflow Brain memory"
-                  title="Save this response to the selected Workflow Brain category memory"
-                >
-                  <span
-                    className="material-symbols-outlined text-sm"
-                    aria-hidden="true"
-                  >
-                    bookmark_add
-                  </span>
-                </button>
-                <div className="pointer-events-none absolute right-0 top-9 z-20 w-64 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs leading-snug text-gray-700 opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-                  Save this assistant response into the selected Workflow Brain
-                  memory. It becomes source context for future Brain answers.
-                </div>
-              </div>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => onSaveToBrain(message.id, message.message)}
+                      aria-label="Save response to Workflow Brain memory"
+                      className="size-8 shrink-0"
+                    >
+                      <BookmarkPlus className="size-4" aria-hidden="true" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-64">
+                    Save this assistant response into the selected Workflow Brain
+                    memory. It becomes source context for future Brain answers.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <span
-              className={`text-xs text-gray-400 mt-1 px-2 ${
-                isBot ? "text-left" : "text-right"
-              }`}
-            >
+          <div
+            className={cn(
+              "mt-1 flex items-center gap-2 px-2 text-xs text-text-muted",
+              !isBot && "justify-end",
+            )}
+          >
+            <time dateTime={isValidTime ? sentAt.toISOString() : undefined}>
               {time}
-            </span>
+            </time>
             {message.isSpoken && (
-              <span
-                className="text-xs text-gray-400 mt-1"
-                title="Sent via voice"
-              >
-                <span className="material-symbols-outlined text-xs">mic</span>
+              <span title="Sent via voice">
+                <Mic className="size-3" aria-hidden="true" />
+                <span className="sr-only">Sent via voice</span>
               </span>
             )}
           </div>

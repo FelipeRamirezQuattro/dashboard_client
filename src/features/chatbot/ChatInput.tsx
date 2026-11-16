@@ -1,4 +1,15 @@
 import React, { useState, KeyboardEvent, useEffect } from "react";
+import {
+  Alert,
+  Button,
+  Textarea,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+  cn,
+} from "@odessa-separator/ui";
+import { Mic, SendHorizontal } from "lucide-react";
 import useVoiceRecognition from "../../hooks/useVoiceRecognition";
 
 interface ChatInputProps {
@@ -96,66 +107,61 @@ const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   return (
-    <div className="border-t border-gray-200 p-3 sm:p-4 bg-white flex-shrink-0 rounded-b-2xl sm:rounded-b-2xl">
+    <div className="shrink-0 border-t border-border bg-surface p-3 sm:p-4">
       {/* Voice unsupported warning */}
       {showVoiceUnsupported && !isVoiceSupported && (
-        <div className="mb-2 text-xs text-amber-600 bg-amber-50 p-2 rounded-lg border border-amber-200">
+        <Alert variant="warning" className="mb-2 text-xs">
           Voice input is not supported in your browser. Please use Chrome, Edge,
           or Safari.
-        </div>
+        </Alert>
       )}
 
       {/* Voice error warning */}
       {showVoiceUnsupported && voiceError && isVoiceSupported && (
-        <div className="mb-2 text-xs text-red-600 bg-red-50 p-2 rounded-lg border border-red-200">
+        <Alert variant="danger" className="mb-2 text-xs">
           {voiceError}
-        </div>
+        </Alert>
       )}
 
       <div className="flex items-center gap-2">
         {/* Voice button */}
         {voiceEnabled && (
-          <button
-            type="button"
-            onClick={handleVoiceToggle}
-            disabled={disabled || voiceState === "processing"}
-            className={`${
-              isListening
-                ? "bg-red-500 hover:bg-red-600 animate-pulse"
-                : isVoiceSupported
-                  ? "bg-gray-100 hover:bg-gray-200 text-gray-700"
-                  : "bg-gray-100 text-gray-400 cursor-not-allowed"
-            } p-2.5 sm:p-2.5 rounded-lg transition-all touch-manipulation flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed`}
-            aria-label={
-              isListening
-                ? "Stop voice input"
-                : isVoiceSupported
-                  ? "Start voice input (Ctrl+Space)"
-                  : "Voice input not supported"
-            }
-            title={
-              isListening
-                ? "Click to stop recording"
-                : isVoiceSupported
-                  ? "Click to start voice input (Ctrl+Space)"
-                  : "Voice input not supported in this browser"
-            }
-          >
-            <span
-              className={`material-symbols-outlined text-xl sm:text-xl ${
-                isListening ? "text-white" : ""
-              }`}
-              aria-hidden="true"
-            >
-              {isListening ? "mic" : "mic_none"}
-            </span>
-          </button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={isListening ? "danger" : "outline"}
+                  size="icon"
+                  onClick={handleVoiceToggle}
+                  disabled={disabled || voiceState === "processing"}
+                  aria-pressed={isListening}
+                  aria-label="Voice input"
+                  aria-keyshortcuts="Control+Space"
+                  className={cn(
+                    "shrink-0 touch-manipulation",
+                    isListening && "motion-safe:animate-pulse",
+                    !isVoiceSupported && "text-text-muted",
+                  )}
+                >
+                  <Mic className="size-5" aria-hidden="true" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {isListening
+                  ? "Click to stop recording"
+                  : isVoiceSupported
+                    ? "Click to start voice input (Ctrl+Space)"
+                    : "Voice input not supported in this browser"}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
 
         {/* Text input */}
-        <textarea
+        <Textarea
           id="chatbot-message-input"
           name="chatbot-message"
+          aria-label="Message"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -167,30 +173,28 @@ const ChatInput: React.FC<ChatInputProps> = ({
           autoCorrect="off"
           autoCapitalize="sentences"
           rows={2}
-          className="flex-1 min-h-[44px] max-h-28 px-3 sm:px-4 py-2.5 sm:py-2.5 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-osi-primary focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-sm sm:text-base resize-none"
+          className="max-h-28 min-h-11 flex-1 resize-none text-sm sm:text-base"
         />
 
         {/* Send button */}
-        <button
-          type="button"
+        <Button
+          size="icon"
           onClick={handleSend}
           disabled={!input.trim() || disabled || isListening}
-          className="bg-osi-primary text-white p-2.5 sm:p-2.5 rounded-lg hover:bg-osi-primary/90 active:bg-osi-primary/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation flex-shrink-0"
           aria-label="Send message"
+          className="shrink-0 touch-manipulation"
         >
-          <span
-            className="material-symbols-outlined text-xl sm:text-xl"
-            aria-hidden="true"
-          >
-            send
-          </span>
-        </button>
+          <SendHorizontal className="size-5" aria-hidden="true" />
+        </Button>
       </div>
 
       {/* Listening indicator */}
       {isListening && (
-        <div className="mt-2 text-xs text-gray-500 flex items-center gap-1">
-          <span className="inline-block w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+        <div className="mt-2 flex items-center gap-1 text-xs text-text-muted" role="status">
+          <span
+            className="inline-block size-2 bg-danger-solid motion-safe:animate-pulse"
+            aria-hidden="true"
+          />
           <span>Listening... Speak now</span>
         </div>
       )}

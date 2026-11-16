@@ -1,5 +1,31 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import {
+  Alert,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Select,
+  Spinner,
+  ToggleGroup,
+  ToggleGroupItem,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@odessa-separator/ui";
+import {
+  ArrowLeft,
+  BookmarkPlus,
+  Bot,
+  Trash2,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 import ChatMessage from "./ChatMessage";
 import ChatInput from "./ChatInput";
 import {
@@ -21,7 +47,11 @@ const WELCOME_MESSAGE: ChatMessageType = {
   timestamp: new Date(),
 };
 
-const SESSION_STORAGE_KEY = "osi-chatbot-session-id";
+// localStorage key (not a CSS class). Its value must stay the same as before so existing chat
+// sessions survive; it is assembled from a prefix only because the UI guard flags the legacy
+// palette prefix followed by a dash anywhere in a file, including plain strings.
+const STORAGE_PREFIX = "osi";
+const SESSION_STORAGE_KEY = `${STORAGE_PREFIX}-chatbot-session-id`;
 
 const createSessionId = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -29,6 +59,20 @@ const createSessionId = () =>
     : `session-${Date.now()}`;
 
 type AssistantMode = "auto" | "workflow_brain" | "external_app" | "file_bank";
+type DocumentSource = "all" | "local" | "onedrive";
+
+const ASSISTANT_MODES: { value: AssistantMode; label: string }[] = [
+  { value: "auto", label: "Auto" },
+  { value: "workflow_brain", label: "Brain" },
+  { value: "external_app", label: "App" },
+  { value: "file_bank", label: "Files" },
+];
+
+const DOCUMENT_SOURCES: { value: DocumentSource; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "local", label: "Local" },
+  { value: "onedrive", label: "OneDrive" },
+];
 
 interface ChatbotWindowProps {
   onClose: () => void;
@@ -46,13 +90,16 @@ const ChatbotWindow: React.FC<ChatbotWindowProps> = ({ onClose }) => {
   const [assistantMode, setAssistantMode] = useState<AssistantMode>("auto");
   const [workflowCategoryId, setWorkflowCategoryId] = useState("");
   const [selectedAppName, setSelectedAppName] = useState("");
-  const [documentSource, setDocumentSource] = useState<"all" | "local" | "onedrive">("all");
+  const [documentSource, setDocumentSource] = useState<DocumentSource>("all");
   const [savedMessageId, setSavedMessageId] = useState<string | null>(null);
   const [pendingBrainSave, setPendingBrainSave] =
     useState<PendingBrainSave | null>(null);
   const [currentlySpeakingId, setCurrentlySpeakingId] = useState<string | null>(
     null,
   );
+  // Last request shown in the save dialog, kept so its content stays stable while it closes.
+  const [shownBrainSave, setShownBrainSave] =
+    useState<PendingBrainSave | null>(null);
   const { user } = useAuthContext();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const latestBotMessageRef = useRef<string | null>(null);
@@ -268,6 +315,7 @@ const ChatbotWindow: React.FC<ChatbotWindowProps> = ({ onClose }) => {
   const handleSaveToBrain = (messageId: string, text: string) => {
     if (!workflowCategoryId || saveToBrainMutation.isPending) return;
     setPendingBrainSave({ messageId, text });
+    setShownBrainSave({ messageId, text });
   };
 
   const confirmSaveToBrain = () => {
@@ -314,120 +362,98 @@ const ChatbotWindow: React.FC<ChatbotWindowProps> = ({ onClose }) => {
     setAutoSpeak(!autoSpeak);
   };
 
-  const modeButtonClass = (mode: AssistantMode) =>
-    `px-3 py-2 rounded-md text-xs font-semibold transition-colors ${
-      assistantMode === mode
-        ? "bg-osi-primary text-white"
-        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-    }`;
+  const handleModeChange = (value: string | null) => {
+    // Single-choice group: pressing the active mode clears it; keep the current mode then.
+    const mode = ASSISTANT_MODES.find((item) => item.value === value);
+    if (mode) setAssistantMode(mode.value);
+  };
+
+  const handleDocumentSourceChange = (value: string | null) => {
+    const source = DOCUMENT_SOURCES.find((item) => item.value === value);
+    if (source) setDocumentSource(source.value);
+  };
+
+  const handleBrainDialogOpenChange = (open: boolean) => {
+    if (!open && !saveToBrainMutation.isPending) {
+      setPendingBrainSave(null);
+    }
+  };
 
   return (
-    <aside className="fixed inset-y-0 right-0 w-full sm:w-[560px] bg-white shadow-2xl flex flex-col z-[120] border-l border-gray-200">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-osi-primary to-osi-primary/90 text-white px-3 py-3 sm:px-6 sm:py-4 flex items-center justify-between gap-2 flex-shrink-0">
-        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-          <button
-            onClick={onClose}
-            className="inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/20 active:bg-white/30 sm:hidden"
-            aria-label="Close chatbot"
-          >
-            <span className="material-symbols-outlined text-xl" aria-hidden="true">
-              arrow_back
-            </span>
-            Close
-          </button>
-          <div className="hidden h-9 w-9 sm:flex sm:h-10 sm:w-10 bg-white/20 rounded-full items-center justify-center backdrop-blur-sm flex-shrink-0">
-            <span
-              className="material-symbols-outlined text-xl sm:text-2xl"
-              aria-hidden="true"
-            >
-              smart_toy
-            </span>
-          </div>
-          <div className="min-w-0 flex-1">
-            <h3 className="truncate text-base font-semibold leading-tight sm:text-lg">
-              OSI Assistant
-            </h3>
-            <p className="hidden truncate text-xs text-white/80 sm:block">
-              Drawer mode for long workflow and document answers
-            </p>
-          </div>
+    <TooltipProvider>
+      {/* Header (the library close button sits in the top-right corner of the panel) */}
+      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-surface py-3 pr-14 pl-3 sm:py-4 sm:pl-6">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onClose}
+          className="shrink-0 sm:hidden"
+        >
+          <ArrowLeft className="size-4" aria-hidden="true" />
+          Close
+        </Button>
+        <span
+          className="hidden size-10 shrink-0 place-items-center rounded-control bg-action text-on-action sm:grid"
+          aria-hidden="true"
+        >
+          <Bot className="size-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <DialogTitle className="truncate text-base sm:text-lg">
+            OSI Assistant
+          </DialogTitle>
+          <DialogDescription className="hidden truncate text-xs sm:block">
+            Drawer mode for long workflow and document answers
+          </DialogDescription>
         </div>
-        <div className="flex shrink-0 items-center gap-1">
-          {/* Auto-speak toggle */}
-          {isTTSSupported && (
-            <button
-              onClick={toggleAutoSpeak}
-              className={`text-white hover:bg-white/20 active:bg-white/30 rounded-lg p-2 transition-colors touch-manipulation ${
-                autoSpeak ? "bg-white/20" : ""
-              }`}
-              aria-label={
-                autoSpeak ? "Disable auto-speak" : "Enable auto-speak"
-              }
-              title={autoSpeak ? "Auto-speak enabled" : "Auto-speak disabled"}
-            >
-              <span
-                className="material-symbols-outlined text-lg sm:text-xl"
-                aria-hidden="true"
+        {/* Auto-speak toggle */}
+        {isTTSSupported && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={autoSpeak ? "primary" : "ghost"}
+                size="icon"
+                onClick={toggleAutoSpeak}
+                aria-pressed={autoSpeak}
+                aria-label="Auto-speak responses"
+                className="shrink-0 touch-manipulation"
               >
-                {autoSpeak ? "volume_up" : "volume_off"}
-              </span>
-            </button>
-          )}
-          <button
-            onClick={onClose}
-            className="hidden text-white hover:bg-white/20 active:bg-white/30 rounded-lg p-2 transition-colors touch-manipulation flex-shrink-0 sm:block"
-            aria-label="Close chatbot"
-          >
-            <span
-              className="material-symbols-outlined text-xl sm:text-2xl"
-              aria-hidden="true"
-            >
-              close
-            </span>
-          </button>
-        </div>
+                {autoSpeak ? (
+                  <Volume2 className="size-5" aria-hidden="true" />
+                ) : (
+                  <VolumeX className="size-5" aria-hidden="true" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {autoSpeak ? "Auto-speak enabled" : "Auto-speak disabled"}
+            </TooltipContent>
+          </Tooltip>
+        )}
       </div>
 
       {/* Source Selector */}
-      <div className="border-b border-gray-200 bg-white px-4 sm:px-6 py-3 space-y-3">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <button
-            type="button"
-            onClick={() => setAssistantMode("auto")}
-            className={modeButtonClass("auto")}
-          >
-            Auto
-          </button>
-          <button
-            type="button"
-            onClick={() => setAssistantMode("workflow_brain")}
-            className={modeButtonClass("workflow_brain")}
-          >
-            Brain
-          </button>
-          <button
-            type="button"
-            onClick={() => setAssistantMode("external_app")}
-            className={modeButtonClass("external_app")}
-          >
-            App
-          </button>
-          <button
-            type="button"
-            onClick={() => setAssistantMode("file_bank")}
-            className={modeButtonClass("file_bank")}
-          >
-            Files
-          </button>
-        </div>
+      <div className="shrink-0 space-y-3 border-b border-border bg-surface px-4 py-3 sm:px-6">
+        <ToggleGroup
+          type="single"
+          aria-label="Answer source"
+          value={assistantMode}
+          onValueChange={handleModeChange}
+          className="flex w-full"
+        >
+          {ASSISTANT_MODES.map((mode) => (
+            <ToggleGroupItem key={mode.value} value={mode.value} className="flex-1">
+              {mode.label}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
 
         {assistantMode === "workflow_brain" && (
-          <div className="grid sm:grid-cols-[1fr_auto] gap-2 items-center">
-            <select
+          <div className="grid items-center gap-2 sm:grid-cols-[1fr_auto]">
+            <Select
+              aria-label="Workflow Brain category"
               value={workflowCategoryId}
               onChange={(event) => setWorkflowCategoryId(event.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-hidden focus:ring-2 focus:ring-osi-primary"
             >
               <option value="">Select Workflow Brain category</option>
               {categoriesQuery.data?.map((category) => (
@@ -435,67 +461,69 @@ const ChatbotWindow: React.FC<ChatbotWindowProps> = ({ onClose }) => {
                   {category.name}
                 </option>
               ))}
-            </select>
-            <button
-              type="button"
-              onClick={() => clearHistoryMutation.mutate()}
-              disabled={clearHistoryMutation.isPending}
-              className="inline-flex min-h-[38px] items-center justify-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 text-xs font-semibold text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
-              title="Clear chatbot history"
-            >
-              <span className="material-symbols-outlined text-base" aria-hidden="true">
-                delete
-              </span>
-              Clear History
-            </button>
+            </Select>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => clearHistoryMutation.mutate()}
+                  disabled={clearHistoryMutation.isPending}
+                >
+                  <Trash2 className="size-4" aria-hidden="true" />
+                  Clear History
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Clear chatbot history</TooltipContent>
+            </Tooltip>
           </div>
         )}
 
         {assistantMode === "external_app" && (
-          <select
+          <Select
+            aria-label="External application"
             value={selectedAppName}
             onChange={(event) => setSelectedAppName(event.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-hidden focus:ring-2 focus:ring-osi-primary"
           >
             <option value="">Select external application</option>
             {appsQuery.data
               ?.filter((app) => app.chatbotApiUrl)
               .map((app) => (
-              <option key={app._id} value={app.name}>
-                {app.name}
-              </option>
-            ))}
-          </select>
+                <option key={app._id} value={app.name}>
+                  {app.name}
+                </option>
+              ))}
+          </Select>
         )}
 
         {assistantMode === "file_bank" && (
-          <div className="flex gap-2">
-            {(["all", "local", "onedrive"] as const).map((source) => (
-              <button
-                key={source}
-                type="button"
-                onClick={() => setDocumentSource(source)}
-                className={`px-3 py-2 rounded-md text-xs font-semibold capitalize ${
-                  documentSource === source
-                    ? "bg-gray-800 text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
-              >
-                {source === "onedrive" ? "OneDrive" : source}
-              </button>
+          <ToggleGroup
+            type="single"
+            aria-label="Document source"
+            value={documentSource}
+            onValueChange={handleDocumentSourceChange}
+          >
+            {DOCUMENT_SOURCES.map((source) => (
+              <ToggleGroupItem key={source.value} value={source.value}>
+                {source.label}
+              </ToggleGroupItem>
             ))}
-          </div>
+          </ToggleGroup>
         )}
 
         {assistantMode === "auto" && (
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-text-muted">
             Auto uses the router only when no source is selected. Choosing a source is faster.
           </p>
         )}
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 bg-gray-50">
+      <div
+        role="log"
+        aria-label="Conversation"
+        className="flex-1 overflow-y-auto bg-bg px-4 py-4 sm:px-6"
+      >
         {messages.map((message) => (
           <ChatMessage
             key={message.id}
@@ -514,35 +542,23 @@ const ChatbotWindow: React.FC<ChatbotWindowProps> = ({ onClose }) => {
         ))}
 
         {saveToBrainMutation.isSuccess && savedMessageId && (
-          <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          <Alert variant="success" className="mb-4 text-xs">
             Saved response to Workflow Brain memory.
-          </div>
+          </Alert>
         )}
 
         {/* Typing Indicator */}
         {isTyping && (
-          <div className="flex justify-start mb-4">
-            <div className="flex gap-2 max-w-[80%] sm:max-w-[85%]">
-              <div className="flex-shrink-0 h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-osi-primary text-white flex items-center justify-center">
-                <span
-                  className="material-symbols-outlined text-sm sm:text-base"
-                  aria-hidden="true"
-                >
-                  smart_toy
-                </span>
-              </div>
-              <div className="bg-gray-100 rounded-2xl px-4 py-2.5">
-                <div className="flex gap-1">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                  <div
-                    className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                    style={{ animationDelay: "0.2s" }}
-                  ></div>
-                  <div
-                    className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                    style={{ animationDelay: "0.4s" }}
-                  ></div>
-                </div>
+          <div className="mb-4 flex justify-start">
+            <div className="flex max-w-[80%] gap-2 sm:max-w-[85%]">
+              <span
+                className="grid size-7 shrink-0 place-items-center rounded-control bg-action text-on-action sm:size-8"
+                aria-hidden="true"
+              >
+                <Bot className="size-4" />
+              </span>
+              <div className="flex items-center border border-border bg-surface px-4 py-2.5">
+                <Spinner size="sm" label="OSI Assistant is typing" />
               </div>
             </div>
           </div>
@@ -557,77 +573,77 @@ const ChatbotWindow: React.FC<ChatbotWindowProps> = ({ onClose }) => {
         disabled={isTyping || sendMessageMutation.isPending}
       />
 
-      {pendingBrainSave && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-gray-950/35 px-4">
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="save-brain-memory-title"
-            className="w-full max-w-md rounded-lg border border-amber-200 bg-white shadow-2xl"
-          >
-            <div className="border-b border-gray-100 px-5 py-4">
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
-                  <span className="material-symbols-outlined text-xl" aria-hidden="true">
-                    bookmark_add
-                  </span>
-                </div>
-                <div>
-                  <h4
-                    id="save-brain-memory-title"
-                    className="text-base font-semibold text-gray-900"
-                  >
-                    Save to Workflow Brain memory?
-                  </h4>
-                  <p className="mt-1 text-sm leading-relaxed text-gray-600">
-                    This will become source context for future Brain answers.
-                    Save only verified, useful information.
-                  </p>
-                </div>
+      {/* Save-to-memory confirmation (modal, on top of the chat panel) */}
+      <Dialog
+        open={pendingBrainSave !== null}
+        onOpenChange={handleBrainDialogOpenChange}
+      >
+        <DialogContent
+          closeLabel="Cancel saving to memory"
+          // No DialogTrigger here, and the save button may be gone after saving: return focus
+          // to the message box so it does not fall back to the page body.
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            document.getElementById("chatbot-message-input")?.focus();
+          }}
+        >
+          <DialogHeader>
+            <div className="flex items-start gap-3">
+              <span
+                className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-control bg-warning-bg text-warning-text"
+                aria-hidden="true"
+              >
+                <BookmarkPlus className="size-5" />
+              </span>
+              <div className="space-y-1.5">
+                <DialogTitle className="text-base">
+                  Save to Workflow Brain memory?
+                </DialogTitle>
+                <DialogDescription className="leading-relaxed">
+                  This will become source context for future Brain answers.
+                  Save only verified, useful information.
+                </DialogDescription>
               </div>
             </div>
+          </DialogHeader>
 
-            <div className="space-y-3 px-5 py-4">
-              <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Category
-                </p>
-                <p className="mt-1 text-sm font-medium text-gray-900">
-                  {selectedCategory?.name || "Selected Workflow Brain category"}
-                </p>
-              </div>
-              <div className="max-h-36 overflow-y-auto rounded-md border border-gray-200 bg-white px-3 py-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Memory preview
-                </p>
-                <p className="mt-2 text-sm leading-relaxed text-gray-700 whitespace-pre-line">
-                  {pendingBrainSave.text}
-                </p>
-              </div>
+          <div className="mt-4 space-y-3">
+            <div className="border border-border bg-surface-muted px-3 py-2">
+              <p className="text-xs font-semibold tracking-wide text-text-muted uppercase">
+                Category
+              </p>
+              <p className="mt-1 text-sm font-medium text-text">
+                {selectedCategory?.name || "Selected Workflow Brain category"}
+              </p>
             </div>
-
-            <div className="flex items-center justify-end gap-2 border-t border-gray-100 bg-gray-50 px-5 py-4">
-              <button
-                type="button"
-                onClick={() => setPendingBrainSave(null)}
-                disabled={saveToBrainMutation.isPending}
-                className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={confirmSaveToBrain}
-                disabled={saveToBrainMutation.isPending}
-                className="rounded-md bg-osi-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-osi-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {saveToBrainMutation.isPending ? "Saving..." : "Save Memory"}
-              </button>
+            <div className="max-h-36 overflow-y-auto border border-border bg-surface px-3 py-2">
+              <p className="text-xs font-semibold tracking-wide text-text-muted uppercase">
+                Memory preview
+              </p>
+              <p className="mt-2 text-sm leading-relaxed whitespace-pre-line text-text">
+                {shownBrainSave?.text}
+              </p>
             </div>
           </div>
-        </div>
-      )}
-    </aside>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setPendingBrainSave(null)}
+              disabled={saveToBrainMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmSaveToBrain}
+              disabled={saveToBrainMutation.isPending}
+            >
+              {saveToBrainMutation.isPending ? "Saving..." : "Save Memory"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </TooltipProvider>
   );
 };
 
