@@ -60,7 +60,11 @@ const roleLabels: Record<UserRole, string> = {
   superadmin: "Super Admin",
 };
 
+// Stable default so the query result keeps the same reference while loading (effect dependency).
+const NO_PERMISSIONS: UserPermission[] = [];
+
 // Helper functions to extract IDs from permissions
+
 const extractBusinessUnitIds = (permissions: UserPermission[]): string[] => {
   const buIds = new Set<string>();
   permissions.forEach((perm) => {
@@ -158,7 +162,7 @@ const UserManagement: React.FC = () => {
   });
 
   // Fetch user permissions when editing
-  const { data: userPermissions = [] } = useQuery({
+  const { data: userPermissions = NO_PERMISSIONS } = useQuery({
     queryKey: ["userPermissions", selectedUser?._id],
     queryFn: () => permissionsService.getUserPermissions(selectedUser!._id),
     enabled: !!selectedUser,

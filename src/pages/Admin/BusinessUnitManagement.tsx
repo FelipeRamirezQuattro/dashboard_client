@@ -52,6 +52,7 @@ const BusinessUnitManagement: React.FC = () => {
   const { user } = useAuth();
   const isSuperAdmin = user?.role === "superadmin";
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("active");
   const [deleteOpen, setDeleteOpen] = useState(false);
   // Kept after the dialog closes so the message never reads "undefined" while it animates out.
@@ -177,12 +178,20 @@ const BusinessUnitManagement: React.FC = () => {
     setIsModalOpen(false);
   };
 
-  const table = useDataTable<BusinessUnit>(businessUnits ?? [], {
-    searchText: (bu) => `${bu.name} ${bu.description}`,
-    filter: (bu) =>
+  // One predicate for the table and the CSV export: trimmed search over the joined text + status.
+  const matches = (bu: BusinessUnit) => {
+    const term = searchTerm.trim().toLowerCase();
+    const matchesSearch = `${bu.name} ${bu.description}`.toLowerCase().includes(term);
+    const matchesStatus =
       statusFilter === "all" ||
       (statusFilter === "active" && bu.isActive) ||
-      (statusFilter === "inactive" && !bu.isActive),
+      (statusFilter === "inactive" && !bu.isActive);
+    return matchesSearch && matchesStatus;
+  };
+
+  // The search lives in `searchTerm`, so `searchText` is not passed and the hook's own search is unused.
+  const table = useDataTable<BusinessUnit>(businessUnits ?? [], {
+    filter: matches,
     sorters: {
       name: (a, b) => a.name.localeCompare(b.name),
       status: (a, b) => Number(b.isActive) - Number(a.isActive),
@@ -192,23 +201,17 @@ const BusinessUnitManagement: React.FC = () => {
     pageSize: 10,
   });
 
+  const changeSearch = (value: string) => {
+    setSearchTerm(value);
+    table.resetPage();
+  };
+
   const changeStatusFilter = (value: StatusFilter) => {
     setStatusFilter(value);
     table.resetPage();
   };
 
-  // Same matching rules as the table (search + status filter), over every page.
-  const filteredBusinessUnits = (businessUnits ?? []).filter((bu) => {
-    const term = table.search.toLowerCase();
-    const matchesSearch =
-      bu.name.toLowerCase().includes(term) ||
-      bu.description.toLowerCase().includes(term);
-    const matchesStatus =
-      statusFilter === "all" ||
-      (statusFilter === "active" && bu.isActive) ||
-      (statusFilter === "inactive" && !bu.isActive);
-    return matchesSearch && matchesStatus;
-  });
+  const filteredBusinessUnits = (businessUnits ?? []).filter(matches);
 
   const handleExport = () => {
     exportRowsToCsv(
@@ -321,8 +324,8 @@ const BusinessUnitManagement: React.FC = () => {
       <DataTableToolbar
         searchLabel="Search business units"
         searchPlaceholder="Search business units..."
-        search={table.search}
-        onSearchChange={table.setSearch}
+        search={searchTerm}
+        onSearchChange={changeSearch}
         resultCount={table.total}
         filters={
           <Field label="Status">

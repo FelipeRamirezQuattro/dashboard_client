@@ -61,6 +61,7 @@ const DepartmentManagement: React.FC = () => {
   const { user } = useAuth();
   const isSuperAdmin = user?.role === "superadmin";
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const [businessUnitFilter, setBusinessUnitFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("active");
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -189,22 +190,26 @@ const DepartmentManagement: React.FC = () => {
     setIsModalOpen(false);
   };
 
-  const matchesFilters = (dept: Department) => {
+  const searchText = (dept: Department) =>
+    `${dept.name} ${dept.description} ${getBusinessUnitName(dept)}`;
+
+  // One predicate for the table and the CSV export: trimmed search + business unit + status.
+  const matches = (dept: Department) => {
+    const matchesSearch = searchText(dept)
+      .toLowerCase()
+      .includes(searchTerm.trim().toLowerCase());
     const matchesBusinessUnit =
       !businessUnitFilter || getBusinessUnitId(dept) === businessUnitFilter;
     const matchesStatus =
       statusFilter === "all" ||
       (statusFilter === "active" && dept.isActive) ||
       (statusFilter === "inactive" && !dept.isActive);
-    return matchesBusinessUnit && matchesStatus;
+    return matchesSearch && matchesBusinessUnit && matchesStatus;
   };
 
-  const searchText = (dept: Department) =>
-    `${dept.name} ${dept.description} ${getBusinessUnitName(dept)}`;
-
+  // The search lives in `searchTerm`, so `searchText` is not passed to the hook.
   const table = useDataTable<Department>(departments ?? [], {
-    searchText,
-    filter: matchesFilters,
+    filter: matches,
     sorters: {
       name: (a, b) => a.name.localeCompare(b.name),
       businessUnit: (a, b) =>
@@ -215,6 +220,11 @@ const DepartmentManagement: React.FC = () => {
     initialSort: { key: "name", direction: "ascending" },
     pageSize: 10,
   });
+
+  const changeSearch = (value: string) => {
+    setSearchTerm(value);
+    table.resetPage();
+  };
 
   const changeStatusFilter = (value: StatusFilter) => {
     setStatusFilter(value);
@@ -249,12 +259,7 @@ const DepartmentManagement: React.FC = () => {
     });
   }
 
-  // Same matching rules as the table (search + filters), over every page.
-  const filteredDepartments = (departments ?? []).filter(
-    (dept) =>
-      searchText(dept).toLowerCase().includes(table.search.toLowerCase()) &&
-      matchesFilters(dept),
-  );
+  const filteredDepartments = (departments ?? []).filter(matches);
 
   const handleExport = () => {
     exportRowsToCsv(
@@ -380,8 +385,8 @@ const DepartmentManagement: React.FC = () => {
       <DataTableToolbar
         searchLabel="Search departments"
         searchPlaceholder="Search departments..."
-        search={table.search}
-        onSearchChange={table.setSearch}
+        search={searchTerm}
+        onSearchChange={changeSearch}
         resultCount={table.total}
         filters={
           <div className="flex flex-col gap-4">

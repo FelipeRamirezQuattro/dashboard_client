@@ -52,7 +52,6 @@ const TopBar: React.FC<TopBarProps> = ({ sidebarCollapsed = false }) => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [selectedResultIndex, setSelectedResultIndex] = useState(-1);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
@@ -111,7 +110,6 @@ const TopBar: React.FC<TopBarProps> = ({ sidebarCollapsed = false }) => {
   const handleResultClick = async (result: SearchResult) => {
     setSearchQuery("");
     setIsSearchFocused(false);
-    setSelectedResultIndex(-1);
     if (result.type === "businessUnit") {
       navigate(`/business-unit/${result.id}`);
     } else if (result.type === "department" && result.businessUnitId) {
@@ -127,32 +125,17 @@ const TopBar: React.FC<TopBarProps> = ({ sidebarCollapsed = false }) => {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!searchResults.length) return;
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setSelectedResultIndex((prev) => prev < searchResults.length - 1 ? prev + 1 : prev);
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setSelectedResultIndex((prev) => prev > 0 ? prev - 1 : -1);
-    } else if (e.key === "Enter" && selectedResultIndex >= 0) {
-      e.preventDefault();
-      handleResultClick(searchResults[selectedResultIndex]);
-    } else if (e.key === "Escape") {
+    if (e.key === "Escape") {
       setIsSearchFocused(false);
-      setSelectedResultIndex(-1);
     }
   };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedResultIndex >= 0 && searchResults[selectedResultIndex]) {
-      handleResultClick(searchResults[selectedResultIndex]);
-    } else if (searchResults.length === 1) {
+    if (searchResults.length === 1) {
       handleResultClick(searchResults[0]);
     }
   };
-
-  useEffect(() => { setSelectedResultIndex(-1); }, [searchQuery]);
 
   const resultIcons: Record<SearchResult["type"], LucideIcon> = {
     businessUnit: Building2,
@@ -219,7 +202,7 @@ const TopBar: React.FC<TopBarProps> = ({ sidebarCollapsed = false }) => {
           {isSearchFocused && searchQuery.trim() && (
             <div className="fixed inset-x-3 top-16 z-50 max-h-[70vh] overflow-y-auto rounded-card border border-border bg-surface py-2 text-text lg:absolute lg:inset-x-0 lg:top-full lg:mt-2 lg:max-h-96">
               {searchResults.length > 0 ? (
-                searchResults.map((result, index) => {
+                searchResults.map((result) => {
                   const Icon = resultIcons[result.type];
                   return (
                     <Button
@@ -227,10 +210,7 @@ const TopBar: React.FC<TopBarProps> = ({ sidebarCollapsed = false }) => {
                       type="button"
                       variant="ghost"
                       onClick={() => handleResultClick(result)}
-                      className={cn(
-                        "h-auto w-full justify-start gap-3 px-4 py-2.5 text-left font-normal whitespace-normal",
-                        index === selectedResultIndex && "bg-surface-muted",
-                      )}
+                      className="h-auto w-full justify-start gap-3 px-4 py-2.5 text-left font-normal whitespace-normal"
                     >
                       <Icon size={18} aria-hidden="true" className="mt-0.5 shrink-0 self-start" />
                       <span className="min-w-0 flex-1">

@@ -754,14 +754,16 @@ const WorkflowBrainPage: React.FC = () => {
                             variant="ghost"
                             size="sm"
                             className="h-7 px-2 text-xs"
+                            aria-label={`Edit memory: ${memory.type.replace(/_/g, " ")} - ${memory.content.slice(0, 40)}`}
                             onClick={() => startMemoryEdit(memory)}
                           >
                             Edit
                           </Button>
                           <Button
-                            variant="ghost"
+                            variant="danger"
                             size="sm"
-                            className="h-7 px-2 text-xs text-danger-text"
+                            className="h-7 px-2 text-xs"
+                            aria-label={`Delete memory: ${memory.type.replace(/_/g, " ")} - ${memory.content.slice(0, 40)}`}
                             onClick={() => deleteMemory.mutate(memory._id)}
                           >
                             Delete
