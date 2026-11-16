@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   Button,
   Dialog,
@@ -31,9 +31,20 @@ const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
   // Fixed for as long as the panel is open: switching `modal` while open would remount the
   // content (Radix renders a different content component) and lose the conversation.
   const [modal, setModal] = useState(isPhoneViewport);
+  const contentRef = useRef<HTMLDivElement>(null);
+  // Whether focus was inside the panel when it was asked to close (read in onCloseAutoFocus,
+  // when the panel is already being removed and document.activeElement is no longer reliable).
+  const focusInsideOnCloseRef = useRef(true);
+
+  const isFocusInsidePanel = () =>
+    Boolean(contentRef.current?.contains(document.activeElement));
 
   const handleOpenChange = (open: boolean) => {
-    if (open) setModal(isPhoneViewport());
+    if (open) {
+      setModal(isPhoneViewport());
+    } else {
+      focusInsideOnCloseRef.current = isFocusInsidePanel();
+    }
     onOpenChange(open);
   };
 
@@ -68,6 +79,20 @@ const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
         // The panel stays open while the user works on the page next to it; it closes with
         // the close buttons, the launcher or Escape.
         onInteractOutside={(event) => event.preventDefault()}
+        ref={contentRef}
+        // Non-modal: Radix listens for Escape on the whole document. Only close when the user
+        // is in the panel, so Escape in a page field does not close the chat. (Radix only calls
+        // this when the panel is the top layer; a page Dialog/Popover above it closes first.)
+        onEscapeKeyDown={(event) => {
+          if (!modal && !isFocusInsidePanel()) event.preventDefault();
+        }}
+        // Non-modal: if focus was on the page when the chat closed (e.g. the launcher), leave
+        // it there instead of moving it to the launcher. From inside the panel (X, Close,
+        // Escape) Radix still returns focus to the launcher.
+        onCloseAutoFocus={(event) => {
+          if (!modal && !focusInsideOnCloseRef.current) event.preventDefault();
+          focusInsideOnCloseRef.current = true;
+        }}
         className={cn(
           "top-0 right-0 bottom-0 left-auto flex h-dvh max-h-none w-full max-w-none translate-x-0 translate-y-0 flex-col overflow-hidden border-0 border-l p-0 sm:w-[560px]",
           // Non-modal side panel: one step below the library layers (z-50), like the desktop
