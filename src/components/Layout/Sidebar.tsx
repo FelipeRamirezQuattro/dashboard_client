@@ -41,15 +41,14 @@ const CollapsedTip: React.FC<{
   collapsed?: boolean;
   label: React.ReactNode;
   children: React.ReactElement;
-}> = ({ collapsed, label, children }) =>
-  collapsed ? (
-    <Tooltip>
-      <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent side="right">{label}</TooltipContent>
-    </Tooltip>
-  ) : (
-    children
-  );
+}> = ({ collapsed, label, children }) => (
+  // Same tree in both states so the child never remounts (keeps keyboard focus). While expanded the
+  // tooltip is forced closed (controlled `open={false}`); while collapsed it is uncontrolled.
+  <Tooltip open={collapsed ? undefined : false}>
+    <TooltipTrigger asChild>{children}</TooltipTrigger>
+    <TooltipContent side="right">{label}</TooltipContent>
+  </Tooltip>
+);
 
 const NavItem: React.FC<{
   to: string;
@@ -211,7 +210,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
             <SidebarToggle
               collapsed={collapsed}
               onClick={onToggle}
-              aria-label="Collapse sidebar"
+              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
               className="self-end"
             />
           </CollapsedTip>
