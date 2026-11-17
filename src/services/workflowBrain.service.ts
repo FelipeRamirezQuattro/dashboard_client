@@ -6,10 +6,13 @@ import type {
   BrainDocument,
   BrainGroundingMode,
   CategorySettings,
+  CommitImportResult,
   DatasetDefinitionSummary,
   DatasetRecordsPage,
   DocStatus,
   ImportReportView,
+  ReindexResult,
+  RollbackImportResult,
   UploadDocumentMeta,
 } from "../types/brainKnowledge.types";
 
@@ -39,35 +42,70 @@ export interface WorkflowBrainCategory {
   updatedAt: string;
 }
 
-export const effectiveAccessRole = (c: Pick<WorkflowBrainCategory, "accessRole">): BrainAccessRole =>
-  c.accessRole ?? "viewer";
+export const effectiveAccessRole = (c: { accessRole?: string | null }): BrainAccessRole => {
+  const value = c?.accessRole;
+  if (value === undefined || value === null) return "viewer";
+  return value === "viewer" || value === "editor" || value === "admin" ? value : "admin";
+};
 
-export const effectiveGroundingMode = (
-  c: Pick<WorkflowBrainCategory, "groundingMode">,
-): BrainGroundingMode => c.groundingMode ?? "standard";
+export const effectiveGroundingMode = (c: { groundingMode?: string | null }): BrainGroundingMode =>
+  c?.groundingMode === "strict" ? "strict" : "standard";
 
-export const effectiveMinEvidenceCount = (
-  c: Pick<WorkflowBrainCategory, "minEvidenceCount">,
-): number => c.minEvidenceCount ?? 2;
+export const effectiveMinEvidenceCount = (c: { minEvidenceCount?: number | null }): number => {
+  const value = c?.minEvidenceCount;
+  if (typeof value !== "number" || !Number.isFinite(value)) return 2;
+  return Math.min(10, Math.max(1, Math.floor(value)));
+};
+
+const GENERIC_ERROR = "Something went wrong. Please try again.";
+
+const statusMessage = (status: number | undefined): string => {
+  if (status === 401) return "Your session expired. Sign in again.";
+  if (status === 403) return "You do not have access to this.";
+  if (status === 413) return "The file is too large.";
+  return GENERIC_ERROR;
+};
+
+const fromBody = (status: number | undefined, data: unknown): ApiErrorInfo => {
+  if (data && typeof data === "object") {
+    const { error, code } = data as { error?: unknown; code?: unknown };
+    return {
+      status,
+      code: typeof code === "string" ? code : undefined,
+      message: typeof error === "string" && error.trim() ? error : statusMessage(status),
+    };
+  }
+  return { status, message: statusMessage(status) };
+};
+
+const transportError = (err: unknown): ApiErrorInfo | null => {
+  if (!axios.isAxiosError(err) || err.response) return null;
+  if (err.code === "ECONNABORTED" || err.code === "ETIMEDOUT" || err.code === "ERR_CANCELED") {
+    return { message: "The request timed out." };
+  }
+  return { message: "Network error. Check your connection and try again." };
+};
 
 /** Normalises any thrown value into a safe, displayable error (never raw HTML or stack text). */
 export const extractApiError = (err: unknown): ApiErrorInfo => {
-  const fallback = "Something went wrong. Please try again.";
   if (axios.isAxiosError(err)) {
-    const status = err.response?.status;
-    const data: unknown = err.response?.data;
-    if (data && typeof data === "object") {
-      const { error, code } = data as { error?: unknown; code?: unknown };
-      return {
-        status,
-        code: typeof code === "string" ? code : undefined,
-        message: typeof error === "string" && error.trim() ? error : fallback,
-      };
-    }
-    if (!err.response) return { message: "Network error. Check your connection and try again." };
-    return { status, message: fallback };
+    return transportError(err) ?? fromBody(err.response?.status, err.response?.data);
   }
-  return { message: fallback };
+  return { message: GENERIC_ERROR };
+};
+
+/** Like extractApiError, but also decodes JSON error bodies delivered as a Blob (responseType: "blob"). */
+export const extractApiErrorAsync = async (err: unknown): Promise<ApiErrorInfo> => {
+  if (axios.isAxiosError(err) && err.response && err.response.data instanceof Blob) {
+    const status = err.response.status;
+    try {
+      const parsed: unknown = JSON.parse(await err.response.data.text());
+      return fromBody(status, parsed);
+    } catch {
+      return { status, message: statusMessage(status) };
+    }
+  }
+  return extractApiError(err);
 };
 
 export interface BrainMemory {
@@ -264,14 +302,14 @@ export const workflowBrainService = {
   async commitImport(
     importId: string,
     acknowledgeWarnings: boolean,
-  ): Promise<{ committed: unknown; revisions: unknown }> {
+  ): Promise<CommitImportResult> {
     const response = await api.post(`/workflow-brain/imports/${importId}/commit`, {
       acknowledgeWarnings,
     });
     return response.data;
   },
 
-  async rollbackImport(importId: string): Promise<{ rolledBack: unknown; restored: unknown }> {
+  async rollbackImport(importId: string): Promise<RollbackImportResult> {
     const response = await api.post(`/workflow-brain/imports/${importId}/rollback`);
     return response.data;
   },
@@ -298,7 +336,7 @@ export const workflowBrainService = {
     return response.data;
   },
 
-  async reindexCategory(categoryId: string): Promise<unknown> {
+  async reindexCategory(categoryId: string): Promise<ReindexResult> {
     const response = await api.post(`/workflow-brain/categories/${categoryId}/reindex`);
     return response.data;
   },

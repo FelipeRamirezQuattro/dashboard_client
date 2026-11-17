@@ -67,12 +67,18 @@ export interface DatasetColumnSummary {
   name: string;
   type: string;
   required?: boolean;
+  values?: string[];
+  maxLength?: number;
+  min?: number;
+  max?: number;
+  notFuture?: boolean;
 }
 
 export interface DatasetTableSummary {
   name: string;
   file: string;
   required: boolean;
+  primaryKey: string[];
   columns: DatasetColumnSummary[];
 }
 
@@ -107,4 +113,19 @@ export interface ApiErrorInfo {
   status?: number;
   code?: string;
   message: string;
+}
+
+export interface CommitImportResult {
+  committed: number;
+  revisions: number;
+}
+
+export interface RollbackImportResult {
+  rolledBack: number;
+  restored: number;
+}
+
+export interface ReindexResult {
+  documents: number;
+  batches: number;
 }
