@@ -155,7 +155,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                 {isBot ? "OSI Assistant said:" : "You said:"}
               </span>
               {insufficientParts ? (
-                <Alert variant="info" role="status" className="text-sm">
+                <Alert variant="info" className="text-sm">
                   <p className="font-semibold">{insufficientParts.lead}</p>
                   {insufficientParts.rest.map((line, i) => (
                     <p key={i} className="text-xs text-text-muted">

@@ -4,17 +4,23 @@ export const INSUFFICIENT_PREFIX = "Not enough stored information to answer this
 export const DRAFT_LINE = "DRAFT — suggestions only; an engineer must review.";
 export const MAX_CITATIONS = 50;
 
-/** Validates server-provided citations: keeps only objects with string id and label, capped. */
+const MAX_TEXT = 200;
+const clip = (v: string) => (v.length > MAX_TEXT ? `${v.slice(0, MAX_TEXT - 1)}…` : v);
+
+/**
+ * Validates server-provided citations, all-or-nothing: any invalid item or an
+ * array over the cap yields [] so [n] numbering can never drift from the reply.
+ */
 export function normalizeCitations(raw: unknown): Citation[] {
-  if (!Array.isArray(raw)) return [];
+  if (!Array.isArray(raw) || raw.length > MAX_CITATIONS) return [];
   const out: Citation[] = [];
   for (const item of raw) {
-    if (out.length >= MAX_CITATIONS) break;
-    if (typeof item !== "object" || item === null) continue;
+    if (typeof item !== "object" || item === null) return [];
     const r = item as Record<string, unknown>;
-    if (typeof r.id !== "string" || typeof r.label !== "string") continue;
-    const c: Citation = { id: r.id, label: r.label };
-    if (typeof r.fileName === "string" && r.fileName) c.fileName = r.fileName;
+    if (typeof r.id !== "string" || r.id === "") return [];
+    if (typeof r.label !== "string" || r.label === "") return [];
+    const c: Citation = { id: r.id, label: clip(r.label) };
+    if (typeof r.fileName === "string" && r.fileName) c.fileName = clip(r.fileName);
     if (typeof r.page === "number" && Number.isFinite(r.page)) c.page = r.page;
     out.push(c);
   }
