@@ -1,9 +1,12 @@
+import type { Citation } from "./brainKnowledge.types";
+
 export interface ChatMessage {
   id: string;
   message: string;
   sender: "user" | "bot";
   timestamp: Date;
   isSpoken?: boolean; // Track if message was delivered via voice
+  citations?: Citation[];
 }
 
 export interface ChatResponse {
@@ -22,6 +25,7 @@ export interface ChatResponse {
     | "error";
   routedTo?: string;
   documents?: ChatDocumentResult[];
+  metadata?: { citations?: Citation[]; [k: string]: unknown };
 }
 
 export interface ChatDocumentResult {
