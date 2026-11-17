@@ -37,8 +37,17 @@ import {
   WorkflowBrainCategory,
   WorkflowBrainDomain,
   WorkflowBrainState,
+  effectiveAccessRole,
+  effectiveGroundingMode,
   workflowBrainService,
 } from "../services/workflowBrain.service";
+import {
+  CategorySettingsPanel,
+  DatasetImportPanel,
+  KnowledgeDocumentsPanel,
+  accessRoleBadgeLabel,
+  isKnowledgeAdminRole,
+} from "../features/workflow-brain";
 
 const domains: Array<{ value: WorkflowBrainDomain; label: string }> = [
   { value: "gas_separation", label: "Gas Separation" },
@@ -57,13 +66,15 @@ type TabKey =
   | "workflow"
   | "memory"
   | "unknowns"
-  | "designs";
+  | "designs"
+  | "knowledge";
 
 const tabs: Array<{ key: TabKey; label: string }> = [
   { key: "workflow", label: "Workflow" },
   { key: "memory", label: "Memory" },
   { key: "unknowns", label: "Unknown Areas" },
   { key: "designs", label: "Design Outputs" },
+  { key: "knowledge", label: "Knowledge" },
 ];
 
 const designExamples = [
@@ -82,6 +93,14 @@ const severityVariant = (severity: string): BadgeVariant => {
 
 const isTabKey = (value: string): value is TabKey =>
   tabs.some((tab) => tab.key === value);
+
+const categoryBadges = (category: WorkflowBrainCategory): string[] => {
+  const labels: string[] = [];
+  const access = accessRoleBadgeLabel(effectiveAccessRole(category));
+  if (access) labels.push(access);
+  if (effectiveGroundingMode(category) === "strict") labels.push("Strict");
+  return labels;
+};
 
 const WorkflowBrainPage: React.FC = () => {
   const { user } = useAuth();
@@ -106,6 +125,8 @@ const WorkflowBrainPage: React.FC = () => {
 
   const canEdit = user?.role === "editor" || user?.role === "admin" || user?.role === "superadmin";
   const canDeleteCategory = user?.role === "admin" || user?.role === "superadmin";
+  const canSeeKnowledge = isKnowledgeAdminRole(user?.role);
+  const visibleTabs = tabs.filter((tab) => tab.key !== "knowledge" || canSeeKnowledge);
 
   const categoriesQuery = useQuery({
     queryKey: ["workflowBrainCategories"],
@@ -386,7 +407,14 @@ const WorkflowBrainPage: React.FC = () => {
                           onClick={() => setSelectedCategoryId(category._id)}
                           className="h-auto w-full flex-col items-start gap-1 px-3 py-2.5 text-left whitespace-normal"
                         >
-                          <span className="text-sm font-bold">{category.name}</span>
+                          <span className="flex flex-wrap items-center gap-1.5 text-sm font-bold">
+                            {category.name}
+                            {categoryBadges(category).map((label) => (
+                              <Badge key={label} variant="neutral">
+                                {label}
+                              </Badge>
+                            ))}
+                          </span>
                           <span className="text-xs leading-snug font-normal">
                             {category.description || "Category memory for OSI operations."}
                           </span>
@@ -647,19 +675,21 @@ const WorkflowBrainPage: React.FC = () => {
 
                 <Card className="min-w-0">
                   <Tabs
-                    value={activeTab}
+                    value={visibleTabs.some((tab) => tab.key === activeTab) ? activeTab : "workflow"}
                     onValueChange={(value) => {
-                      if (isTabKey(value)) setActiveTab(value);
+                      if (isTabKey(value) && visibleTabs.some((tab) => tab.key === value)) {
+                        setActiveTab(value);
+                      }
                     }}
                   >
                     <TabsList aria-label="Workflow Brain views" className="max-w-full px-2.5 pt-2">
-                      {tabs.map((tab) => (
+                      {visibleTabs.map((tab) => (
                         <TabsTrigger key={tab.key} value={tab.key}>
                           {tab.label}
                         </TabsTrigger>
                       ))}
                     </TabsList>
-                    {tabs.map((tab) => (
+                    {visibleTabs.map((tab) => (
                       <TabsContent key={tab.key} value={tab.key} className="p-4">
                         {renderTab(tab.key)}
                       </TabsContent>
@@ -676,6 +706,32 @@ const WorkflowBrainPage: React.FC = () => {
 
   function renderTab(tab: TabKey) {
     if (!state) return null;
+
+    if (tab === "knowledge") {
+      if (!canSeeKnowledge || !selectedCategory) return null;
+      return (
+        <div className="flex flex-col gap-8">
+          <section aria-labelledby="brain-settings-heading" className="flex flex-col gap-3">
+            <h3 id="brain-settings-heading" className="text-base font-bold text-text">
+              Category settings
+            </h3>
+            <CategorySettingsPanel categoryId={selectedCategory._id} category={selectedCategory} />
+          </section>
+          <section aria-labelledby="brain-documents-heading" className="flex flex-col gap-3">
+            <h3 id="brain-documents-heading" className="text-base font-bold text-text">
+              Knowledge documents
+            </h3>
+            <KnowledgeDocumentsPanel categoryId={selectedCategory._id} />
+          </section>
+          <section aria-labelledby="brain-datasets-heading" className="flex flex-col gap-3">
+            <h3 id="brain-datasets-heading" className="text-base font-bold text-text">
+              Datasets
+            </h3>
+            <DatasetImportPanel categoryId={selectedCategory._id} />
+          </section>
+        </div>
+      );
+    }
 
     if (tab === "workflow") {
       return state.workflowSteps.length ? (
