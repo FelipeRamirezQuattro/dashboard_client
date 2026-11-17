@@ -1,5 +1,7 @@
 import React from "react";
 import {
+  Alert,
+  Badge,
   Button,
   Tooltip,
   TooltipContent,
@@ -9,6 +11,12 @@ import {
   linkVariants,
 } from "@odessa-separator/ui";
 import { BookmarkPlus, Bot, Mic, User, Volume2 } from "lucide-react";
+import {
+  hasDraftLine,
+  isInsufficientReply,
+  splitReplyForDisplay,
+  DRAFT_LINE,
+} from "./chatCitations.logic";
 import { ChatMessage as ChatMessageType } from "../../types/chatbot.types";
 import {
   downloadFileBankDocument,
@@ -104,6 +112,18 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     return parts.length > 0 ? parts : text;
   };
 
+  const insufficient = isInsufficientReply(message.message);
+  const showDraft = isBot && !insufficient && hasDraftLine(message.message);
+  const bodyText = showDraft
+    ? message.message
+        .split("\n")
+        .filter((l) => l.trim() !== DRAFT_LINE)
+        .join("\n")
+        .trimEnd()
+    : message.message;
+  const insufficientParts = isBot && insufficient ? splitReplyForDisplay(message.message) : null;
+  const citations = isBot && !insufficient ? (message.citations ?? []) : [];
+
   return (
     <div className={cn("mb-4 flex", isBot ? "justify-start" : "justify-end")}>
       <div
@@ -134,9 +154,39 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
               <span className="sr-only">
                 {isBot ? "OSI Assistant said:" : "You said:"}
               </span>
-              <div className="text-sm leading-relaxed break-words whitespace-pre-line">
-                {renderMessage(message.message)}
-              </div>
+              {insufficientParts ? (
+                <Alert variant="info" role="status" className="text-sm">
+                  <p className="font-semibold">{insufficientParts.lead}</p>
+                  {insufficientParts.rest.map((line, i) => (
+                    <p key={i} className="text-xs text-text-muted">
+                      {line}
+                    </p>
+                  ))}
+                </Alert>
+              ) : (
+                <div className="text-sm leading-relaxed break-words whitespace-pre-line">
+                  {renderMessage(bodyText)}
+                </div>
+              )}
+              {showDraft && (
+                <div className="mt-2">
+                  <Badge variant="neutral">{DRAFT_LINE}</Badge>
+                </div>
+              )}
+              {citations.length > 0 && (
+                <div className="mt-3 border-t border-border pt-2">
+                  <p className="text-xs font-semibold text-text-muted">Sources</p>
+                  <ol aria-label="Sources" className="mt-1 space-y-0.5 text-xs text-text-muted">
+                    {citations.map((c, i) => (
+                      <li key={`${c.id}-${i}`} className="break-words">
+                        <span>[{i + 1}]</span> <span>{c.label}</span>
+                        {c.fileName ? <span>{` · ${c.fileName}`}</span> : null}
+                        {typeof c.page === "number" ? <span>{` · p. ${c.page}`}</span> : null}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
             </div>
             {/* Speaker button for bot messages */}
             {isBot && onSpeak && isTTSSupported && (

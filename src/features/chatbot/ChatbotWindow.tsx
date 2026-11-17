@@ -27,6 +27,7 @@ import {
   VolumeX,
 } from "lucide-react";
 import ChatMessage from "./ChatMessage";
+import { normalizeCitations } from "./chatCitations.logic";
 import ChatInput from "./ChatInput";
 import {
   ChatMessage as ChatMessageType,
@@ -202,6 +203,8 @@ const ChatbotWindow: React.FC<ChatbotWindowProps> = ({ onClose }) => {
         sender: "bot",
         timestamp: new Date(data.timestamp),
       };
+      const citations = normalizeCitations(data.metadata?.citations);
+      if (citations.length > 0) botMessage.citations = citations;
 
       setIsTyping(false);
       setMessages((prev) => [...prev, botMessage]);
