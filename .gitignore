@@ -37,3 +37,7 @@ coverage/
 .cache/
 temp/
 tmp/
+
+# Customer documents must never be served from the public bundle.
+# Store them in File Bank (S3/DB) or OneDrive instead.
+public/documents/
