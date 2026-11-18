@@ -3,6 +3,7 @@ import type {
   BrainDocumentFlag,
   BrainGroundingMode,
   CategorySettings,
+  DatasetDefinitionSummary,
   DocKind,
   DocStatus,
   ImportIssue,
@@ -127,3 +128,18 @@ export const isSwitchingToStrict = (saved: BrainGroundingMode, next: BrainGround
 
 export const totalPages = (total: number, pageSize: number): number =>
   Math.max(1, Math.ceil(total / pageSize));
+
+/** Only the flag keys the reviewer ticked, in the document's flag order (never every key of the document). */
+export const tickedFlagKeys = (
+  flags: ReadonlyArray<Pick<BrainDocumentFlag, "key">>,
+  ticked: ReadonlySet<string>,
+): string[] => flags.map((flag) => flag.key).filter((key) => ticked.has(key));
+
+/**
+ * Imported-records table columns from the dataset definition (not from the first row, whose keys depend on which
+ * optional cells it has): the table's columns, then primaryKeyValue and revision.
+ */
+export const recordColumns = (definition: Pick<DatasetDefinitionSummary, "tables"> | undefined, table: string): string[] => {
+  const columns = definition?.tables.find((t) => t.name === table)?.columns.map((c) => c.name) ?? [];
+  return columns.length ? [...columns, "primaryKeyValue", "revision"] : [];
+};

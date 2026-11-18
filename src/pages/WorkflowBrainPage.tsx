@@ -715,19 +715,20 @@ const WorkflowBrainPage: React.FC = () => {
             <h3 id="brain-settings-heading" className="text-base font-bold text-text">
               Category settings
             </h3>
-            <CategorySettingsPanel categoryId={selectedCategory._id} category={selectedCategory} />
+            {/* key: a category switch remounts each panel, so an in-flight request can never label another category */}
+            <CategorySettingsPanel key={selectedCategory._id} categoryId={selectedCategory._id} category={selectedCategory} />
           </section>
           <section aria-labelledby="brain-documents-heading" className="flex flex-col gap-3">
             <h3 id="brain-documents-heading" className="text-base font-bold text-text">
               Knowledge documents
             </h3>
-            <KnowledgeDocumentsPanel categoryId={selectedCategory._id} />
+            <KnowledgeDocumentsPanel key={selectedCategory._id} categoryId={selectedCategory._id} />
           </section>
           <section aria-labelledby="brain-datasets-heading" className="flex flex-col gap-3">
             <h3 id="brain-datasets-heading" className="text-base font-bold text-text">
               Datasets
             </h3>
-            <DatasetImportPanel categoryId={selectedCategory._id} />
+            <DatasetImportPanel key={selectedCategory._id} categoryId={selectedCategory._id} />
           </section>
         </div>
       );

@@ -42,13 +42,16 @@ const CategorySettingsPanel: React.FC<CategorySettingsPanelProps> = ({ categoryI
   const [minEvidence, setMinEvidence] = React.useState(String(saved.minEvidenceCount));
   const [notice, setNotice] = React.useState<Notice | null>(null);
 
-  // Re-sync the form when the selected category or its saved values change.
+  // Re-sync the form when the selected category or its saved values change (e.g. the refetch after a save). The
+  // notice is cleared only when the category changes, so "Settings saved" survives that refetch.
   React.useEffect(() => {
     setAccessRole(saved.accessRole);
     setGroundingMode(saved.groundingMode);
     setMinEvidence(String(saved.minEvidenceCount));
-    setNotice(null);
   }, [categoryId, saved.accessRole, saved.groundingMode, saved.minEvidenceCount]);
+  React.useEffect(() => {
+    setNotice(null);
+  }, [categoryId]);
 
   const parsedMin = parseMinEvidence(minEvidence);
   const minError = parsedMin === null ? "Enter a whole number from 1 to 10." : undefined;

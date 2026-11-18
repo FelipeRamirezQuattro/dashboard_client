@@ -29,6 +29,7 @@ import {
   badgeVariantForStatus,
   canActivate,
   fileSizeLimitError,
+  tickedFlagKeys,
   uploadFormError,
 } from "./brainPanels.logic";
 
@@ -117,8 +118,8 @@ const KnowledgeDocumentsPanel: React.FC<KnowledgeDocumentsPanelProps> = ({ categ
   });
 
   const activate = useMutation({
-    mutationFn: (doc: BrainDocument) =>
-      workflowBrainService.setDocumentStatus(doc.id, "active", doc.flags.map((f) => f.key)),
+    mutationFn: (p: { doc: BrainDocument; acknowledgeFlags: string[] }) =>
+      workflowBrainService.setDocumentStatus(p.doc.id, "active", p.acknowledgeFlags),
     onSuccess: async () => {
       setReviewDoc(null);
       setTicked(new Set());
@@ -275,7 +276,7 @@ const KnowledgeDocumentsPanel: React.FC<KnowledgeDocumentsPanelProps> = ({ categ
               disabled={
                 reviewDoc.status !== "draft" || !canActivate(reviewDoc.flags, ticked) || activate.isPending
               }
-              onClick={() => activate.mutate(reviewDoc)}
+              onClick={() => activate.mutate({ doc: reviewDoc, acknowledgeFlags: tickedFlagKeys(reviewDoc.flags, ticked) })}
             >
               {activate.isPending ? <Spinner size="sm" label="Activating" /> : <Check size={15} aria-hidden="true" />}
               Activate

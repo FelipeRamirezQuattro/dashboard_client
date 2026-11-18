@@ -34,6 +34,7 @@ import {
   fileExtension,
   groupIssuesByFile,
   hasWarnings,
+  recordColumns,
   totalPages,
 } from "./brainPanels.logic";
 
@@ -59,7 +60,8 @@ const downloadBlob = (blob: Blob, filename: string) => {
   document.body.appendChild(link);
   link.click();
   link.remove();
-  URL.revokeObjectURL(url);
+  // deferred: revoking synchronously can cancel the download in some browsers
+  setTimeout(() => URL.revokeObjectURL(url), 0);
 };
 
 export const ImportReportPanel: React.FC<{ report: ImportReportView }> = ({ report }) => {
@@ -153,7 +155,9 @@ const DatasetImportPanel: React.FC<DatasetImportPanelProps> = ({ categoryId }) =
   const [importId, setImportId] = React.useState<string | null>(null);
   const [report, setReport] = React.useState<ImportReportView | null>(null);
   const [ackWarnings, setAckWarnings] = React.useState(false);
-  const [committed, setCommitted] = React.useState<CommitImportResult | null>(null);
+  // The last committed import stays rollback-able while new files are picked or checked; it is cleared only by a
+  // category/dataset change (remount / resetImport) or a successful rollback.
+  const [lastCommit, setLastCommit] = React.useState<{ importId: string; result: CommitImportResult } | null>(null);
   const [rolledBack, setRolledBack] = React.useState<RollbackImportResult | null>(null);
   const [confirmRollback, setConfirmRollback] = React.useState(false);
   const [notice, setNotice] = React.useState<Notice | null>(null);
@@ -173,7 +177,7 @@ const DatasetImportPanel: React.FC<DatasetImportPanelProps> = ({ categoryId }) =
     setImportId(null);
     setReport(null);
     setAckWarnings(false);
-    setCommitted(null);
+    setLastCommit(null);
     setRolledBack(null);
     setConfirmRollback(false);
     setPage(1);
@@ -216,7 +220,6 @@ const DatasetImportPanel: React.FC<DatasetImportPanelProps> = ({ categoryId }) =
       setImportId(result.importId);
       setReport(result.report);
       setAckWarnings(false);
-      setCommitted(null);
       setRolledBack(null);
       setNotice(null);
     },
@@ -233,26 +236,28 @@ const DatasetImportPanel: React.FC<DatasetImportPanelProps> = ({ categoryId }) =
     queryClient.invalidateQueries({ queryKey: ["brainDatasetRecords", categoryId, datasetKey] });
 
   const commit = useMutation({
-    mutationFn: () => workflowBrainService.commitImport(importId as string, ackWarnings),
-    onSuccess: async (result) => {
-      setCommitted(result);
+    mutationFn: (id: string) => workflowBrainService.commitImport(id, ackWarnings),
+    onSuccess: async (result, id) => {
+      setLastCommit({ importId: id, result });
       setRolledBack(null);
       setNotice({ variant: "success", title: "Import committed", message: "The records are now stored." });
       setReport(null);
+      setImportId(null);
       setFiles({});
       setInputVersion((v) => v + 1);
+      setPage(1);
       await refreshRecords();
     },
     onError: (error) => fail("Import was not committed", error),
   });
 
   const rollback = useMutation({
-    mutationFn: () => workflowBrainService.rollbackImport(importId as string),
+    mutationFn: (id: string) => workflowBrainService.rollbackImport(id),
     onSuccess: async (result) => {
       setConfirmRollback(false);
       setRolledBack(result);
-      setCommitted(null);
-      setImportId(null);
+      setLastCommit(null);
+      setPage(1);
       setNotice({ variant: "success", title: "Import rolled back", message: "The previous records were restored." });
       await refreshRecords();
     },
@@ -265,7 +270,7 @@ const DatasetImportPanel: React.FC<DatasetImportPanelProps> = ({ categoryId }) =
   const busy = dryRun.isPending || commit.isPending || rollback.isPending;
   const requiredMissing = definition?.tables.some((t) => t.required && !files[t.file]) ?? true;
   const records = recordsQuery.data;
-  const columns = records?.items[0] ? Object.keys(records.items[0]) : [];
+  const columns = recordColumns(definition, recordTable);
 
   return (
     <div className="flex flex-col gap-5">
@@ -356,7 +361,6 @@ const DatasetImportPanel: React.FC<DatasetImportPanelProps> = ({ categoryId }) =
                             });
                             setReport(null);
                             setImportId(null);
-                            setCommitted(null);
                           }}
                         />
                       )}
@@ -397,7 +401,7 @@ const DatasetImportPanel: React.FC<DatasetImportPanelProps> = ({ categoryId }) =
                       variant="accent"
                       size="sm"
                       disabled={!canCommit(report, ackWarnings) || busy}
-                      onClick={() => commit.mutate()}
+                      onClick={() => importId && commit.mutate(importId)}
                     >
                       {commit.isPending ? <Spinner size="sm" label="Committing" /> : <ShieldCheck size={15} aria-hidden="true" />}
                       Commit import
@@ -406,10 +410,10 @@ const DatasetImportPanel: React.FC<DatasetImportPanelProps> = ({ categoryId }) =
                 </div>
               )}
 
-              {committed && importId && (
+              {lastCommit && (
                 <div className="flex flex-col gap-2">
                   <p className="text-sm text-text">
-                    Committed {committed.committed} record(s); {committed.revisions} replaced an earlier revision.
+                    Committed {lastCommit.result.committed} record(s); {lastCommit.result.revisions} replaced an earlier revision.
                   </p>
                   <div>
                     <Button variant="outline" size="sm" disabled={busy} onClick={() => setConfirmRollback(true)}>
@@ -495,7 +499,7 @@ const DatasetImportPanel: React.FC<DatasetImportPanelProps> = ({ categoryId }) =
         confirmLabel="Roll back"
         tone="danger"
         isPending={rollback.isPending}
-        onConfirm={() => rollback.mutate()}
+        onConfirm={() => lastCommit && rollback.mutate(lastCommit.importId)}
         onCancel={() => setConfirmRollback(false)}
       />
     </div>
